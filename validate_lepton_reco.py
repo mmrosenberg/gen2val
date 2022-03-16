@@ -8,6 +8,7 @@ from larcv import larcv
 from larflow import larflow
 from math import sqrt, acos, cos, sin, pi
 from array import array
+from helpers.larflowreco_ana_funcs import *
 
 parser = argparse.ArgumentParser("Validate Lepton Reco")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
@@ -23,23 +24,7 @@ args = parser.parse_args()
 if not args.nue ^ args.numu:
   sys.exit("Need to specify --nue or --numu. Exiting...")
 
-files = []
-for kpsfile in args.files:
-  dlrecofilelist = open(args.truth, "r")
-  for line in dlrecofilelist:
-    dlrecofile = line.replace("\n","")
-    samtag = dlrecofile[dlrecofile.find("merged_dlreco_"):].replace("merged_dlreco_","").replace(".root","")
-    if samtag in kpsfile:
-      files.append([kpsfile, dlrecofile])
-      break
-  dlrecofilelist.close()
-
-
-def getVertexDistance(pos3v, recoVtx):
-  xdiffSq = (pos3v.X() - recoVtx.pos[0])**2
-  ydiffSq = (pos3v.Y() - recoVtx.pos[1])**2
-  zdiffSq = (pos3v.Z() - recoVtx.pos[2])**2
-  return sqrt( xdiffSq + ydiffSq + zdiffSq )
+files = getFiles("merged_dlreco_", args.files, args.truth)
 
 def getStartDistance(trueStart, recoTrack, p=-1):
   if p < 0:
@@ -138,32 +123,6 @@ def getMinAngle(angles):
     if ang < minAng:
       minAng = ang
   return minAng
-
-def MCLeptonOkay(nuIntLep, mcObjLep):
-  if mcObjLep.PdgCode() != nuIntLep.PdgCode():
-    return False
-  nuIntStart = nuIntLep.Position()
-  mcObjStart = mcObjLep.Start()
-  xdiffSq = (nuIntStart.X() - mcObjStart.X())**2
-  ydiffSq = (nuIntStart.Y() - mcObjStart.Y())**2
-  zdiffSq = (nuIntStart.Z() - mcObjStart.Z())**2
-  if sqrt(xdiffSq + ydiffSq + zdiffSq) > 1.:
-    return False
-  return True
-
-detCrds = [[0., 256.35], [-116.5, 116.5], [0, 1036.8]]
-fidCrds = [ [detCrds[0][0] + 20. , detCrds[0][1] - 20.] ]
-fidCrds.append( [detCrds[1][0] + 20. , detCrds[1][1] - 20.] )
-fidCrds.append( [detCrds[2][0] + 20. , detCrds[2][1] - 60.] )
-
-def inRange(x, bnd):
-  return (x >= bnd[0] and x <= bnd[1])
-
-def isFiducial(p):
-  return (inRange(p.X(),fidCrds[0]) and inRange(p.Y(),fidCrds[1]) and inRange(p.Z(),fidCrds[2]))
-
-def isInDetector(p):
-  return (inRange(p.X(),detCrds[0]) and inRange(p.Y(),detCrds[1]) and inRange(p.Z(),detCrds[2]))
 
 def getLastPoint(trackUnCorr, trackCorr):
   iStep = trackUnCorr.NumberTrajectoryPoints() - 1
