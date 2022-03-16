@@ -46,6 +46,21 @@ def getShowerGap(shower_trunk_v, recoVtx):
       minGap = gap
   return minGap
 
+def addClusterCharge(iolcv, cluster, eventPixels, eventCharge, vertexPixels, vertexCharge):
+  evtImage2D = iolcv.get_data(larcv.kProductImage2D, "wire")
+  image2Dvec = evtImage2D.Image2DArray()
+  for hit in cluster:
+    for p in range(3):
+      row = (hit.tick - 2400)//6
+      pixel = [ p, hit.tick, hit.targetwire[p] ]
+      pixVal = image2Dvec[p].pixel(row, hit.targetwire[p])
+      if pixel not in eventPixels:
+        eventPixels.append(pixel)
+        eventCharge = eventCharge + pixVal
+      if pixel not in vertexPixels:
+        vertexPixels.append(pixel)
+        vertexCharge = vertexCharge + pixVal
+  return eventPixels, eventCharge, vertexPixels, vertexCharge
 
 #NuSelectionVariables classes
 prongvars = larflow.reco.NuSelProngVars()
@@ -124,6 +139,12 @@ vtxKeyPtType = array('i', maxNVtxs*[0])
 vtxNTracks = array('i', maxNVtxs*[0])
 vtxNShowers = array('i', maxNVtxs*[0])
 vtxHasReco = array('i', maxNVtxs*[0])
+vtxShwMaxCosTheta = array('f', maxNVtxs*[0.])
+vtxLargestShwCosTheta = array('f', maxNVtxs*[0.])
+vtxTrkMaxCosTheta = array('f', maxNVtxs*[0.])
+vtxLongestTrkCosTheta = array('f', maxNVtxs*[0.])
+vtxFracCharge = array('f', maxNVtxs*[0.])
+vtxFracChargeDownstream = array('f', maxNVtxs*[0.])
 vtxMaxTrkTotll = array('f', maxNVtxs*[0])
 vtxMaxTrkTotllmuon = array('f', maxNVtxs*[0])
 vtxMaxTrkTotllproton = array('f', maxNVtxs*[0])
@@ -174,6 +195,12 @@ vertexTree.Branch("vtxKeyPtType", vtxKeyPtType, 'vtxKeyPtType[nVertices]/I')
 vertexTree.Branch("vtxNTracks", vtxNTracks, 'vtxNTracks[nVertices]/I')
 vertexTree.Branch("vtxNShowers", vtxNShowers, 'vtxNShowers[nVertices]/I')
 vertexTree.Branch("vtxHasReco", vtxHasReco, 'vtxHasReco[nVertices]/I')
+vertexTree.Branch("vtxShwMaxCosTheta", vtxShwMaxCosTheta, 'vtxShwMaxCosTheta[nVertices]/F')
+vertexTree.Branch("vtxLargestShwCosTheta", vtxLargestShwCosTheta, 'vtxLargestShwCosTheta[nVertices]/F')
+vertexTree.Branch("vtxTrkMaxCosTheta", vtxTrkMaxCosTheta, 'vtxTrkMaxCosTheta[nVertices]/F')
+vertexTree.Branch("vtxLongestTrkCosTheta", vtxLongestTrkCosTheta, 'vtxLongestTrkCosTheta[nVertices]/F')
+vertexTree.Branch("vtxFracCharge", vtxFracCharge, 'vtxFracCharge[nVertices]/F')
+vertexTree.Branch("vtxFracChargeDownstream", vtxFracChargeDownstream, 'vtxFracChargeDownstream[nVertices]/F')
 vertexTree.Branch("vtxMaxTrkTotll", vtxMaxTrkTotll, 'vtxMaxTrkTotll[nVertices]/F')
 vertexTree.Branch("vtxMaxTrkTotllmuon", vtxMaxTrkTotllmuon, 'vtxMaxTrkTotllmuon[nVertices]/F')
 vertexTree.Branch("vtxMaxTrkTotllproton", vtxMaxTrkTotllproton, 'vtxMaxTrkTotllproton[nVertices]/F')
@@ -328,6 +355,9 @@ for filepair in files:
 
     iV = 0
     bestRecoComp[0] = -1.
+    eventPixels = []
+    eventCharge = 0.
+
     #------- begin vertex loop ------------------------------------------------#
     for vertex in kpst.nufitted_v:
 
@@ -362,6 +392,25 @@ for filepair in files:
         if lepPDG == 13:
           vtxHasReco[iV] = 1
 
+      vertexPixels = []
+      vertexCharge = 0.
+
+      vtxShwMaxCosTheta[iV] = -9.
+      vtxLargestShwCosTheta[iV] = -9.
+      maxNShwHits = -1
+
+      for iShw in range(vertex.shower_v.size()):
+        eventPixels, eventCharge, vertexPixels, vertexCharge = addClusterCharge(iolcv, vertex.shower_v[iShw], 
+         eventPixels, eventCharge, vertexPixels, vertexCharge)
+
+        shwCosThetaBeam = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
+        if shwCosThetaBeam > vtxShwMaxCosTheta[iV]:
+          vtxShwMaxCosTheta[iV] = shwCosThetaBeam
+        if vertex.shower_v[iShw].size() > maxNShwHits:
+          maxNShwHits = vertex.shower_v[iShw].size()
+          vtxLargestShwCosTheta[iV] = shwCosThetaBeam
+
+
       vtxMaxTrkTotll[iV] = -1.
       vtxMaxTrkTotllmuon[iV] = -1.
       vtxMaxTrkTotllproton[iV] = -1.
@@ -369,7 +418,23 @@ for filepair in files:
       vtxLongTrkTotllmuon[iV] = -1.
       vtxLongTrkTotllproton[iV] = -1.
       maxTrkLength = -99.
+      vtxTrkMaxCosTheta[iV] = -9.
+      vtxLongestTrkCosTheta[iV] = -9.
+      maxTrkLength2 = -99.
+      iT = 0
+
       for track in vertex.track_v:
+
+        eventPixels, eventCharge, vertexPixels, vertexCharge = addClusterCharge(iolcv, vertex.track_hitcluster_v[iT], 
+         eventPixels, eventCharge, vertexPixels, vertexCharge)
+
+        trkCosThetaBeam = getCosThetaBeamTrack(track)
+        if trkCosThetaBeam > vtxTrkMaxCosTheta[iV]:
+          vtxTrkMaxCosTheta[iV] = trkCosThetaBeam
+        if track.Length() > maxTrkLength2:
+          maxTrackLength2 = track.Length()
+          vtxLongestTrkCosTheta[iV] = trkCosThetaBeam
+
         track_total_c = track_total_c + 1
         try:
           llpid = pidAlgo.calculateLLseparate(track, vertex.pos)
@@ -391,6 +456,10 @@ for filepair in files:
           dQdxStatus[0] = 1
         trackLength[0] = track.Length()
         trackTree.Fill()
+
+        iT = iT + 1
+
+      vtxFracCharge[iV] = vertexCharge
 
       selVars = CalculateNuSelectionVariables(vertex, iolcv, ioll)
       nusel_max_proton_pid[iV] = selVars.max_proton_pid
@@ -417,8 +486,25 @@ for filepair in files:
       nusel_frac_allhits_on_cosmic[iV] = selVars.frac_allhits_on_cosmic
       nusel_nshower_pts_on_cosmic[iV] = selVars.nshower_pts_on_cosmic
       nusel_ntrack_pts_on_cosmic[iV] = selVars.ntrack_pts_on_cosmic
+
       iV = iV + 1
     #------- end vertex loop --------------------------------------------------#
+
+    for iV in range(kpst.nufitted_v.size()):
+      vtxFracChargeDownstream[iV] = 0.
+    collPlaneImage = iolcv.get_data(larcv.kProductImage2D, "wire").Image2DArray()[2]
+    totalCharge = 0.
+    for w in range(collPlaneImage.meta().cols()):
+      wireCharge = 0.
+      for t in range(collPlaneImage.meta().rows()):
+        wireCharge = wireCharge + collPlaneImage.pixel(t, w)
+      totalCharge = totalCharge + wireCharge
+      for iV in range(kpst.nufitted_v.size()):
+        if kpst.nufitted_v[iV].pos[2] < w*0.3:
+          vtxFracChargeDownstream[iV] = vtxFracChargeDownstream[iV] + wireCharge
+    for iV in range(kpst.nufitted_v.size()):
+      vtxFracCharge[iV] = vtxFracCharge[iV] / eventCharge
+      vtxFracChargeDownstream[iV] = vtxFracChargeDownstream[iV] / totalCharge
 
     vertexTree.Fill()
 

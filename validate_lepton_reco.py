@@ -65,7 +65,7 @@ def getTrackSecFlags(trackStart, trackEnd, hit):
     flags[1] = 1
   return flags
 
-def getAngle(true4p, recoTrack):
+def getLeptonAngle(true4p, recoTrack):
   trueMag = sqrt(true4p.Px()**2 + true4p.Py()**2 + true4p.Pz()**2)
   tPx = true4p.Px()/trueMag
   tPy = true4p.Py()/trueMag
@@ -617,7 +617,7 @@ for filepair in files:
     recoLepPixIPurity[0] = purityI
     recoLepPixIAnscPurity[0] = purityIAD
     recoLepStartPosErr[0] = getStartDistance(trueStartPos, recoLepTrack)
-    recoLepStartDirErr[0] = getAngle(trueStartDir, recoLepTrack)*(180./pi)
+    recoLepStartDirErr[0] = getLeptonAngle(trueStartDir, recoLepTrack)*(180./pi)
     nuIntTree.Fill()
 
     if recoStatus[0] == 0 and completenessI < 0.05 and purityIAD < 0.05:

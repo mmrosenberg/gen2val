@@ -117,3 +117,37 @@ def getBestCompleteness(iolcv, vertex, lepPDG, totLepPixI, lepTickLists, lepPixe
       bestComp = comp
   return bestComp
 
+
+def getDistance(a, b):
+  return sqrt( (a.X() - b.X())**2 + (a.Y() - b.Y())**2 + (a.Z() - b.Z())**2)
+
+def getCosTVecAngle(a, b):
+  aMag = sqrt(a.X()**2 + a.Y()**2 + a.Z()**2)
+  bMag = sqrt(b.X()**2 + b.Y()**2 + b.Z()**2)
+  return (a.X()*b.X() + a.Y()*b.Y() + a.Z()*b.Z())/(aMag*bMag)
+
+def getTVecAngle(a, b):
+  return acos(getCosTVecAngle(a,b))
+
+def getCosThetaBeamTrack(track):
+  beamDir = rt.TVector3(0, 0, 1)
+  recoStart = track.Vertex()
+  for i in range(track.NumberTrajectoryPoints()):
+    anglePoint = track.LocationAtPoint(i)
+    if getDistance(recoStart, track.LocationAtPoint(i)) > 5.:
+      break
+  trackDir = rt.TVector3(anglePoint.X() - recoStart.X(),
+                         anglePoint.Y() - recoStart.Y(),
+                         anglePoint.Z() - recoStart.Z())
+  return getCosTVecAngle(trackDir, beamDir)
+
+def getCosThetaBeamShower(showerTrunk):
+  beamDir = rt.TVector3(0, 0, 1)
+  showerDir = rt.TVector3(showerTrunk.VertexDirection().X(),
+                          showerTrunk.VertexDirection().Y(),
+                          showerTrunk.VertexDirection().Z())
+  return getCosTVecAngle(showerDir, beamDir)
+
+
+
+
