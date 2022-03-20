@@ -119,6 +119,10 @@ trackTree.Branch("trackLength", trackLength, 'trackLength/F')
 
 vertexTree = rt.TTree("VertexTree","VertexTree")
 maxNVtxs = 1000
+fileid = array('i', [0])
+run = array('i', [0])
+subrun = array('i', [0])
+event = array('i', [0])
 xsecWeight = array('f', [0.])
 trueNuE = array('f', [0.])
 trueLepE = array('f', [0.])
@@ -127,6 +131,10 @@ bestRecoComp = array('f', [0.])
 trueNuPDG = array('i', [0])
 trueNuCCNC = array('i', [0])
 nVertices = array('i', [0])
+vtxX = array('f', maxNVtxs*[0.])
+vtxY = array('f', maxNVtxs*[0.])
+vtxZ = array('f', maxNVtxs*[0.])
+vtxIsFiducial = array('i', maxNVtxs*[0])
 vtxDistToTrue = array('f', maxNVtxs*[0.])
 vtxBestComp = array('f', maxNVtxs*[0.])
 vtxScore = array('f', maxNVtxs*[0.])
@@ -175,6 +183,10 @@ nusel_frac_showerhits_on_cosmic = array('f', maxNVtxs*[0])
 nusel_frac_allhits_on_cosmic = array('f', maxNVtxs*[0])
 nusel_nshower_pts_on_cosmic = array('i', maxNVtxs*[0])
 nusel_ntrack_pts_on_cosmic = array('i', maxNVtxs*[0])
+vertexTree.Branch("fileid", fileid, 'fileid/I')
+vertexTree.Branch("run", run, 'run/I')
+vertexTree.Branch("subrun", subrun, 'subrun/I')
+vertexTree.Branch("event", event, 'event/I')
 vertexTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
 vertexTree.Branch("trueNuE", trueNuE, 'trueNuE/F')
 vertexTree.Branch("trueLepE", trueLepE, 'trueLepE/F')
@@ -183,7 +195,10 @@ vertexTree.Branch("bestRecoComp", bestRecoComp, 'bestRecoComp/F')
 vertexTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 vertexTree.Branch("trueNuCCNC", trueNuCCNC, 'trueNuCCNC/I')
 vertexTree.Branch("nVertices", nVertices, 'nVertices/I')
-vertexTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue[nVertices]/F')
+vertexTree.Branch("vtxX", vtxX, 'vtxX[nVertices]/F')
+vertexTree.Branch("vtxY", vtxY, 'vtxY[nVertices]/F')
+vertexTree.Branch("vtxZ", vtxZ, 'vtxZ[nVertices]/F')
+vertexTree.Branch("vtxIsFiducial", vtxIsFiducial, 'vtxIsFiducial[nVertices]/I')
 vertexTree.Branch("vtxBestComp", vtxBestComp, 'vtxBestComp[nVertices]/F')
 vertexTree.Branch("vtxScore", vtxScore, 'vtxScore[nVertices]/F')
 vertexTree.Branch("vtxAvgScore", vtxAvgScore, 'vtxAvgScore[nVertices]/F')
@@ -350,6 +365,10 @@ for filepair in files:
       trueNuCCNC[0] = -1
       trueNuE[0] = -9.
 
+    fileid[0] = int(filepair[0][filepair[0].find("fileid")+6:filepair[0].find("fileid")+10])
+    run[0] = kpst.run
+    subrun[0] = kpst.subrun
+    event[0] = kpst.event
 
     nVertices[0] = kpst.nufitted_v.size()
 
@@ -373,6 +392,11 @@ for filepair in files:
       else:
         vtxDistToTrue[iV] = -99.
         vtxBestComp[iV] = -1.
+      vtxX[iV] = vertex.pos[0]
+      vtxY[iV] = vertex.pos[1]
+      vtxZ[iV] = vertex.pos[2]
+      vtxTVec3 = rt.TVector3(vertex.pos[0], vertex.pos[1], vertex.pos[2])
+      vtxIsFiducial[iV] = int(isFiducial(vtxTVec3))
       vtxScore[iV] = vertex.score
       vtxAvgScore[iV] = vertex.avgScore
       vtxMaxScore[iV] = vertex.maxScore
@@ -385,11 +409,11 @@ for filepair in files:
       vtxGap[iV] = -99.
       if vertex.shower_v.size() > 0:
         vtxGap[iV] = getShowerGap(vertex.shower_trunk_v, vertex)
-      if args.isMC:
+      if args.isMC and nuInt.CCNC() == 0:
         vtxHasReco[iV] = 0
-        if lepPDG == 11:
+        if lepPDG == 11 and vertex.shower_v.size() > 0:
           vtxHasReco[iV] = 1
-        if lepPDG == 13:
+        if lepPDG == 13 and vertex.track_v.size() > 0:
           vtxHasReco[iV] = 1
 
       vertexPixels = []
