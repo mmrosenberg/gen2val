@@ -553,12 +553,13 @@ for filepair in files:
           completenessI = cI
           purityI = matchedPixI/totPixI
           purityIAD = lad_matchedPixI/totPixI
-          if totPixI_nv > 0.:
-            purityINV = matchedPixI_nv/totPixI_nv
-            purityINVAD = matchedPixI_nvad/totPixI_nv
-          else:
-            purityINV = -1.
-            purityINVAD = -1.
+          if args.numu:
+            if totPixI_nv > 0.:
+              purityINV = matchedPixI_nv/totPixI_nv
+              purityINVAD = matchedPixI_nvad/totPixI_nv
+            else:
+              purityINV = -1.
+              purityINVAD = -1.
           for iT3 in range(3):
             if args.numu:
               if totPixI_sec[iT3] > 0.:
