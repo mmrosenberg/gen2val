@@ -157,6 +157,9 @@ vtxDist = array('f', [0.])
 vtxDist_x = array('f', [0.])
 vtxDist_y = array('f', [0.])
 vtxDist_z = array('f', [0.])
+vtxNTracks = array('i', [0])
+vtxNShowers = array('i', [0])
+vtxNProngs = array('i', [0])
 nCloseVertices05cm = array('i', [0])
 nCloseVertices10cm = array('i', [0])
 nCloseVertices15cm = array('i', [0])
@@ -200,6 +203,9 @@ nuIntTree.Branch("vtxDist", vtxDist, 'vtxDist/F')
 nuIntTree.Branch("vtxDist_x", vtxDist_x, 'vtxDist_x/F')
 nuIntTree.Branch("vtxDist_y", vtxDist_y, 'vtxDist_y/F')
 nuIntTree.Branch("vtxDist_z", vtxDist_z, 'vtxDist_z/F')
+nuIntTree.Branch("vtxNTracks", vtxNTracks, 'vtxNTracks/I')
+nuIntTree.Branch("vtxNShowers", vtxNShowers, 'vtxNShowers/I')
+nuIntTree.Branch("vtxNProngs", vtxNProngs, 'vtxNProngs/I')
 nuIntTree.Branch("nCloseVertices05cm", nCloseVertices05cm, 'nCloseVertices05cm/I')
 nuIntTree.Branch("nCloseVertices10cm", nCloseVertices10cm, 'nCloseVertices10cm/I')
 nuIntTree.Branch("nCloseVertices15cm", nCloseVertices15cm, 'nCloseVertices15cm/I')
@@ -365,6 +371,9 @@ for filepair in files:
       vtxDist_x[0] = -999.
       vtxDist_y[0] = -999.
       vtxDist_z[0] = -999.
+      vtxNTracks[0] = -1
+      vtxNShowers[0] = -1
+      vtxNProngs[0] = -1
       trueLepCompletenessN[0] = -1.
       trueLepCompletenessI[0] = -1.
       recoLep1PixPurity[0] = -1.
@@ -571,6 +580,9 @@ for filepair in files:
       vtxDist_x[0] = -999.
       vtxDist_y[0] = -999.
       vtxDist_z[0] = -999.
+      vtxNTracks[0] = -1
+      vtxNShowers[0] = -1
+      vtxNProngs[0] = -1
       trueLepCompletenessN[0] = -1.
       trueLepCompletenessI[0] = -1.
       recoLep1PixPurity[0] = -1.
@@ -605,10 +617,13 @@ for filepair in files:
       recoLepTrack = bestVertex.shower_trunk_v[iCMatch]
     recoStatus[0] = 0
     vtxType[0] = bestVertex.keypoint_type
-    vtxDist[0] = bestVtxDist
+    vtxDist[0] = getVertexDistance(trueVtxPos, bestVertex)
     vtxDist_x[0] = bestVertex.pos[0] - trueVtxPos.X()
     vtxDist_y[0] = bestVertex.pos[1] - trueVtxPos.Y()
     vtxDist_z[0] = bestVertex.pos[2] - trueVtxPos.Z()
+    vtxNTracks[0] = bestVertex.track_v.size()
+    vtxNShowers[0] = bestVertex.shower_v.size()
+    vtxNProngs[0] = bestVertex.track_v.size() + bestVertex.shower_v.size()
     trueLepCompletenessN[0] = completenessN
     trueLepCompletenessI[0] = completenessI
     recoLep1PixPurity[0] = purity[0]

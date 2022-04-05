@@ -71,7 +71,7 @@ if args.numu:
 
 cnv = rt.TCanvas("cnv","cnv")
 t.Draw("recoStatus >> h_recoStatus")
-t.Draw("vtxDist >> h_vtxRes","recoStatus == 0")
+t.Draw("pow(pow(vtxDist_x,2)+pow(vtxDist_y,2)+pow(vtxDist_z,2),0.5), >> h_vtxRes","recoStatus == 0")
 t.Draw("trueLepCompletenessI >> h_completeness","recoStatus == 0")
 t.Draw("recoLepPixIAnscPurity >> h_purity","recoStatus == 0")
 t.Draw("recoLepStartPosErr >> h_startPosErr","recoStatus == 0")
