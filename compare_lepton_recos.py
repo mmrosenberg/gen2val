@@ -2,22 +2,7 @@
 import sys
 import argparse
 import ROOT as rt
-
-def sortHists(hlist):
-  iMax = -1
-  maxBin = -99.
-  i = 0 
-  for h in hlist:
-    for b in range(h.GetNbinsX()):
-      if h.GetBinContent(b+1) > maxBin:
-        maxBin = h.GetBinContent(b+1)
-        iMax = i 
-    i = i+1 
-  sortedList = [hlist[iMax]]
-  for i in range(len(hlist)):
-    if i != iMax:
-      sortedList.append(hlist[i])
-  return sortedList
+from helpers.plotting_functions import sortHists
 
 parser = argparse.ArgumentParser("Compare Lepton Reco Versions")
 parser.add_argument("-f1", "--file1", required=True, type=str, help="plot_lepton_reco_val.py output 1")
@@ -48,6 +33,12 @@ h_completeness_1 = f1.Get("h_completeness")
 h_purity_1 = f1.Get("h_purity")
 h_startPosErr_1 = f1.Get("h_startPosErr")
 h_startDirErr_1 = f1.Get("h_startDirErr")
+g_vtxRes_CDF_1 = f1.Get("g_vtxRes_CDF")
+g_startPosErr_CDF_1 = f1.Get("g_startPosErr_CDF")
+g_vtxRes_CDF_1.SetLineColor(rt.kBlue)
+g_vtxRes_CDF_1.SetMarkerColor(rt.kBlue)
+g_startPosErr_CDF_1.SetLineColor(rt.kBlue)
+g_startPosErr_CDF_1.SetMarkerColor(rt.kBlue)
 
 h_recoStatus_2 = f2.Get("h_recoStatus")
 h_vtxRes_2 = f2.Get("h_vtxRes")
@@ -55,6 +46,12 @@ h_completeness_2 = f2.Get("h_completeness")
 h_purity_2 = f2.Get("h_purity")
 h_startPosErr_2 = f2.Get("h_startPosErr")
 h_startDirErr_2 = f2.Get("h_startDirErr")
+g_vtxRes_CDF_2 = f2.Get("g_vtxRes_CDF")
+g_startPosErr_CDF_2 = f2.Get("g_startPosErr_CDF")
+g_vtxRes_CDF_2.SetLineColor(rt.kRed)
+g_vtxRes_CDF_2.SetMarkerColor(rt.kRed)
+g_startPosErr_CDF_2.SetLineColor(rt.kRed)
+g_startPosErr_CDF_2.SetMarkerColor(rt.kRed)
 
 h_recoStatus_1.Scale(1.0/h_recoStatus_1.Integral())
 h_recoStatus_1.GetYaxis().SetTitle("area normalized event count")
@@ -111,6 +108,14 @@ leg = rt.TLegend(0.5,0.7,0.7,0.9)
 leg.AddEntry(h_recoStatus_1, args.version1, "l")
 leg.AddEntry(h_recoStatus_2, args.version2, "l")
 
+leg2 = rt.TLegend(0.6,0.4,0.8,0.6)
+leg2.AddEntry(h_recoStatus_1, args.version1, "l")
+leg2.AddEntry(h_recoStatus_2, args.version2, "l")
+
+leg3 = rt.TLegend(0.3,0.7,0.5,0.9)
+leg3.AddEntry(h_recoStatus_1, args.version1, "l")
+leg3.AddEntry(h_recoStatus_2, args.version2, "l")
+
 cnv = rt.TCanvas("cnv","cnv")
 
 h_recoStatus = [h_recoStatus_1, h_recoStatus_2]
@@ -127,11 +132,22 @@ h_vtxRes[1].Draw("EHISTSAME")
 leg.Draw()
 cnv.SaveAs(args.outdir+"primary_"+lepton+"_validation_comparison_"+args.version1+"_vs_"+args.version2+"_vtxRes.png")
 
+g_vtxRes_CDF = rt.TMultiGraph()
+g_vtxRes_CDF.SetTitle(g_vtxRes_CDF_1.GetTitle()+"; "+g_vtxRes_CDF_1.GetXaxis().GetTitle()+"; "+g_vtxRes_CDF_1.GetYaxis().GetTitle())
+g_vtxRes_CDF.Add(g_vtxRes_CDF_1)
+g_vtxRes_CDF.Add(g_vtxRes_CDF_2)
+g_vtxRes_CDF.Draw("ALP")
+leg2.Draw()
+cnv.SaveAs(args.outdir+"primary_"+lepton+"_validation_comparison_"+args.version1+"_vs_"+args.version2+"_vtxResCDF.png")
+
 h_completeness = [h_completeness_1, h_completeness_2]
 h_completeness = sortHists(h_completeness)
 h_completeness[0].Draw("EHIST")
 h_completeness[1].Draw("EHISTSAME")
-leg.Draw()
+if args.numu:
+  leg.Draw()
+if args.nue:
+  leg3.Draw()
 cnv.SaveAs(args.outdir+"primary_"+lepton+"_validation_comparison_"+args.version1+"_vs_"+args.version2+"_completeness.png")
 
 h_purity = [h_purity_1, h_purity_2]
@@ -147,6 +163,14 @@ h_startPosErr[0].Draw("EHIST")
 h_startPosErr[1].Draw("EHISTSAME")
 leg.Draw()
 cnv.SaveAs(args.outdir+"primary_"+lepton+"_validation_comparison_"+args.version1+"_vs_"+args.version2+"_startPosErr.png")
+
+g_startPosErr_CDF = rt.TMultiGraph()
+g_startPosErr_CDF.SetTitle(g_startPosErr_CDF_1.GetTitle()+"; "+g_startPosErr_CDF_1.GetXaxis().GetTitle()+"; "+g_startPosErr_CDF_1.GetYaxis().GetTitle())
+g_startPosErr_CDF.Add(g_startPosErr_CDF_1)
+g_startPosErr_CDF.Add(g_startPosErr_CDF_2)
+g_startPosErr_CDF.Draw("ALP")
+leg2.Draw()
+cnv.SaveAs(args.outdir+"primary_"+lepton+"_validation_comparison_"+args.version1+"_vs_"+args.version2+"_startPosErrCDF.png")
 
 h_startDirErr = [h_startDirErr_1, h_startDirErr_2]
 h_startDirErr = sortHists(h_startDirErr)
