@@ -46,6 +46,15 @@ def getShowerGap(shower_trunk_v, recoVtx):
       minGap = gap
   return minGap
 
+def getShowerGapMaxSh(shower_v, shower_trunk_v, recoVtx):
+  maxNHits = -1
+  gap = -99.
+  for i in range(shower_v.size()):
+    if shower_v[i].size() > maxNHits:
+      maxNHits = shower_v[i].size()
+      gap = getVertexDistance(shower_trunk_v[i].Vertex(), recoVtx)
+  return gap
+
 def addClusterCharge(iolcv, cluster, eventPixels, eventCharge, vertexPixels, vertexCharge):
   evtImage2D = iolcv.get_data(larcv.kProductImage2D, "wire")
   image2Dvec = evtImage2D.Image2DArray()
@@ -143,6 +152,7 @@ vtxMaxScore = array('f', maxNVtxs*[0.])
 vtxNetScore = array('f', maxNVtxs*[0.])
 vtxNetNuScore = array('f', maxNVtxs*[0.])
 vtxGap = array('f', maxNVtxs*[0.])
+vtxGapMaxSh = array('f', maxNVtxs*[0.])
 vtxKeyPtType = array('i', maxNVtxs*[0])
 vtxNTracks = array('i', maxNVtxs*[0])
 vtxNShowers = array('i', maxNVtxs*[0])
@@ -207,6 +217,7 @@ vertexTree.Branch("vtxMaxScore", vtxMaxScore, 'vtxMaxScore[nVertices]/F')
 vertexTree.Branch("vtxNetScore", vtxNetScore, 'vtxNetScore[nVertices]/F')
 vertexTree.Branch("vtxNetNuScore", vtxNetNuScore, 'vtxNetNuScore[nVertices]/F')
 vertexTree.Branch("vtxGap", vtxGap, 'vtxGap[nVertices]/F')
+vertexTree.Branch("vtxGapMaxSh", vtxGapMaxSh, 'vtxGapMaxSh[nVertices]/F')
 vertexTree.Branch("vtxKeyPtType", vtxKeyPtType, 'vtxKeyPtType[nVertices]/I')
 vertexTree.Branch("vtxNTracks", vtxNTracks, 'vtxNTracks[nVertices]/I')
 vertexTree.Branch("vtxNShowers", vtxNShowers, 'vtxNShowers[nVertices]/I')
@@ -408,8 +419,10 @@ for filepair in files:
       vtxNShowers[iV] = vertex.shower_v.size()
       vtxHasReco[iV] = -1
       vtxGap[iV] = -99.
+      vtxGapMaxSh[iV] = -99.
       if vertex.shower_v.size() > 0:
         vtxGap[iV] = getShowerGap(vertex.shower_trunk_v, vertex)
+        vtxGapMaxSh[iV] = getShowerGapMaxSh(vertex.shower_v, vertex.shower_trunk_v, vertex)
       if args.isMC and nuInt.CCNC() == 0:
         vtxHasReco[iV] = 0
         if lepPDG == 11 and vertex.shower_v.size() > 0:
