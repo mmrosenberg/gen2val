@@ -18,6 +18,7 @@ parser.add_argument("-v", "--vertexRange", type=float, default=3., help="search 
 parser.add_argument("--nue", help="analyze nue events", action="store_true")
 parser.add_argument("--numu", help="analyze numu events", action="store_true")
 parser.add_argument("--contained", help="require primary muon containment for numu events", action="store_true")
+parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 parser.add_argument("--v1", help="reverse track points for v1 bug", action="store_true")
 args = parser.parse_args()
 
@@ -267,6 +268,10 @@ for filepair in files:
     ioll.go_to(ientry)
     iolcv.read_entry(ientry)
     kpst.GetEntry(ientry)
+
+    vertices = kpst.nuvetoed_v
+    if args.oldVtxBranch:
+      vertices = kpst.nufitted_v
   
     if kpst.run != ioll.run_id() or kpst.subrun != ioll.subrun_id() or kpst.event != ioll.event_id():
       print("EVENTS DON'T MATCH!!!")
@@ -338,7 +343,7 @@ for filepair in files:
     nCloseVertices = [0, 0, 0]
     bestVtxDist = 1e9
 
-    for vtx in kpst.nufitted_v:
+    for vtx in vertices:
       deltaVertex = getVertexDistance(trueVtxPos, vtx)
       if deltaVertex < args.vertexRange:
         closeVertices.append(vtx)
@@ -356,15 +361,15 @@ for filepair in files:
     nCloseVertices10cm[0] = nCloseVertices[1]
     nCloseVertices15cm[0] = nCloseVertices[2]
 
-    if kpst.nufitted_v.size() > 0:
+    if vertices.size() > 0:
       closestVtxDist[0] = bestVtxDist
     else:
       closestVtxDist[0] = -9.
 
-    #if kpst.nufitted_v.size() < 1:
+    #if vertices.size() < 1:
     if len(closeVertices) < 1:
       recoStatus[0] = 2
-      if kpst.nufitted_v.size() < 1:
+      if vertices.size() < 1:
         recoStatus[0] = 3
       vtxType[0] = -1
       vtxDist[0] = -9.

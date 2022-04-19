@@ -20,6 +20,7 @@ parser.add_argument("-w", "--weightfile", type=str, default="none", help="weight
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="analyze_vertex_reco_output.root", help="output file name")
 parser.add_argument("--contained", help="require primary muon containment for MC numu events", action="store_true")
+parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
 
 if args.isMC and args.weightfile=="none":
@@ -306,6 +307,10 @@ for filepair in files:
     iolcv.read_entry(ientry)
     kpst.GetEntry(ientry)
   
+    vertices = kpst.nuvetoed_v
+    if args.oldVtxBranch:
+      vertices = kpst.nufitted_v
+  
     if kpst.run != ioll.run_id() or kpst.subrun != ioll.subrun_id() or kpst.event != ioll.event_id():
       print("EVENTS DON'T MATCH!!!")
       print("truth run/subrun/event: %i/%i/%i"%(ioll.run_id(),ioll.subrun_id(),ioll.event_id()))
@@ -382,7 +387,7 @@ for filepair in files:
     subrun[0] = kpst.subrun
     event[0] = kpst.event
 
-    nVertices[0] = kpst.nufitted_v.size()
+    nVertices[0] = vertices.size()
 
     iV = 0
     bestRecoComp[0] = -1.
@@ -390,7 +395,7 @@ for filepair in files:
     eventCharge = 0.
 
     #------- begin vertex loop ------------------------------------------------#
-    for vertex in kpst.nufitted_v:
+    for vertex in vertices:
 
       if args.isMC:
         vtxDistToTrue[iV] = getVertexDistance(trueVtxPos, vertex)
@@ -528,7 +533,7 @@ for filepair in files:
       iV = iV + 1
     #------- end vertex loop --------------------------------------------------#
 
-    for iV in range(kpst.nufitted_v.size()):
+    for iV in range(vertices.size()):
       vtxFracChargeDownstream[iV] = 0.
     collPlaneImage = iolcv.get_data(larcv.kProductImage2D, "wire").Image2DArray()[2]
     totalCharge = 0.
@@ -537,10 +542,10 @@ for filepair in files:
       for t in range(collPlaneImage.meta().rows()):
         wireCharge = wireCharge + collPlaneImage.pixel(t, w)
       totalCharge = totalCharge + wireCharge
-      for iV in range(kpst.nufitted_v.size()):
-        if kpst.nufitted_v[iV].pos[2] < w*0.3:
+      for iV in range(vertices.size()):
+        if vertices[iV].pos[2] < w*0.3:
           vtxFracChargeDownstream[iV] = vtxFracChargeDownstream[iV] + wireCharge
-    for iV in range(kpst.nufitted_v.size()):
+    for iV in range(vertices.size()):
       vtxFracCharge[iV] = vtxFracCharge[iV] / eventCharge
       vtxFracChargeDownstream[iV] = vtxFracChargeDownstream[iV] / totalCharge
 
