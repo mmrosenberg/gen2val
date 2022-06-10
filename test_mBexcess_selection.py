@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser("Test mB Excess Selection")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
 parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
 parser.add_argument("-o", "--outfile", type=str, default="test_mBexcess_selection_output.root", help="output file name")
+parser.add_argument("--printEvents", help="print out event info for failed and passed events", action="store_true")
 parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
 
@@ -191,6 +192,13 @@ for filepair in files:
 
     if recoNNegLLThreshTrks[0] == 0 and recoNPosLLThreshTrks[0] == 0:
       passSelReco[0] = 1
+
+    if args.printEvents and passSelTruth[0] == 1:
+      printStatement = filepair[0]+" "+filepair[1]+" (entry, run, subrun, event): (%i, %i, %i, %i)"%(ientry, kpst.run, kpst.subrun, kpst.event)
+      if passSelReco[0] == 1:
+        print("PASSED: "+printStatement)
+      else:
+        print("FAILED: "+printStatement)
 
     eventTree.Fill()
 
