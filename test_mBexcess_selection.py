@@ -162,13 +162,16 @@ for filepair in files:
     recoNPosLLThreshTrks[0] = -1
 
     nSSvertices = 0
+    nMSvertices = 0
     for vtx in vertices:
       recoVtxPos = rt.TVector3(vtx.pos[0], vtx.pos[1], vtx.pos[2])
       if vtx.shower_v.size() == 1 and isFiducial(recoVtxPos):
         nSSvertices = nSSvertices + 1
         showerVertex = vtx
+      if vtx.shower_v.size() > 1:
+        nMSvertices = nMSvertices + 1
 
-    if nSSvertices != 1:
+    if nSSvertices != 1 or nMSvertices != 0:
       eventTree.Fill()
       continue
 
@@ -194,6 +197,7 @@ for filepair in files:
       passSelReco[0] = 1
 
     if args.printEvents and passSelTruth[0] == 1:
+      mcpg.printAllNodeInfo()
       printStatement = filepair[0]+" "+filepair[1]+" (entry, run, subrun, event): (%i, %i, %i, %i)"%(ientry, kpst.run, kpst.subrun, kpst.event)
       if passSelReco[0] == 1:
         print("PASSED: "+printStatement)
