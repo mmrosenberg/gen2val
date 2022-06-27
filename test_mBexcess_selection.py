@@ -7,56 +7,85 @@ from ublarcvapp import ublarcvapp
 from larcv import larcv
 from larflow import larflow
 from array import array
+from event_weighting.event_weight_helper import SumPOT, Weights
 from helpers.larflowreco_ana_funcs import *
 
 parser = argparse.ArgumentParser("Test mB Excess Selection")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
 parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
 parser.add_argument("-o", "--outfile", type=str, default="test_mBexcess_selection_output.root", help="output file name")
+parser.add_argument("-w", "--weightfile", type=str, default="none", help="weights file (pickled python dict)")
+parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
 parser.add_argument("--printEvents", help="print out event info for failed and passed events", action="store_true")
 parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
 
-files = getFiles("merged_dlreco_", args.files, args.truth)
+if args.isMC and args.weightfile=="none":
+  sys.exit("Must supply weight file for MC input. Exiting...")
+
+reco2Tag = "merged_dlana_"
+if args.isMC:
+  reco2Tag = "merged_dlreco_"
+files = getFiles(reco2Tag, args.files, args.truth)
 
 outRootFile = rt.TFile(args.outfile, "RECREATE")
+
+if args.isMC:
+  potTree = rt.TTree("potTree","potTree")
+  totPOT = array('f', [0.])
+  totGoodPOT = array('f', [0.])
+  potTree.Branch("totPOT", totPOT, 'totPOT/F')
+  potTree.Branch("totGoodPOT", totGoodPOT, 'totGoodPOT/F')
+
 eventTree = rt.TTree("EventTree","EventTree")
+xsecWeight = array('f', [0.])
 trueEnue = array('f', [0.])
+trueCCNC = array('i', [0])
+trueNuPDG = array('i', [0])
 passSelTruth = array('i', [0])
 passSelReco = array('i', [0])
-truthNMus = array('i', [0])
-truthNThreshMus = array('i', [0])
-truthNCPis = array('i', [0])
-truthNThreshCPis = array('i', [0])
-truthNPrs = array('i', [0])
-truthNThreshPrs = array('i', [0])
-truthNPi0s = array('i', [0])
-truthNPhs = array('i', [0])
+trueNMus = array('i', [0])
+trueNThreshMus = array('i', [0])
+trueNCPis = array('i', [0])
+trueNThreshCPis = array('i', [0])
+trueNPrs = array('i', [0])
+trueNThreshPrs = array('i', [0])
+trueNPi0s = array('i', [0])
+trueNPhs = array('i', [0])
+trueNEls = array('i', [0])
 recoSingleVtx = array('i', [0])
 recoNNegLLTrks = array('i', [0])
 recoNNegLLThreshTrks = array('i', [0])
 recoNPosLLTrks = array('i', [0])
 recoNPosLLThreshTrks = array('i', [0])
+eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
 eventTree.Branch("trueEnue", trueEnue, 'trueEnue/F')
+eventTree.Branch("trueCCNC", trueCCNC, 'trueCCNC/I')
+eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 eventTree.Branch("passSelTruth", passSelTruth, 'passSelTruth/I')
 eventTree.Branch("passSelReco", passSelReco, 'passSelReco/I')
-eventTree.Branch("truthNMus", truthNMus, 'truthNMus/I')
-eventTree.Branch("truthNThreshMus", truthNThreshMus, 'truthNThreshMus/I')
-eventTree.Branch("truthNCPis", truthNCPis, 'truthNCPis/I')
-eventTree.Branch("truthNThreshCPis", truthNThreshCPis, 'truthNThreshCPis/I')
-eventTree.Branch("truthNPrs", truthNPrs, 'truthNPrs/I')
-eventTree.Branch("truthNThreshPrs", truthNThreshPrs, 'truthNThreshPrs/I')
-eventTree.Branch("truthNPi0s", truthNPi0s, 'truthNPi0s/I')
-eventTree.Branch("truthNPhs", truthNPhs, 'truthNPhs/I')
+eventTree.Branch("trueNMus", trueNMus, 'trueNMus/I')
+eventTree.Branch("trueNThreshMus", trueNThreshMus, 'trueNThreshMus/I')
+eventTree.Branch("trueNCPis", trueNCPis, 'trueNCPis/I')
+eventTree.Branch("trueNThreshCPis", trueNThreshCPis, 'trueNThreshCPis/I')
+eventTree.Branch("trueNPrs", trueNPrs, 'trueNPrs/I')
+eventTree.Branch("trueNThreshPrs", trueNThreshPrs, 'trueNThreshPrs/I')
+eventTree.Branch("trueNPi0s", trueNPi0s, 'trueNPi0s/I')
+eventTree.Branch("trueNPhs", trueNPhs, 'trueNPhs/I')
+eventTree.Branch("trueNEls", trueNEls, 'trueNEls/I')
 eventTree.Branch("recoSingleVtx", recoSingleVtx, 'recoSingleVtx/I')
 eventTree.Branch("recoNNegLLTrks", recoNNegLLTrks, 'recoNNegLLTrks/I')
 eventTree.Branch("recoNNegLLThreshTrks", recoNNegLLThreshTrks, 'recoNNegLLThreshTrks/I')
 eventTree.Branch("recoNPosLLTrks", recoNPosLLTrks, 'recoNPosLLTrks/I')
 eventTree.Branch("recoNPosLLThreshTrks", recoNPosLLThreshTrks, 'recoNPosLLThreshTrks/I')
 
-
 sce = larutil.SpaceChargeMicroBooNE()
 mcNuVertexer = ublarcvapp.mctools.NeutrinoVertex()
+
+if args.isMC:
+  totPOT_ = 0.
+  totGoodPOT_ = 0.
+  weights = Weights(args.weightfile)
 
 
 #-------- begin file loop -----------------------------------------------------#
@@ -83,6 +112,11 @@ for filepair in files:
     kpsfile.Close()
     continue
 
+  if args.isMC:
+    potInFile, goodPotInFile = SumPOT(filepair[1])
+    totPOT_ = totPOT_ + potInFile
+    totGoodPOT_ = totGoodPOT_ + goodPotInFile
+
   #++++++ begin entry loop ++++++++++++++++++++++++++++++++++++++++++++++++++++=
   for ientry in range(ioll.get_entries()):
   
@@ -100,58 +134,89 @@ for filepair in files:
       print("reco run/subrun/event: %i/%i/%i"%(kpst.run,kpst.subrun,kpst.event))
       continue
 
-    mctruth = ioll.get_data(larlite.data.kMCTruth, "generator")
-    nuInt = mctruth.at(0).GetNeutrino()
-    lep = nuInt.Lepton()
-    mcNuVertex = mcNuVertexer.getPos3DwSCE(ioll, sce)
-    trueVtxPos = rt.TVector3(mcNuVertex[0], mcNuVertex[1], mcNuVertex[2])
+    xsecWeight[0] = -99.
+    trueEnue[0] = -99.
+    trueCCNC[0] = -1
+    trueNuPDG[0] = -1
+    passSelTruth[0] = -1
+    trueNMus[0] = -1
+    trueNThreshMus[0] = -1
+    trueNCPis[0] = -1
+    trueNThreshCPis[0] = -1
+    trueNPrs[0] = -1
+    trueNThreshPrs[0] = -1
+    trueNPi0s[0] = -1
+    trueNPhs[0] = -1
+    trueNEls[0] = -1
 
-    if nuInt.CCNC() != 0 or lep.PdgCode() != 11 or not isFiducial(trueVtxPos):
-      continue
+    if args.isMC:
+      mctruth = ioll.get_data(larlite.data.kMCTruth, "generator")
+      nuInt = mctruth.at(0).GetNeutrino()
+      #lep = nuInt.Lepton()
+      mcNuVertex = mcNuVertexer.getPos3DwSCE(ioll, sce)
+      trueVtxPos = rt.TVector3(mcNuVertex[0], mcNuVertex[1], mcNuVertex[2])
 
-    trueEnue[0] = nuInt.Nu().Momentum().E()
-    passSelTruth[0] = 0
-    truthNMus[0] = 0
-    truthNThreshMus[0] = 0
-    truthNCPis[0] = 0
-    truthNThreshCPis[0] = 0
-    truthNPrs[0] = 0
-    truthNThreshPrs[0] = 0
-    truthNPi0s[0] = 0
-    truthNPhs[0] = 0
+      #if nuInt.CCNC() != 0 or lep.PdgCode() != 11 or not isFiducial(trueVtxPos):
+      if not isFiducial(trueVtxPos):
+        continue
 
-    mcpg = ublarcvapp.mctools.MCPixelPGraph()
-    mcpg.set_adc_treename("wire")
-    mcpg.buildgraph(iolcv, ioll)
+      try:
+        xsecWeight[0] = weights.get(kpst.run, kpst.subrun, kpst.event)
+      except:
+        print("Couldn't find weight for run %i, subrun %i, event %i in %s!!!"%(kpst.run, kpst.subrun, kpst.event, args.weightfile))
+        continue
 
-    for node in mcpg.node_v:
+      trueEnue[0] = nuInt.Nu().Momentum().E()
+      trueCCNC[0] = nuInt.CCNC()
+      trueNuPDG[0] = nuInt.Nu().PdgCode()
+      passSelTruth[0] = 0
+      trueNMus[0] = 0
+      trueNThreshMus[0] = 0
+      trueNCPis[0] = 0
+      trueNThreshCPis[0] = 0
+      trueNPrs[0] = 0
+      trueNThreshPrs[0] = 0
+      trueNPi0s[0] = 0
+      trueNPhs[0] = 0
+      trueNEls[0] = 0
 
-      if node.tid == node.mtid and node.origin == 1:
+      mcpg = ublarcvapp.mctools.MCPixelPGraph()
+      mcpg.set_adc_treename("wire")
+      mcpg.buildgraph(iolcv, ioll)
 
-        if abs(node.pid) == 13:
-          truthNMus[0] = truthNMus[0] + 1
-          if node.E_MeV > 38.6:
-            truthNThreshMus[0] = truthNThreshMus[0] + 1
+      for node in mcpg.node_v:
 
-        if abs(node.pid) == 211:
-          truthNCPis[0] = truthNCPis[0] + 1
-          if node.E_MeV > 51.0:
-            truthNThreshCPis[0] = truthNThreshCPis[0] + 1
+        if node.tid == node.mtid and node.origin == 1:
 
-        if abs(node.pid) == 2212:
-          truthNPrs[0] = truthNPrs[0] + 1
-          if node.E_MeV > 343.0:
-            truthNThreshPrs[0] = truthNThreshPrs[0] + 1
+          if abs(node.pid) == 13:
+            trueNMus[0] = trueNMus[0] + 1
+            if node.E_MeV > 38.6:
+              trueNThreshMus[0] = trueNThreshMus[0] + 1
 
-        if abs(node.pid) == 111:
-          truthNPi0s[0] = truthNPi0s[0] + 1
+          if abs(node.pid) == 211:
+            trueNCPis[0] = trueNCPis[0] + 1
+            if node.E_MeV > 51.0:
+              trueNThreshCPis[0] = trueNThreshCPis[0] + 1
 
-        if abs(node.pid) == 22:
-          truthNPhs[0] = truthNPhs[0] + 1
+          if abs(node.pid) == 2212:
+            trueNPrs[0] = trueNPrs[0] + 1
+            if node.E_MeV > 343.0:
+              trueNThreshPrs[0] = trueNThreshPrs[0] + 1
+
+          if abs(node.pid) == 111:
+            trueNPi0s[0] = trueNPi0s[0] + 1
+
+          if abs(node.pid) == 22:
+            trueNPhs[0] = trueNPhs[0] + 1
+
+          if abs(node.pid) == 11:
+            trueNEls[0] = trueNEls[0] + 1
 
 
-    if truthNPi0s[0] == 0 and truthNPhs[0] == 0 and truthNThreshMus[0] == 0 and truthNThreshCPis[0] == 0 and truthNThreshPrs[0] == 0:
-      passSelTruth[0] = 1
+      #if trueNPi0s[0] == 0 and trueNPhs[0] == 0 and trueNThreshMus[0] == 0 and trueNThreshCPis[0] == 0 and trueNThreshPrs[0] == 0:
+      truthSingleShower = (trueNPhs[0] == 1 and trueNEls[0] == 0) or (trueNPhs[0] == 0 and trueNEls[0] == 1)
+      if truthSingleShower and trueNPi0s[0] == 0 and trueNThreshMus[0] == 0 and trueNThreshCPis[0] == 0 and trueNThreshPrs[0] == 0:
+        passSelTruth[0] = 1
 
 
     passSelReco[0] = 0
@@ -215,8 +280,15 @@ for filepair in files:
 #-------- end file loop -----------------------------------------------------#
 
 
+if args.isMC:
+  totPOT[0] = totPOT_
+  totGoodPOT[0] = totGoodPOT_
+  potTree.Fill()
+
 outRootFile.cd()
 eventTree.Write("",rt.TObject.kOverwrite)
+if args.isMC:
+  potTree.Write("",rt.TObject.kOverwrite)
 outRootFile.Close()
 
 
