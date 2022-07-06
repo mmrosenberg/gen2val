@@ -16,7 +16,8 @@ parser.add_argument("-t", "--truth", required=True, type=str, help="text file co
 parser.add_argument("-o", "--outfile", type=str, default="test_mBexcess_selection_output.root", help="output file name")
 parser.add_argument("-w", "--weightfile", type=str, default="none", help="weights file (pickled python dict)")
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
-parser.add_argument("--printEvents", help="print out event info for failed and passed events", action="store_true")
+parser.add_argument("--printTrueEvents", help="print out event info for true signal events", action="store_true")
+parser.add_argument("--printRecoEvents", help="print out event info for reco signal events", action="store_true")
 parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
 
@@ -58,6 +59,8 @@ recoNNegLLTrks = array('i', [0])
 recoNNegLLThreshTrks = array('i', [0])
 recoNPosLLTrks = array('i', [0])
 recoNPosLLThreshTrks = array('i', [0])
+recoVtxDistToTrue = array('f', [0.])
+recoShowerNHits = array('i', [0])
 eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
 eventTree.Branch("trueEnue", trueEnue, 'trueEnue/F')
 eventTree.Branch("trueCCNC", trueCCNC, 'trueCCNC/I')
@@ -78,6 +81,8 @@ eventTree.Branch("recoNNegLLTrks", recoNNegLLTrks, 'recoNNegLLTrks/I')
 eventTree.Branch("recoNNegLLThreshTrks", recoNNegLLThreshTrks, 'recoNNegLLThreshTrks/I')
 eventTree.Branch("recoNPosLLTrks", recoNPosLLTrks, 'recoNPosLLTrks/I')
 eventTree.Branch("recoNPosLLThreshTrks", recoNPosLLThreshTrks, 'recoNPosLLThreshTrks/I')
+eventTree.Branch("recoVtxDistToTrue", recoVtxDistToTrue, 'recoVtxDistToTrue/F')
+eventTree.Branch("recoShowerNHits", recoShowerNHits, 'recoShowerNHits/I')
 
 sce = larutil.SpaceChargeMicroBooNE()
 mcNuVertexer = ublarcvapp.mctools.NeutrinoVertex()
@@ -225,6 +230,8 @@ for filepair in files:
     recoNNegLLThreshTrks[0] = -1
     recoNPosLLTrks[0] = -1
     recoNPosLLThreshTrks[0] = -1
+    recoVtxDistToTrue[0] = -99.
+    recoShowerNHits[0] = -1
 
     nSSvertices = 0
     nMSvertices = 0
@@ -245,6 +252,8 @@ for filepair in files:
     recoNNegLLThreshTrks[0] = 0
     recoNPosLLTrks[0] = 0
     recoNPosLLThreshTrks[0] = 0
+    recoVtxDistToTrue[0] = getVertexDistance(trueVtxPos, showerVertex)
+    recoShowerNHits[0] = showerVertex.shower_v[0].size()
 
     for iT in range(showerVertex.track_v.size()):
       length = showerVertex.track_v[iT].Length()
@@ -261,13 +270,22 @@ for filepair in files:
     if recoNNegLLThreshTrks[0] == 0 and recoNPosLLThreshTrks[0] == 0:
       passSelReco[0] = 1
 
-    if args.printEvents and passSelTruth[0] == 1:
+    if args.printTrueEvents and passSelTruth[0] == 1:
       mcpg.printAllNodeInfo()
       printStatement = filepair[0]+" "+filepair[1]+" (entry, run, subrun, event): (%i, %i, %i, %i)"%(ientry, kpst.run, kpst.subrun, kpst.event)
       if passSelReco[0] == 1:
         print("PASSED: "+printStatement)
       else:
         print("FAILED: "+printStatement)
+
+    if args.printRecoEvents and passSelReco[0] == 1:
+      mcpg.printAllNodeInfo()
+      printStatement = filepair[0]+" "+filepair[1]+" (entry, run, subrun, event): (%i, %i, %i, %i)"%(ientry, kpst.run, kpst.subrun, kpst.event)
+      if passSelTruth[0] == 1:
+        print("TRUE SIGNAL: "+printStatement)
+      else:
+        print("TRUE BACKGROUND: "+printStatement)
+      print("reco shower vertex pos: %f, %f %f"%(showerVertex.pos[0],showerVertex.pos[1],showerVertex.pos[2]))
 
     eventTree.Fill()
 
