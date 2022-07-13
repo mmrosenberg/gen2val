@@ -40,7 +40,7 @@ if args.isMC:
 
 eventTree = rt.TTree("EventTree","EventTree")
 xsecWeight = array('f', [0.])
-trueEnue = array('f', [0.])
+trueEnu = array('f', [0.])
 trueCCNC = array('i', [0])
 trueNuPDG = array('i', [0])
 passSelTruth = array('i', [0])
@@ -62,7 +62,7 @@ recoNPosLLThreshTrks = array('i', [0])
 recoVtxDistToTrue = array('f', [0.])
 recoShowerNHits = array('i', [0])
 eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
-eventTree.Branch("trueEnue", trueEnue, 'trueEnue/F')
+eventTree.Branch("trueEnu", trueEnu, 'trueEnu/F')
 eventTree.Branch("trueCCNC", trueCCNC, 'trueCCNC/I')
 eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 eventTree.Branch("passSelTruth", passSelTruth, 'passSelTruth/I')
@@ -140,7 +140,7 @@ for filepair in files:
       continue
 
     xsecWeight[0] = -99.
-    trueEnue[0] = -99.
+    trueEnu[0] = -99.
     trueCCNC[0] = -1
     trueNuPDG[0] = -1
     passSelTruth[0] = -1
@@ -171,7 +171,7 @@ for filepair in files:
         print("Couldn't find weight for run %i, subrun %i, event %i in %s!!!"%(kpst.run, kpst.subrun, kpst.event, args.weightfile))
         continue
 
-      trueEnue[0] = nuInt.Nu().Momentum().E()
+      trueEnu[0] = nuInt.Nu().Momentum().E()
       trueCCNC[0] = nuInt.CCNC()
       trueNuPDG[0] = nuInt.Nu().PdgCode()
       passSelTruth[0] = 0
