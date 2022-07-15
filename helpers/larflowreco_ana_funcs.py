@@ -39,12 +39,18 @@ detCrds = [[0., 256.35], [-116.5, 116.5], [0, 1036.8]]
 fidCrds = [ [detCrds[0][0] + 20. , detCrds[0][1] - 20.] ]
 fidCrds.append( [detCrds[1][0] + 20. , detCrds[1][1] - 20.] )
 fidCrds.append( [detCrds[2][0] + 20. , detCrds[2][1] - 60.] )
+fidCrdsBig = [ [detCrds[0][0] + 10. , detCrds[0][1] - 10.] ]
+fidCrdsBig.append( [detCrds[1][0] + 10. , detCrds[1][1] - 10.] )
+fidCrdsBig.append( [detCrds[2][0] + 10. , detCrds[2][1] - 30.] )
 
 def inRange(x, bnd):
   return (x >= bnd[0] and x <= bnd[1])
 
 def isFiducial(p):
   return (inRange(p.X(),fidCrds[0]) and inRange(p.Y(),fidCrds[1]) and inRange(p.Z(),fidCrds[2]))
+
+def isFiducialBig(p):
+  return (inRange(p.X(),fidCrdsBig[0]) and inRange(p.Y(),fidCrdsBig[1]) and inRange(p.Z(),fidCrdsBig[2]))
 
 def isInDetector(p):
   return (inRange(p.X(),detCrds[0]) and inRange(p.Y(),detCrds[1]) and inRange(p.Z(),detCrds[2]))

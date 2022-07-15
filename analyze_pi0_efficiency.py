@@ -33,6 +33,8 @@ trueNuPDG = array('i', [0])
 nPi0s = array('i', [0])
 nGammaPairs = array('i', [0])
 nGammasInFV = array('i', [0])
+nPrimDecGammas = array('i', [0])
+nPrimDecGammasInFV = array('i', [0])
 eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
 eventTree.Branch("trueEnu", trueEnu, 'trueEnu/F')
 eventTree.Branch("trueCCNC", trueCCNC, 'trueCCNC/I')
@@ -40,6 +42,8 @@ eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 eventTree.Branch("nPi0s", nPi0s, 'nPi0s/I')
 eventTree.Branch("nGammaPairs", nGammaPairs, 'nGammaPairs/I')
 eventTree.Branch("nGammasInFV", nGammasInFV, 'nGammasInFV/I')
+eventTree.Branch("nPrimDecGammas", nPrimDecGammas, 'nPrimDecGammas/I')
+eventTree.Branch("nPrimDecGammasInFV", nPrimDecGammasInFV, 'nPrimDecGammasInFV/I')
 
 sce = larutil.SpaceChargeMicroBooNE()
 mcNuVertexer = ublarcvapp.mctools.NeutrinoVertex()
@@ -75,10 +79,11 @@ for mdlfile in args.files:
     nuInt = mctruth.at(0).GetNeutrino()
     gtruth = ioll.get_data(larlite.data.kGTruth, "generator")
     npi0s = gtruth.at(0).fNumPi0
+    mcNuPos = mctruth.at(0).GetNeutrino().Nu().Position()
     mcNuVertex = mcNuVertexer.getPos3DwSCE(ioll, sce)
     trueVtxPos = rt.TVector3(mcNuVertex[0], mcNuVertex[1], mcNuVertex[2])
 
-    if npi0s < 1 or not isFiducial(trueVtxPos):
+    if npi0s < 1 or not isFiducialBig(trueVtxPos):
       continue
 
     try:
@@ -93,6 +98,8 @@ for mdlfile in args.files:
     nPi0s[0] = npi0s
     nGammaPairs[0] = 0
     nGammasInFV[0] = 0
+    nPrimDecGammas[0] = 0
+    nPrimDecGammasInFV[0] = 0
 
     gammaDict = {}
     mcshowers = ioll.get_data(larlite.data.kMCShower, "mcreco")
@@ -109,10 +116,14 @@ for mdlfile in args.files:
     for key, gammas in gammaDict.items():
       if len(gammas) == 2:
         nGammaPairs[0] = nGammaPairs[0] + 1
-        for gamma in gammas:
-          convPoint = gamma.DetProfile()
-          if isFiducial(convPoint):
-            nGammasInFV[0] = nGammasInFV[0] + 1
+      for gamma in gammas:
+        primaryDecay = getDistance(mcNuPos, gamma.Start()) < 1e-4
+        if primaryDecay:
+          nPrimDecGammas[0] = nPrimDecGammas[0] + 1
+        if isFiducialBig(gamma.DetProfile()):
+          nGammasInFV[0] = nGammasInFV[0] + 1
+          if primaryDecay:
+            nPrimDecGammasInFV[0] = nPrimDecGammasInFV[0] + 1
 
     eventTree.Fill()
 
