@@ -24,11 +24,6 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+'/prongCNN/models')
-
-from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
-from datasets_reco_5ClassHardLabel_multiTask import mean, std
-
 parser = argparse.ArgumentParser("Validate Vertex Reco")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
 parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
@@ -40,6 +35,10 @@ parser.add_argument("-o", "--outfile", type=str, default="prepare_selection_test
 parser.add_argument("--multiGPU", action="store_true", help="use multiple GPUs")
 parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
+
+sys.path.append(args.model_path[:args.model_path.find("/checkpoints")])
+from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
+from datasets_reco_5ClassHardLabel_multiTask import mean, std
 
 if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
@@ -151,7 +150,10 @@ flowTriples = larflow.prep.FlowTriples()
 model = ResNet34(2, ResBlock, outputs=5)
 if "cuda" in args.device and args.multiGPU:
   model = nn.DataParallel(model)
-checkpoint = torch.load(args.model_path)
+if args.device == "cpu":
+  checkpoint = torch.load(args.model_path, map_location=torch.device('cpu'))
+else:
+  checkpoint = torch.load(args.model_path)
 try:
   model.load_state_dict(checkpoint['model_state_dict'])
 except:
@@ -293,7 +295,7 @@ for filepair in files:
   #++++++ begin entry loop ++++++++++++++++++++++++++++++++++++++++++++++++++++=
   for ientry in range(ioll.get_entries()):
 
-    print("reached entry:", ientry)
+    #print("reached entry:", ientry)
 
     ioll.go_to(ientry)
     iolcv.read_entry(ientry)
