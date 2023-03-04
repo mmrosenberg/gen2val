@@ -24,7 +24,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
-parser = argparse.ArgumentParser("Validate Vertex Reco")
+parser = argparse.ArgumentParser("Get Vertex and Prong Info Needed for Selections")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
 parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
 parser.add_argument("-w", "--weightfile", type=str, default="none", help="weights file (pickled python dict)")
@@ -194,26 +194,40 @@ vtxBestComp = array('f', [0.])
 vtxScore = array('f', [0.])
 vtxFracHitsOnCosmic = array('f', [0.])
 nTracks = array('i', [0])
+trackIsSecondary = array('i', maxNTrks*[0])
 trackNHits = array('i', maxNTrks*[0])
 trackHitFrac = array('f', maxNTrks*[0.])
 trackCharge = array('f', maxNTrks*[0.])
 trackChargeFrac = array('f', maxNTrks*[0.])
-trackRecoMuKE = array('f', maxNTrks*[0.])
-trackRecoPrKE = array('f', maxNTrks*[0.])
+trackMuKE = array('f', maxNTrks*[0.])
+trackPrKE = array('f', maxNTrks*[0.])
+trackCosTheta = array('f', maxNTrks*[0.])
 trackClassified = array('i', maxNTrks*[0])
-trackRecoPID = array('i', maxNTrks*[0])
-trackRecoComp = array('f', maxNTrks*[0.])
+trackPID = array('i', maxNTrks*[0])
+trackElScore = array('f', maxNTrks*[0.])
+trackPhScore = array('f', maxNTrks*[0.])
+trackMuScore = array('f', maxNTrks*[0.])
+trackPiScore = array('f', maxNTrks*[0.])
+trackPrScore = array('f', maxNTrks*[0.])
+trackComp = array('f', maxNTrks*[0.])
 nShowers = array('i', [0])
+showerIsSecondary = array('i', maxNShwrs*[0])
 showerNHits = array('i', maxNShwrs*[0])
 showerHitFrac = array('f', maxNShwrs*[0.])
 showerCharge = array('f', maxNShwrs*[0.])
 showerChargeFrac = array('f', maxNShwrs*[0.])
-showerRecoPl0E = array('f', maxNShwrs*[0.])
-showerRecoPl1E = array('f', maxNShwrs*[0.])
-showerRecoPl2E = array('f', maxNShwrs*[0.])
+showerPl0E = array('f', maxNShwrs*[0.])
+showerPl1E = array('f', maxNShwrs*[0.])
+showerPl2E = array('f', maxNShwrs*[0.])
+showerCosTheta = array('f', maxNShwrs*[0.])
 showerClassified = array('i', maxNShwrs*[0])
-showerRecoPID = array('i', maxNShwrs*[0])
-showerRecoComp = array('f', maxNShwrs*[0])
+showerPID = array('i', maxNShwrs*[0])
+showerElScore = array('f', maxNShwrs*[0.])
+showerPhScore = array('f', maxNShwrs*[0.])
+showerMuScore = array('f', maxNShwrs*[0.])
+showerPiScore = array('f', maxNShwrs*[0.])
+showerPrScore = array('f', maxNShwrs*[0.])
+showerComp = array('f', maxNShwrs*[0])
 eventTree.Branch("fileid", fileid, 'fileid/I')
 eventTree.Branch("run", run, 'run/I')
 eventTree.Branch("subrun", subrun, 'subrun/I')
@@ -235,26 +249,40 @@ eventTree.Branch("vtxBestComp", vtxBestComp, 'vtxBestComp/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
 eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmic/F')
 eventTree.Branch("nTracks", nTracks, 'nTracks/I')
+eventTree.Branch("trackIsSecondary", trackIsSecondary, 'trackIsSecondary[nTracks]/I')
 eventTree.Branch("trackNHits", trackNHits, 'trackNHits[nTracks]/I')
 eventTree.Branch("trackHitFrac", trackHitFrac, 'trackHitFrac[nTracks]/F')
 eventTree.Branch("trackCharge", trackCharge, 'trackCharge[nTracks]/F')
 eventTree.Branch("trackChargeFrac", trackChargeFrac, 'trackChargeFrac[nTracks]/F')
-eventTree.Branch("trackRecoMuKE", trackRecoMuKE, 'trackRecoMuKE[nTracks]/F')
-eventTree.Branch("trackRecoPrKE", trackRecoPrKE, 'trackRecoPrKE[nTracks]/F')
+eventTree.Branch("trackMuKE", trackMuKE, 'trackMuKE[nTracks]/F')
+eventTree.Branch("trackPrKE", trackPrKE, 'trackPrKE[nTracks]/F')
+eventTree.Branch("trackCosTheta", trackCosTheta, 'trackCosTheta[nTracks]/F')
 eventTree.Branch("trackClassified", trackClassified, 'trackClassified[nTracks]/I')
-eventTree.Branch("trackRecoPID", trackRecoPID, 'trackRecoPID[nTracks]/I')
-eventTree.Branch("trackRecoComp", trackRecoComp, 'trackRecoComp[nTracks]/F')
+eventTree.Branch("trackPID", trackPID, 'trackPID[nTracks]/I')
+eventTree.Branch("trackElScore", trackElScore, 'trackElScore[nTracks]/F')
+eventTree.Branch("trackPhScore", trackPhScore, 'trackPhScore[nTracks]/F')
+eventTree.Branch("trackMuScore", trackMuScore, 'trackMuScore[nTracks]/F')
+eventTree.Branch("trackPiScore", trackPiScore, 'trackPiScore[nTracks]/F')
+eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
+eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
 eventTree.Branch("nShowers", nShowers, 'nShowers/I')
+eventTree.Branch("showerIsSecondary", showerIsSecondary, 'showerIsSecondary[nShowers]/I')
 eventTree.Branch("showerNHits", showerNHits, 'showerNHits[nShowers]/I')
 eventTree.Branch("showerHitFrac", showerHitFrac, 'showerHitFrac[nShowers]/F')
 eventTree.Branch("showerCharge", showerCharge, 'showerCharge[nShowers]/F')
 eventTree.Branch("showerChargeFrac", showerChargeFrac, 'showerChargeFrac[nShowers]/F')
-eventTree.Branch("showerRecoPl0E", showerRecoPl0E, 'showerRecoPl0E[nShowers]/F')
-eventTree.Branch("showerRecoPl1E", showerRecoPl1E, 'showerRecoPl1E[nShowers]/F')
-eventTree.Branch("showerRecoPl2E", showerRecoPl2E, 'showerRecoPl2E[nShowers]/F')
+eventTree.Branch("showerPl0E", showerPl0E, 'showerPl0E[nShowers]/F')
+eventTree.Branch("showerPl1E", showerPl1E, 'showerPl1E[nShowers]/F')
+eventTree.Branch("showerPl2E", showerPl2E, 'showerPl2E[nShowers]/F')
+eventTree.Branch("showerCosTheta", showerCosTheta, 'showerCosTheta[nShowers]/F')
 eventTree.Branch("showerClassified", showerClassified, 'showerClassified[nShowers]/I')
-eventTree.Branch("showerRecoPID", showerRecoPID, 'showerRecoPID[nShowers]/I')
-eventTree.Branch("showerRecoComp", showerRecoComp, 'showerRecoComp[nShowers]/F')
+eventTree.Branch("showerPID", showerPID, 'showerPID[nShowers]/I')
+eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
+eventTree.Branch("showerPhScore", showerPhScore, 'showerPhScore[nShowers]/F')
+eventTree.Branch("showerMuScore", showerMuScore, 'showerMuScore[nShowers]/F')
+eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
+eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
+eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
 
 
 if args.isMC:
@@ -444,10 +472,12 @@ for filepair in files:
     for iTrk, trackCls in enumerate(vertex.track_hitcluster_v):
 
       vertexNHits += trackCls.size()
+      trackIsSecondary[iTrk] = vertex.track_isSecondary_v[iTrk]
       trackNHits[iTrk] = trackCls.size()
       trackCharge[iTrk], vertexPixels, vertexCharge = addClusterCharge(iolcv,trackCls,vertexPixels,vertexCharge,10.)
-      trackRecoMuKE[iTrk] = vertex.track_kemu_v[iTrk]
-      trackRecoPrKE[iTrk] = vertex.track_keproton_v[iTrk]
+      trackMuKE[iTrk] = vertex.track_kemu_v[iTrk]
+      trackPrKE[iTrk] = vertex.track_keproton_v[iTrk]
+      trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk])
 
       cropPt = vertex.track_v[iTrk].End()
       prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,trackCls,cropPt,10.,512,512)
@@ -458,25 +488,37 @@ for filepair in files:
           break
       if skip:
         trackClassified[iTrk] = 0
-        trackRecoPID[iTrk] = 0
-        trackRecoComp[iTrk] = -1.
+        trackPID[iTrk] = 0
+        trackElScore[iTrk] = -99.
+        trackPhScore[iTrk] = -99.
+        trackMuScore[iTrk] = -99.
+        trackPiScore[iTrk] = -99.
+        trackPrScore[iTrk] = -99.
+        trackComp[iTrk] = -1.
         continue
 
       prongImage = makeImage(prong_vv).to(args.device)
       prongCNN_out = model(prongImage)
       trackClassified[iTrk] = 1
-      trackRecoPID[iTrk] = getPID(prongCNN_out[0].argmax(1).item())
-      trackRecoComp[iTrk] = prongCNN_out[1].item()
+      trackPID[iTrk] = getPID(prongCNN_out[0].argmax(1).item())
+      trackElScore[iTrk] = prongCNN_out[0][0][0].item()
+      trackPhScore[iTrk] = prongCNN_out[0][0][1].item()
+      trackMuScore[iTrk] = prongCNN_out[0][0][2].item()
+      trackPiScore[iTrk] = prongCNN_out[0][0][3].item()
+      trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
+      trackComp[iTrk] = prongCNN_out[1].item()
 
 
     for iShw, shower in enumerate(vertex.shower_v):
 
       vertexNHits += shower.size()
+      showerIsSecondary[iShw] = vertex.shower_isSecondary_v[iShw]
       showerNHits[iShw] = shower.size()
       showerCharge[iShw], vertexPixels, vertexCharge = addClusterCharge(iolcv,shower,vertexPixels,vertexCharge, 10.)
-      showerRecoPl0E[iShw] = vertex.shower_plane_mom_vv[iShw][0].E()
-      showerRecoPl1E[iShw] = vertex.shower_plane_mom_vv[iShw][1].E()
-      showerRecoPl2E[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
+      showerPl0E[iShw] = vertex.shower_plane_mom_vv[iShw][0].E()
+      showerPl1E[iShw] = vertex.shower_plane_mom_vv[iShw][1].E()
+      showerPl2E[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
+      showerCosTheta[iShw] = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
 
       cropPt = vertex.shower_trunk_v[iShw].Vertex()
       prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,shower,cropPt,10.,512,512)
@@ -487,15 +529,25 @@ for filepair in files:
           break
       if skip:
         showerClassified[iShw] = 0
-        showerRecoPID[iShw] = 0
-        showerRecoComp[iShw] = -1.
+        showerPID[iShw] = 0
+        showerElScore[iShw] = -99.
+        showerPhScore[iShw] = -99.
+        showerMuScore[iShw] = -99.
+        showerPiScore[iShw] = -99.
+        showerPrScore[iShw] = -99.
+        showerComp[iShw] = -1.
         continue
 
       prongImage = makeImage(prong_vv).to(args.device)
       prongCNN_out = model(prongImage)
       showerClassified[iShw] = 1
-      showerRecoPID[iShw] = getPID(prongCNN_out[0].argmax(1).item())
-      showerRecoComp[iShw] = prongCNN_out[1].item()
+      showerPID[iShw] = getPID(prongCNN_out[0].argmax(1).item())
+      showerElScore[iShw] = prongCNN_out[0][0][0].item()
+      showerPhScore[iShw] = prongCNN_out[0][0][1].item()
+      showerMuScore[iShw] = prongCNN_out[0][0][2].item()
+      showerPiScore[iShw] = prongCNN_out[0][0][3].item()
+      showerPrScore[iShw] = prongCNN_out[0][0][4].item()
+      showerComp[iShw] = prongCNN_out[1].item()
 
     for i in range(nTracks[0]):
       trackHitFrac[i] = trackNHits[i] / (1.0*vertexNHits)
