@@ -68,11 +68,11 @@ def configureHists(h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext):
   return h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext
 
 
-h_cosFrac_CCnumu = rt.TH1F("h_cosFrac_CCnumu","Fraction of Hits On Cosmics",21,0,1.05)
-h_cosFrac_NCnumu = rt.TH1F("h_cosFrac_NCnumu","Fraction of Hits On Cosmics",21,0,1.05)
-h_cosFrac_CCnue = rt.TH1F("h_cosFrac_CCnue","Fraction of Hits On Cosmics",21,0,1.05)
-h_cosFrac_NCnue = rt.TH1F("h_cosFrac_NCnue","Fraction of Hits On Cosmics",21,0,1.05)
-h_cosFrac_ext = rt.TH1F("h_cosFrac_ext","Fraction of Hits On Cosmics",21,0,1.05)
+h_cosFrac_CCnumu = rt.TH1F("h_cosFrac_CCnumu","Fraction of Hits On Cosmics",42,-1.05,1.05)
+h_cosFrac_NCnumu = rt.TH1F("h_cosFrac_NCnumu","Fraction of Hits On Cosmics",42,-1.05,1.05)
+h_cosFrac_CCnue = rt.TH1F("h_cosFrac_CCnue","Fraction of Hits On Cosmics",42,-1.05,1.05)
+h_cosFrac_NCnue = rt.TH1F("h_cosFrac_NCnue","Fraction of Hits On Cosmics",42,-1.05,1.05)
+h_cosFrac_ext = rt.TH1F("h_cosFrac_ext","Fraction of Hits On Cosmics",42,-1.05,1.05)
 h_cosFrac_CCnumu, h_cosFrac_NCnumu, h_cosFrac_CCnue, h_cosFrac_NCnue, h_cosFrac_ext = configureHists(h_cosFrac_CCnumu,
  h_cosFrac_NCnumu, h_cosFrac_CCnue, h_cosFrac_NCnue, h_cosFrac_ext)
 
@@ -328,6 +328,9 @@ for i in range(tnue.GetEntries()):
     continue
 
   h_cosFrac_CCnue.Fill(tnue.vtxFracHitsOnCosmic, tnue.xsecWeight)
+  #if tnue.vtxFracHitsOnCosmic < 0 or tnue.vtxFracHitsOnCosmic > 1.:
+  if tnue.vtxFracHitsOnCosmic > 1.:
+    print(tnue.vtxFracHitsOnCosmic)
 
   if tnue.vtxFracHitsOnCosmic >= 1.:
     continue
@@ -483,6 +486,9 @@ print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_ext",h_cosFrac_ext.In
 print()
 
 
+print("h_cosFrac_CCnue unscaled integral: ", h_cosFrac_CCnue.Integral())
+print("h_nEl_CCnue unscaled integral: ", h_nEl_CCnue.Integral())
+
 h_cosFrac_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_cosFrac_NCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_cosFrac_CCnue.Scale(runs1to3POT/tnuePOTsum)
@@ -494,6 +500,9 @@ h_nEl_NCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_nEl_CCnue.Scale(runs1to3POT/tnuePOTsum)
 h_nEl_NCnue.Scale(runs1to3POT/tnuPOTsum)
 h_nEl_ext.Scale(runs1to3POT/textPOTsum)
+
+print("h_cosFrac_CCnue scaled integral: ", h_cosFrac_CCnue.Integral())
+print("h_nEl_CCnue scaled integral: ", h_nEl_CCnue.Integral())
 
 h_nCompEl_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_nCompEl_NCnumu.Scale(runs1to3POT/tnuPOTsum)
