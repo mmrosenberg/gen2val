@@ -373,6 +373,10 @@ for filepair in files:
           print("Couldn't find MC lepton match!!!")
           continue
 
+        totLepPixI, lepTickLists, lepPixelDictList = getLeptonPixels(lepPDG, ioll, iolcv)
+        if not totLepPixI > 0.:
+          continue
+
         trueMuContained[0] = -1
         if lepPDG == 13:
           if isInDetector(mcLeptonUnCorr.End()):
@@ -382,8 +386,6 @@ for filepair in files:
 
         trueLepPDG[0] = lepPDG
         trueLepE[0] = lep.Momentum().E()
-
-        totLepPixI, lepTickLists, lepPixelDictList = getLeptonPixels(lepPDG, ioll, iolcv)
 
       else: #from "if nuInt.CCNC"
         trueLepPDG[0] = 0
@@ -477,15 +479,18 @@ for filepair in files:
       trackCharge[iTrk], vertexPixels, vertexCharge = addClusterCharge(iolcv,trackCls,vertexPixels,vertexCharge,10.)
       trackMuKE[iTrk] = vertex.track_kemu_v[iTrk]
       trackPrKE[iTrk] = vertex.track_keproton_v[iTrk]
-      trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk])
+      nTrajPoints = vertex.track_v[iTrk].NumberTrajectoryPoints()
+      trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk]) if (nTrajPoints > 1) else -9.
 
-      cropPt = vertex.track_v[iTrk].End()
-      prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,trackCls,cropPt,10.,512,512)
-      skip = False
-      for p in range(3):
-        if prong_vv[p].size() < 10:
-          skip = True
-          break
+      skip = True
+      if nTrajPoints > 1:
+        skip = False
+        cropPt = vertex.track_v[iTrk].End()
+        prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,trackCls,cropPt,10.,512,512)
+        for p in range(3):
+          if prong_vv[p].size() < 10:
+            skip = True
+            break
       if skip:
         trackClassified[iTrk] = 0
         trackPID[iTrk] = 0
