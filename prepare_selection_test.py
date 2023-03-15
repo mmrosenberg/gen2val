@@ -629,11 +629,13 @@ for filepair in files:
       trackMuKE[iTrk] = vertex.track_kemu_v[iTrk]
       trackPrKE[iTrk] = vertex.track_keproton_v[iTrk]
       nTrajPoints = vertex.track_v[iTrk].NumberTrajectoryPoints()
-      trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk]) if (nTrajPoints > 1) else -9.
-      trackDistToVtx[iTrk] = getVertexDistance(vertex.track_v[iTrk].Vertex(), vertex)
+      trackLength = getDistance(vertex.track_v[iTrk].Vertex(),vertex.track_v[iTrk].End()) if (nTrajPoints > 1) else -9.
+      goodTrack = nTrajPoints > 1 and trackLength > 1e-6
+      trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk]) if goodTrack else -9.
+      trackDistToVtx[iTrk] = getVertexDistance(vertex.track_v[iTrk].Vertex(), vertex) if goodTrack else -9.
 
       skip = True
-      if nTrajPoints > 1:
+      if goodTrack:
         skip = False
         cropPt = vertex.track_v[iTrk].End()
         prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,trackCls,cropPt,10.,512,512)
