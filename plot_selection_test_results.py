@@ -13,8 +13,8 @@ parser.add_argument("-fnue", "--bnbnue_file", type=str, default="prepare_selecti
 parser.add_argument("-fext", "--extbnb_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v16_extbnb_file.root", help="bnb nu input file")
 parser.add_argument("-c", "--compCut", type=float, default=0.6, help="completeness cut value")
 parser.add_argument("-s", "--confCut", type=float, default=9, help="electron class confidence cut value")
-parser.add_argument("-q", "--chargeCut", type=float, default=70000, help="electron charge fraction cut value")
-parser.add_argument("-qf", "--chargeFracCut", type=float, default=0.7, help="electron charge fraction cut value")
+parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron charge fraction cut value")
+parser.add_argument("-qf", "--chargeFracCut", type=float, default=0.05, help="electron charge fraction cut value")
 parser.add_argument("-o", "--outfile", type=str, default="plot_selection_test_results_output.root", help="output root file name")
 args = parser.parse_args()
 
@@ -439,6 +439,7 @@ for i in range(tnu.GetEntries()):
       h_elMaxQF_wQcut_CCnumu, h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue = FillNuHistos(h_elMaxQF_wQcut_CCnumu,
         h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
 
+    #---- the winner ------------------------------------------
     if elMaxQConf > args.confCut:
       h_elMaxQComp_wConfCut_CCnumu, h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue = FillNuHistos(h_elMaxQComp_wConfCut_CCnumu,
         h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
@@ -448,6 +449,7 @@ for i in range(tnu.GetEntries()):
         h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
       h_elMaxQ_wConfCut_CCnumu, h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue = FillNuHistos(h_elMaxQ_wConfCut_CCnumu,
         h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut:
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
@@ -455,6 +457,12 @@ for i in range(tnu.GetEntries()):
           n_runs1to3_NCnumu_pass += tnu.xsecWeight
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
+    #--------------------------------------------------------------
+    if eventType == 0 and elMaxQElScore > -1. and (elMaxQPhScore > -1. or elMaxQPiScore > -1.):
+    #elif eventType == 0:
+      if elMaxQConf > args.confCut:
+        print("THIS IS SIGNAL!!!!!")
+      print("CC numu background (fileid, run, subrun, event): (%i, %i, %i, %i) with (e-,ph,pi) scores: (%f, %f, %f) removed"%(tnu.fileid,tnu.run,tnu.subrun,tnu.event,elMaxQElScore,elMaxQPhScore,elMaxQPiScore))
 
   if nMuons >= 1:
     h_muMaxComp_CCnumu, h_muMaxComp_NCnumu, h_muMaxComp_NCnue = FillNuHistos(h_muMaxComp_CCnumu,

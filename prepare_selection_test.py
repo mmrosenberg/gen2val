@@ -2,6 +2,7 @@
 import os,sys,argparse
 
 import ROOT as rt
+import uproot
 
 from larlite import larlite
 from larlite import larutil
@@ -32,6 +33,10 @@ parser.add_argument("-m", "--model_path", type=str, required=True, help="path to
 parser.add_argument("-d", "--device", type=str, default="cpu", help="gpu/cpu device")
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="prepare_selection_test_output.root", help="output file name")
+parser.add_argument("--makePlots", action="store_true", help="make image plots for specified event")
+parser.add_argument("-r", "--run", type=int, default=0, help="run number for event to plot")
+parser.add_argument("-sr", "--subrun", type=int, default=0, help="subrun number for event to plot")
+parser.add_argument("-e", "--event", type=int, default=0, help="event number for event to plot")
 parser.add_argument("--multiGPU", action="store_true", help="use multiple GPUs")
 parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
@@ -40,6 +45,13 @@ sys.path.append(args.model_path[:args.model_path.find("/checkpoints")])
 from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
 from datasets_reco_5ClassHardLabel_multiTask import mean, std
 
+if args.isMC and args.makePlots:
+  import matplotlib.pyplot as plt
+  import matplotlib.backends.backend_pdf
+  #plotfilename = "selection_test_images_run%i_subrun%i_event%i.pdf"%(args.run,args.subrun,args.event)
+  plotfilename = "selection_test_images_for_score_removed_CCnumu_background.pdf"
+  outpdf = matplotlib.backends.backend_pdf.PdfPages(plotfilename)
+
 if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
 
@@ -47,6 +59,8 @@ reco2Tag = "merged_dlana_"
 if args.isMC:
   reco2Tag = "merged_dlreco_"
 files = getFiles(reco2Tag, args.files, args.truth)
+
+plotEvents = [[16960, 184, 9249], [16962, 75, 3769], [16935, 300, 15039], [16944, 110, 5549], [16947, 210, 10533], [18508, 291, 14580], [18527, 20, 1034], [18511, 29, 1461], [18514, 195, 9777], [18577, 320, 16019], [18525, 115, 5767], [18520, 13, 676], [18005, 67, 3367], [18021, 3, 166], [18031, 383, 19184], [18032, 515, 25798], [18860, 124, 6248], [18863, 152, 7650], [18874, 72, 3648], [18862, 415, 20765]]
 
 
 def addClusterCharge(iolcv, cluster, vertexPixels, vertexCharge, threshold):
@@ -68,6 +82,67 @@ def addClusterCharge(iolcv, cluster, vertexPixels, vertexCharge, threshold):
         vertexPixels.append(pixel)
         vertexCharge += pixVal
   return clusterCharge, vertexPixels, vertexCharge
+
+
+
+def getMCProngParticle(sparseimg_vv, mcpg, mcpm, adc_v):
+
+  #particleDict = {}
+  trackDict = {}
+  totalPixI = 0.
+
+  for p in range(3):
+    for pix in sparseimg_vv[p]:
+      totalPixI += pix.val
+      pixContents = mcpm.getPixContent(p, pix.rawRow, pix.rawCol)
+      for part in pixContents.particles:
+        #if abs(part.pdg) in particleDict:
+        #  particleDict[abs(part.pdg)] += pixContents.pixI
+        #else:
+        #  particleDict[abs(part.pdg)] = pixContents.pixI
+        if part.tid in trackDict:
+          trackDict[part.tid][2] += pixContents.pixI
+        else:
+          trackDict[part.tid] = [part.pdg, part.nodeidx, pixContents.pixI]
+
+  maxPartPDG = 0 
+  maxPartNID = -1
+  maxPartTID = -1
+  maxPartI = 0.
+  maxPartComp = 0.
+  #pdglist = []
+  #puritylist = []
+
+  #for part in particleDict:
+  #  pdglist.append(part)
+  #  puritylist.append(particleDict[part]/totalPixI)
+
+  for track in trackDict:
+    if trackDict[track][2] > maxPartI:
+      maxPartI = trackDict[track][2]
+      maxPartPDG = trackDict[track][0]
+      maxPartNID = trackDict[track][1]
+      maxPartTID = track
+
+  totNodePixI = 0.
+  if maxPartI > 0.:
+    maxPartNode = mcpg.node_v[maxPartNID]
+    if maxPartNode.tid != maxPartTID:
+      sys.exit("ERROR: mismatch between node track id from mcpm and mcpg in getMCProngParticle")
+    for p in range(3):
+      pixels = maxPartNode.pix_vv[p]
+      for iP in range(pixels.size()//2):
+        row = (pixels[2*iP] - 2400)//6
+        col = pixels[2*iP+1]
+        totNodePixI += adc_v[p].pixel(row, col)
+    if totNodePixI > 0.:
+      maxPartComp = maxPartI/totNodePixI
+
+  if maxPartComp > 1.:
+    print("ERROR: prong completeness calculated to be >1")
+
+  #return maxPartPDG, maxPartTID, totNodePixI, maxPartI/totalPixI, maxPartComp, pdglist, puritylist
+  return maxPartPDG, maxPartI/totalPixI, maxPartComp
 
 
 def makeImage(prong_vv):
@@ -124,6 +199,60 @@ def makeImage(prong_vv):
   norm = transforms.Normalize(mean, std)
   image = norm(image).reshape(1,6,512,512)
   return torch.clamp(image, max=4.0)
+
+
+def plotEventTitle(r, sr, e, primInfo):
+  fig = plt.figure(0, clear=True)
+  plt.suptitle("\n\n\nRun %i Subrun %i Event %i \n\n\n %s"%(r, sr, e, primInfo), fontsize=12)
+  outpdf.savefig(fig)
+
+
+def plotImage(X, r, sr, e, pdg, purity, completeness, visE, compPred, elScore, phScore, muScore, piScore, prScore):
+  #pltmin = None
+  #pltmax = None
+  pltmin = -1.
+  pltmax = 2.
+  suptitlesize=6
+  titlesize=8
+  ticksize=6
+  X0 = X[:,0:2].reshape(X.shape[0], 2, 512, 512)
+  X1 = X[:,2:4].reshape(X.shape[0], 2, 512, 512)
+  X2 = X[:,4:].reshape(X.shape[0], 2, 512, 512)
+  fig = plt.figure(0, clear=True)
+  plt.subplot(2,3,1)
+  plt.imshow(X0.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 0 prong", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.subplot(2,3,2)
+  plt.imshow(X1.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 1 prong", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.subplot(2,3,3)
+  plt.imshow(X2.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 2 prong", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.subplot(2,3,4)
+  plt.imshow(X0.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 0 all", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.subplot(2,3,5)
+  plt.imshow(X1.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 1 all", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.subplot(2,3,6)
+  plt.imshow(X2.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
+  plt.title("plane 2 all", fontsize=titlesize)
+  plt.xticks(fontsize=ticksize)
+  plt.yticks(fontsize=ticksize)
+  plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred), fontsize=suptitlesize)
+  #plt.show()
+  outpdf.savefig(fig)
+  return
 
 
 def getPID(cnnClass):
@@ -202,6 +331,7 @@ trackChargeFrac = array('f', maxNTrks*[0.])
 trackMuKE = array('f', maxNTrks*[0.])
 trackPrKE = array('f', maxNTrks*[0.])
 trackCosTheta = array('f', maxNTrks*[0.])
+trackDistToVtx = array('f', maxNTrks*[0.])
 trackClassified = array('i', maxNTrks*[0])
 trackPID = array('i', maxNTrks*[0])
 trackElScore = array('f', maxNTrks*[0.])
@@ -220,6 +350,7 @@ showerPl0E = array('f', maxNShwrs*[0.])
 showerPl1E = array('f', maxNShwrs*[0.])
 showerPl2E = array('f', maxNShwrs*[0.])
 showerCosTheta = array('f', maxNShwrs*[0.])
+showerDistToVtx = array('f', maxNShwrs*[0.])
 showerClassified = array('i', maxNShwrs*[0])
 showerPID = array('i', maxNShwrs*[0])
 showerElScore = array('f', maxNShwrs*[0.])
@@ -257,6 +388,7 @@ eventTree.Branch("trackChargeFrac", trackChargeFrac, 'trackChargeFrac[nTracks]/F
 eventTree.Branch("trackMuKE", trackMuKE, 'trackMuKE[nTracks]/F')
 eventTree.Branch("trackPrKE", trackPrKE, 'trackPrKE[nTracks]/F')
 eventTree.Branch("trackCosTheta", trackCosTheta, 'trackCosTheta[nTracks]/F')
+eventTree.Branch("trackDistToVtx", trackDistToVtx, 'trackDistToVtx[nTracks]/F')
 eventTree.Branch("trackClassified", trackClassified, 'trackClassified[nTracks]/I')
 eventTree.Branch("trackPID", trackPID, 'trackPID[nTracks]/I')
 eventTree.Branch("trackElScore", trackElScore, 'trackElScore[nTracks]/F')
@@ -275,6 +407,7 @@ eventTree.Branch("showerPl0E", showerPl0E, 'showerPl0E[nShowers]/F')
 eventTree.Branch("showerPl1E", showerPl1E, 'showerPl1E[nShowers]/F')
 eventTree.Branch("showerPl2E", showerPl2E, 'showerPl2E[nShowers]/F')
 eventTree.Branch("showerCosTheta", showerCosTheta, 'showerCosTheta[nShowers]/F')
+eventTree.Branch("showerDistToVtx", showerDistToVtx, 'showerDistToVtx[nShowers]/F')
 eventTree.Branch("showerClassified", showerClassified, 'showerClassified[nShowers]/I')
 eventTree.Branch("showerPID", showerPID, 'showerPID[nShowers]/I')
 eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
@@ -336,7 +469,10 @@ for filepair in files:
       continue
 
 
-    if args.isMC:  
+    if args.isMC:
+
+      if args.makePlots and [kpst.run, kpst.subrun, kpst.event] not in plotEvents:
+        continue
 
       mctruth = ioll.get_data(larlite.data.kMCTruth, "generator")
       nuInt = mctruth.at(0).GetNeutrino()
@@ -444,6 +580,19 @@ for filepair in files:
         vtxBestComp[0] = getBestCompleteness(iolcv, vertex, lepPDG, totLepPixI, lepTickLists, lepPixelDictList)
       else:
         vtxBestComp[0] = -1.
+      if args.makePlots:
+        mcpg = ublarcvapp.mctools.MCPixelPGraph()
+        mcpg.set_adc_treename("wire")
+        mcpg.buildgraph(iolcv, ioll)
+        mcpm = ublarcvapp.mctools.MCPixelPMap()
+        mcpm.set_adc_treename("wire")
+        mcpm.buildmap(iolcv, mcpg)
+        primaryPartInfo = "Primary Particles:\n\n"
+        for node in mcpg.node_v:
+          if (node.tid == node.mtid and node.origin == 1 and node.process == "primary"):
+            primaryPartInfo += "  %i (%.2f MeV)\n"%(node.pid, node.E_MeV)
+        #primaryPartInfo = primaryPartInfo[:-2]
+        plotEventTitle(run[0], subrun[0], event[0], primaryPartInfo)
     else:
       vtxDistToTrue[0] = -99.
       vtxBestComp[0] = -1.
@@ -481,6 +630,7 @@ for filepair in files:
       trackPrKE[iTrk] = vertex.track_keproton_v[iTrk]
       nTrajPoints = vertex.track_v[iTrk].NumberTrajectoryPoints()
       trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk]) if (nTrajPoints > 1) else -9.
+      trackDistToVtx[iTrk] = getVertexDistance(vertex.track_v[iTrk].Vertex(), vertex)
 
       skip = True
       if nTrajPoints > 1:
@@ -513,6 +663,12 @@ for filepair in files:
       trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
       trackComp[iTrk] = prongCNN_out[1].item()
 
+      if args.isMC and args.makePlots: #and args.run == run[0] and args.subrun == subrun[0] and args.event == event[0]:
+        pdg, purity, completeness = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
+        plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
+                  trackCharge[iTrk], trackComp[iTrk], trackElScore[iTrk], trackPhScore[iTrk],
+                  trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
+
 
     for iShw, shower in enumerate(vertex.shower_v):
 
@@ -524,6 +680,7 @@ for filepair in files:
       showerPl1E[iShw] = vertex.shower_plane_mom_vv[iShw][1].E()
       showerPl2E[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
       showerCosTheta[iShw] = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
+      showerDistToVtx[iShw] = getVertexDistance(vertex.shower_trunk_v[iShw].Vertex(), vertex)
 
       cropPt = vertex.shower_trunk_v[iShw].Vertex()
       prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,shower,cropPt,10.,512,512)
@@ -554,6 +711,13 @@ for filepair in files:
       showerPrScore[iShw] = prongCNN_out[0][0][4].item()
       showerComp[iShw] = prongCNN_out[1].item()
 
+      if args.isMC and args.makePlots: #and args.run == run[0] and args.subrun == subrun[0] and args.event == event[0]:
+        pdg, purity, completeness = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
+        plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
+                  showerCharge[iShw], showerComp[iShw], showerElScore[iShw], showerPhScore[iShw],
+                  showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
+
+
     for i in range(nTracks[0]):
       trackHitFrac[i] = trackNHits[i] / (1.0*vertexNHits)
       trackChargeFrac[i] = trackCharge[i] / vertexCharge
@@ -583,4 +747,7 @@ eventTree.Write("",rt.TObject.kOverwrite)
 if args.isMC:
   potTree.Write("",rt.TObject.kOverwrite)
 outRootFile.Close()
+
+if args.isMC and args.makePlots:
+  outpdf.close()
 
