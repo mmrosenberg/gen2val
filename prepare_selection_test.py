@@ -87,7 +87,7 @@ def addClusterCharge(iolcv, cluster, vertexPixels, vertexCharge, threshold):
 
 def getMCProngParticle(sparseimg_vv, mcpg, mcpm, adc_v):
 
-  #particleDict = {}
+  particleDict = {}
   trackDict = {}
   totalPixI = 0.
 
@@ -96,10 +96,10 @@ def getMCProngParticle(sparseimg_vv, mcpg, mcpm, adc_v):
       totalPixI += pix.val
       pixContents = mcpm.getPixContent(p, pix.rawRow, pix.rawCol)
       for part in pixContents.particles:
-        #if abs(part.pdg) in particleDict:
-        #  particleDict[abs(part.pdg)] += pixContents.pixI
-        #else:
-        #  particleDict[abs(part.pdg)] = pixContents.pixI
+        if abs(part.pdg) in particleDict:
+          particleDict[abs(part.pdg)] += pixContents.pixI
+        else:
+          particleDict[abs(part.pdg)] = pixContents.pixI
         if part.tid in trackDict:
           trackDict[part.tid][2] += pixContents.pixI
         else:
@@ -110,12 +110,12 @@ def getMCProngParticle(sparseimg_vv, mcpg, mcpm, adc_v):
   maxPartTID = -1
   maxPartI = 0.
   maxPartComp = 0.
-  #pdglist = []
-  #puritylist = []
+  pdglist = []
+  puritylist = []
 
-  #for part in particleDict:
-  #  pdglist.append(part)
-  #  puritylist.append(particleDict[part]/totalPixI)
+  for part in particleDict:
+    pdglist.append(part)
+    puritylist.append(particleDict[part]/totalPixI)
 
   for track in trackDict:
     if trackDict[track][2] > maxPartI:
@@ -142,7 +142,7 @@ def getMCProngParticle(sparseimg_vv, mcpg, mcpm, adc_v):
     print("ERROR: prong completeness calculated to be >1")
 
   #return maxPartPDG, maxPartTID, totNodePixI, maxPartI/totalPixI, maxPartComp, pdglist, puritylist
-  return maxPartPDG, maxPartI/totalPixI, maxPartComp
+  return maxPartPDG, maxPartI/totalPixI, maxPartComp, pdglist, puritylist
 
 
 def makeImage(prong_vv):
@@ -340,6 +340,14 @@ trackMuScore = array('f', maxNTrks*[0.])
 trackPiScore = array('f', maxNTrks*[0.])
 trackPrScore = array('f', maxNTrks*[0.])
 trackComp = array('f', maxNTrks*[0.])
+trackTruePID = array('i', maxNTrks*[0])
+trackTruePurity = array('f', maxNTrks*[0.])
+trackTrueComp = array('f', maxNTrks*[0.])
+trackTrueElPurity = array('f', maxNTrks*[0.])
+trackTruePhPurity = array('f', maxNTrks*[0.])
+trackTrueMuPurity = array('f', maxNTrks*[0.])
+trackTruePiPurity = array('f', maxNTrks*[0.])
+trackTruePrPurity = array('f', maxNTrks*[0.])
 nShowers = array('i', [0])
 showerIsSecondary = array('i', maxNShwrs*[0])
 showerNHits = array('i', maxNShwrs*[0])
@@ -359,6 +367,14 @@ showerMuScore = array('f', maxNShwrs*[0.])
 showerPiScore = array('f', maxNShwrs*[0.])
 showerPrScore = array('f', maxNShwrs*[0.])
 showerComp = array('f', maxNShwrs*[0])
+showerTruePID = array('i', maxNShwrs*[0])
+showerTruePurity = array('f', maxNShwrs*[0.])
+showerTrueComp = array('f', maxNShwrs*[0.])
+showerTrueElPurity = array('f', maxNShwrs*[0.])
+showerTruePhPurity = array('f', maxNShwrs*[0.])
+showerTrueMuPurity = array('f', maxNShwrs*[0.])
+showerTruePiPurity = array('f', maxNShwrs*[0.])
+showerTruePrPurity = array('f', maxNShwrs*[0.])
 eventTree.Branch("fileid", fileid, 'fileid/I')
 eventTree.Branch("run", run, 'run/I')
 eventTree.Branch("subrun", subrun, 'subrun/I')
@@ -397,6 +413,14 @@ eventTree.Branch("trackMuScore", trackMuScore, 'trackMuScore[nTracks]/F')
 eventTree.Branch("trackPiScore", trackPiScore, 'trackPiScore[nTracks]/F')
 eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
 eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
+eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
+eventTree.Branch("trackTruePurity", trackTruePurity, 'trackTruePurity[nTracks]/F')
+eventTree.Branch("trackTrueComp", trackTrueComp, 'trackTrueComp[nTracks]/F')
+eventTree.Branch("trackTrueElPurity", trackTrueElPurity, 'trackTrueElPurity[nTracks]/F')
+eventTree.Branch("trackTruePhPurity", trackTruePhPurity, 'trackTruePhPurity[nTracks]/F')
+eventTree.Branch("trackTrueMuPurity", trackTrueMuPurity, 'trackTrueMuPurity[nTracks]/F')
+eventTree.Branch("trackTruePiPurity", trackTruePiPurity, 'trackTruePiPurity[nTracks]/F')
+eventTree.Branch("trackTruePrPurity", trackTruePrPurity, 'trackTruePrPurity[nTracks]/F')
 eventTree.Branch("nShowers", nShowers, 'nShowers/I')
 eventTree.Branch("showerIsSecondary", showerIsSecondary, 'showerIsSecondary[nShowers]/I')
 eventTree.Branch("showerNHits", showerNHits, 'showerNHits[nShowers]/I')
@@ -410,6 +434,14 @@ eventTree.Branch("showerCosTheta", showerCosTheta, 'showerCosTheta[nShowers]/F')
 eventTree.Branch("showerDistToVtx", showerDistToVtx, 'showerDistToVtx[nShowers]/F')
 eventTree.Branch("showerClassified", showerClassified, 'showerClassified[nShowers]/I')
 eventTree.Branch("showerPID", showerPID, 'showerPID[nShowers]/I')
+eventTree.Branch("showerTruePID", showerTruePID, 'showerTruePID[nShowers]/I')
+eventTree.Branch("showerTruePurity", showerTruePurity, 'showerTruePurity[nShowers]/F')
+eventTree.Branch("showerTrueComp", showerTrueComp, 'showerTrueComp[nShowers]/F')
+eventTree.Branch("showerTrueElPurity", showerTrueElPurity, 'showerTrueElPurity[nShowers]/F')
+eventTree.Branch("showerTruePhPurity", showerTruePhPurity, 'showerTruePhPurity[nShowers]/F')
+eventTree.Branch("showerTrueMuPurity", showerTrueMuPurity, 'showerTrueMuPurity[nShowers]/F')
+eventTree.Branch("showerTruePiPurity", showerTruePiPurity, 'showerTruePiPurity[nShowers]/F')
+eventTree.Branch("showerTruePrPurity", showerTruePrPurity, 'showerTruePrPurity[nShowers]/F')
 eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
 eventTree.Branch("showerPhScore", showerPhScore, 'showerPhScore[nShowers]/F')
 eventTree.Branch("showerMuScore", showerMuScore, 'showerMuScore[nShowers]/F')
@@ -580,13 +612,13 @@ for filepair in files:
         vtxBestComp[0] = getBestCompleteness(iolcv, vertex, lepPDG, totLepPixI, lepTickLists, lepPixelDictList)
       else:
         vtxBestComp[0] = -1.
+      mcpg = ublarcvapp.mctools.MCPixelPGraph()
+      mcpg.set_adc_treename("wire")
+      mcpg.buildgraph(iolcv, ioll)
+      mcpm = ublarcvapp.mctools.MCPixelPMap()
+      mcpm.set_adc_treename("wire")
+      mcpm.buildmap(iolcv, mcpg)
       if args.makePlots:
-        mcpg = ublarcvapp.mctools.MCPixelPGraph()
-        mcpg.set_adc_treename("wire")
-        mcpg.buildgraph(iolcv, ioll)
-        mcpm = ublarcvapp.mctools.MCPixelPMap()
-        mcpm.set_adc_treename("wire")
-        mcpm.buildmap(iolcv, mcpg)
         primaryPartInfo = "Primary Particles:\n\n"
         for node in mcpg.node_v:
           if (node.tid == node.mtid and node.origin == 1 and node.process == "primary"):
@@ -665,11 +697,40 @@ for filepair in files:
       trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
       trackComp[iTrk] = prongCNN_out[1].item()
 
-      if args.isMC and args.makePlots: #and args.run == run[0] and args.subrun == subrun[0] and args.event == event[0]:
-        pdg, purity, completeness = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
-        plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                  trackCharge[iTrk], trackComp[iTrk], trackElScore[iTrk], trackPhScore[iTrk],
-                  trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
+      if args.isMC:
+        pdg, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
+        trackTruePID[iTrk] = pdg
+        trackTruePurity[iTrk] = purity
+        trackTrueComp[iTrk] = completeness
+        trackTrueElPurity[iTrk] = 0.
+        trackTruePhPurity[iTrk] = 0.
+        trackTrueMuPurity[iTrk] = 0.
+        trackTruePiPurity[iTrk] = 0.
+        trackTruePrPurity[iTrk] = 0.
+        for iTru, current_pdg in enumerate(allPdgs):
+          if current_pdg == 11:
+            trackTrueElPurity[iTrk] = allPurities[iTru]
+          if current_pdg == 22:
+            trackTruePhPurity[iTrk] = allPurities[iTru]
+          if current_pdg == 13:
+            trackTrueMuPurity[iTrk] = allPurities[iTru]
+          if current_pdg == 211:
+            trackTruePiPurity[iTrk] = allPurities[iTru]
+          if current_pdg == 2212:
+            trackTruePrPurity[iTrk] = allPurities[iTru]
+        if args.makePlots:
+          plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
+                    trackCharge[iTrk], trackComp[iTrk], trackElScore[iTrk], trackPhScore[iTrk],
+                    trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
+      else:
+        trackTruePID[iTrk] = 0
+        trackTruePurity[iTrk] = -1.
+        trackTrueComp[iTrk] = -1.
+        trackTrueElPurity[iTrk] = -1.
+        trackTruePhPurity[iTrk] = -1.
+        trackTrueMuPurity[iTrk] = -1.
+        trackTruePiPurity[iTrk] = -1.
+        trackTruePrPurity[iTrk] = -1.
 
 
     for iShw, shower in enumerate(vertex.shower_v):
@@ -713,11 +774,40 @@ for filepair in files:
       showerPrScore[iShw] = prongCNN_out[0][0][4].item()
       showerComp[iShw] = prongCNN_out[1].item()
 
-      if args.isMC and args.makePlots: #and args.run == run[0] and args.subrun == subrun[0] and args.event == event[0]:
-        pdg, purity, completeness = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
-        plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                  showerCharge[iShw], showerComp[iShw], showerElScore[iShw], showerPhScore[iShw],
-                  showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
+      if args.isMC:
+        pdg, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
+        showerTruePID[iShw] = pdg
+        showerTruePurity[iShw] = purity
+        showerTrueComp[iShw] = completeness
+        showerTrueElPurity[iShw] = 0.
+        showerTruePhPurity[iShw] = 0.
+        showerTrueMuPurity[iShw] = 0.
+        showerTruePiPurity[iShw] = 0.
+        showerTruePrPurity[iShw] = 0.
+        for iTru, current_pdg in enumerate(allPdgs):
+          if current_pdg == 11:
+            showerTrueElPurity[iShw] = allPurities[iTru]
+          if current_pdg == 22:
+            showerTruePhPurity[iShw] = allPurities[iTru]
+          if current_pdg == 13:
+            showerTrueMuPurity[iShw] = allPurities[iTru]
+          if current_pdg == 211:
+            showerTruePiPurity[iShw] = allPurities[iTru]
+          if current_pdg == 2212:
+            showerTruePrPurity[iShw] = allPurities[iTru]
+        if args.makePlots:
+          plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
+                    showerCharge[iShw], showerComp[iShw], showerElScore[iShw], showerPhScore[iShw],
+                    showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
+      else:
+        showerTruePID[iShw] = 0
+        showerTruePurity[iShw] = -1.
+        showerTrueComp[iShw] = -1.
+        showerTrueElPurity[iShw] = -1.
+        showerTruePhPurity[iShw] = -1.
+        showerTrueMuPurity[iShw] = -1.
+        showerTruePiPurity[iShw] = -1.
+        showerTruePrPurity[iShw] = -1.
 
 
     for i in range(nTracks[0]):

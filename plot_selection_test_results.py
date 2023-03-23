@@ -296,45 +296,33 @@ h_elMaxQF_wQcut_ext = rt.TH1F("h_elMaxQF_wQcut_ext","Max Electron Charge Fractio
 h_elMaxQF_wQcut_CCnumu, h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_CCnue, h_elMaxQF_wQcut_NCnue, h_elMaxQF_wQcut_ext = configureHists(h_elMaxQF_wQcut_CCnumu,
  h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_CCnue, h_elMaxQF_wQcut_NCnue, h_elMaxQF_wQcut_ext)
 
-hMain_xTS = 0.0425
-hMain_yTS = 0.05
-hMain_yTO = 0.6
-hRat_xTS = 0.13
-hRat_yTS = 0.14
-hRat_xLS = 0.1
-hRat_yLS = 0.1
-hRat_xTO = 1.
-hRat_yTO = 0.2
-hRat_y1 = -1
-hRat_y2 = 3
-
-h_nuE_CCnue_nCuts = rt.TH1F("h_nuE_CCnue_nCuts","Neutrino Energy for True CCnue Events",40,0,7)
-h_nuE_CCnue_wCuts = rt.TH1F("h_nuE_CCnue_wCuts","Neutrino Energy for True CCnue Events",40,0,7)
+h_nuE_CCnue_nCuts = rt.TH1F("h_nuE_CCnue_nCuts","Neutrino Energy for True CCnue Events",30,0,3)
+h_nuE_CCnue_wCuts = rt.TH1F("h_nuE_CCnue_wCuts","Neutrino Energy for True CCnue Events",30,0,3)
+h_nuE_CCnumu_wCuts = rt.TH1F("h_nuE_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
+h_nuE_NCnumu_wCuts = rt.TH1F("h_nuE_NCnumu_wCuts","Neutrino Energy for True NCnumu Events",30,0,3)
+h_nuE_NCnue_wCuts = rt.TH1F("h_nuE_NCnue_wCuts","Neutrino Energy for True NCnue Events",30,0,3)
+h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for True ext Events",30,0,3)
+h_nuE_all_wCuts = rt.TH1F("h_nuE_all_wCuts","Neutrino Energy for all Events",30,0,3)
 h_nuE_CCnue_nCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
 h_nuE_CCnue_nCuts.SetLineColor(rt.kBlue)
 h_nuE_CCnue_nCuts.SetLineWidth(2)
 h_nuE_CCnue_nCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_CCnue_nCuts.GetXaxis().SetTitleSize(hMain_xTS)
-h_nuE_CCnue_nCuts.GetYaxis().SetTitleSize(hMain_yTS)
-h_nuE_CCnue_nCuts.GetYaxis().SetTitleOffset(hMain_yTO)
 h_nuE_CCnue_wCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
 h_nuE_CCnue_wCuts.SetLineColor(rt.kRed)
 h_nuE_CCnue_wCuts.SetLineWidth(2)
 h_nuE_CCnue_wCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_CCnue_wCuts.GetXaxis().SetTitleSize(hMain_xTS)
-h_nuE_CCnue_wCuts.GetYaxis().SetTitleSize(hMain_yTS)
-h_nuE_CCnue_wCuts.GetYaxis().SetTitleOffset(hMain_yTO)
-h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","",40,0,7)
-h_nuE_CCnue_eff.GetYaxis().SetTitle("efficiency")
+h_nuE_all_wCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_nuE_all_wCuts.SetLineColor(rt.kRed)
+h_nuE_all_wCuts.SetLineWidth(2)
+h_nuE_all_wCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
+h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","Inclusive CC nue Selection",30,0,3)
 h_nuE_CCnue_eff.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_eff.SetLineColor(rt.kBlack)
 h_nuE_CCnue_eff.SetLineWidth(2)
-h_nuE_CCnue_eff.GetXaxis().SetTitleSize(hRat_xTS)
-h_nuE_CCnue_eff.GetYaxis().SetTitleSize(hRat_yTS)
-h_nuE_CCnue_eff.GetXaxis().SetLabelSize(hRat_xLS)
-h_nuE_CCnue_eff.GetYaxis().SetLabelSize(hRat_yLS)
-h_nuE_CCnue_eff.GetXaxis().SetTitleOffset(hRat_xTO)
-h_nuE_CCnue_eff.GetYaxis().SetTitleOffset(hRat_yTO)
+h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection",30,0,3)
+h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
+h_nuE_CCnue_pur.SetLineColor(8)
+h_nuE_CCnue_pur.SetLineWidth(2)
 
 
 n_raw_CCnumu = 0
@@ -513,10 +501,13 @@ for i in range(tnu.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
+          h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
         if eventType == 1:
           n_runs1to3_NCnumu_pass += tnu.xsecWeight
+          h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
+          h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
     #--------------------------------------------------------------
     #if eventType == 0 and elMaxQElScore > -1. and (elMaxQPhScore > -1. or elMaxQPiScore > -1.):
     ##elif eventType == 0:
@@ -762,6 +753,7 @@ for i in range(text.GetEntries()):
       h_elMaxQ_wConfCut_ext.Fill(elMaxQ)
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_ext_pass += 1.
+        h_nuE_ext_wCuts.Fill(text.trueNuE)
 
   if nMuons >= 1:
     h_muMaxComp_ext.Fill(muMaxComp)
@@ -805,8 +797,18 @@ print()
 #print("h_nEl_CCnue unscaled integral: ", h_nEl_CCnue.Integral())
 
 h_nuE_CCnue_nCuts.Scale(runs1to3POT/tnuePOTsum)
+h_nuE_CCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
+h_nuE_NCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
 h_nuE_CCnue_wCuts.Scale(runs1to3POT/tnuePOTsum)
+h_nuE_NCnue_wCuts.Scale(runs1to3POT/tnuPOTsum)
+h_nuE_ext_wCuts.Scale(runs1to3POT/textPOTsum)
 h_nuE_CCnue_eff.Divide(h_nuE_CCnue_wCuts,h_nuE_CCnue_nCuts,1,1,"B")
+h_nuE_all_wCuts.Add(h_nuE_CCnumu_wCuts)
+h_nuE_all_wCuts.Add(h_nuE_NCnumu_wCuts)
+h_nuE_all_wCuts.Add(h_nuE_CCnue_wCuts)
+h_nuE_all_wCuts.Add(h_nuE_NCnue_wCuts)
+h_nuE_all_wCuts.Add(h_nuE_ext_wCuts)
+h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts,1,1,"B")
 
 h_cosFrac_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_cosFrac_NCnumu.Scale(runs1to3POT/tnuPOTsum)
@@ -1328,28 +1330,65 @@ leg_muMaxQ.Draw()
 #cnv_muMaxQ.SaveAs("muMaxQ.png")
 cnv_muMaxQ.Write()
 
-pad_x1 = 0.005
-pad_x2 = 0.995
-uPad_y1 = 0.2525
-uPad_y2 = 0.995
-lPad_y1 = 0.005
-lPad_y2 = 0.2475
-bMargin = 0.3
-cnv_nuE_CCnue = rt.TCanvas("cnv_nuE_CCnue","cnv_nuE_CCnue")
-uPad_nuE_CCnue = rt.TPad("uPad_nuE_CCnue","uPad_nuE_CCnue",pad_x1,uPad_y1,pad_x2,uPad_y2)
-lPad_nuE_CCnue = rt.TPad("lPad_nuE_CCnue","lPad_nuE_CCnue",pad_x1,lPad_y1,pad_x2,lPad_y2)
-lPad_nuE_CCnue.SetBottomMargin(bMargin)
-uPad_nuE_CCnue.Draw()
-lPad_nuE_CCnue.Draw()
-uPad_nuE_CCnue.cd()
-h_nuE_CCnue_nCuts.Draw("EHIST")
-h_nuE_CCnue_wCuts.Draw("EHISTSAME")
-leg_nuE_CCnue = rt.TLegend(0.7,0.7,0.9,0.9)
-leg_nuE_CCnue.AddEntry(h_nuE_CCnue_nCuts, "Without Cuts", "l")
-leg_nuE_CCnue.AddEntry(h_nuE_CCnue_wCuts, "With Cuts", "l")
-leg_nuE_CCnue.Draw()
-lPad_nuE_CCnue.cd()
+h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1)
+h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1)
+cnv_CCnue_sel = rt.TCanvas("cnv_CCnue_sel","cnv_CCnue_sel")
 h_nuE_CCnue_eff.Draw("E")
-cnv_nuE_CCnue.Write()
+h_nuE_CCnue_pur.Draw("ESAME")
+leg_CCnue_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_CCnue_sel.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
+leg_CCnue_sel.AddEntry(h_nuE_CCnue_pur, "purity", "l")
+leg_CCnue_sel.Draw()
+cnv_CCnue_sel.Write()
+
+#hMain_xTS = 0.0425
+#hMain_yTS = 0.05
+#hMain_yTO = 0.6
+#hRat_xTS = 0.13
+#hRat_yTS = 0.14
+#hRat_xLS = 0.1
+#hRat_yLS = 0.1
+#hRat_xTO = 1.
+#hRat_yTO = 0.2
+#hRat_y1 = -1
+#hRat_y2 = 3
+#pad_x1 = 0.005
+#pad_x2 = 0.995
+#uPad_y1 = 0.2525
+#uPad_y2 = 0.995
+#lPad_y1 = 0.005
+#lPad_y2 = 0.2475
+#bMargin = 0.3
+#h_nuE_CCnue_nCuts.GetXaxis().SetTitleSize(hMain_xTS)
+#h_nuE_CCnue_nCuts.GetYaxis().SetTitleSize(hMain_yTS)
+#h_nuE_CCnue_nCuts.GetYaxis().SetTitleOffset(hMain_yTO)
+#h_nuE_CCnue_wCuts.GetXaxis().SetTitleSize(hMain_xTS)
+#h_nuE_CCnue_wCuts.GetYaxis().SetTitleSize(hMain_yTS)
+#h_nuE_CCnue_wCuts.GetYaxis().SetTitleOffset(hMain_yTO)
+#h_nuE_CCnue_eff.SetTitle("")
+#h_nuE_CCnue_eff.GetYaxis().SetTitle("efficiency")
+#h_nuE_CCnue_eff.GetXaxis().SetTitleSize(hRat_xTS)
+#h_nuE_CCnue_eff.GetYaxis().SetTitleSize(hRat_yTS)
+#h_nuE_CCnue_eff.GetXaxis().SetLabelSize(hRat_xLS)
+#h_nuE_CCnue_eff.GetYaxis().SetLabelSize(hRat_yLS)
+#h_nuE_CCnue_eff.GetXaxis().SetTitleOffset(hRat_xTO)
+#h_nuE_CCnue_eff.GetYaxis().SetTitleOffset(hRat_yTO)
+#h_nuE_CCnue_eff.SetLineColor(rt.kBlack)
+#cnv_nuE_CCnue = rt.TCanvas("cnv_nuE_CCnue","cnv_nuE_CCnue")
+#uPad_nuE_CCnue = rt.TPad("uPad_nuE_CCnue","uPad_nuE_CCnue",pad_x1,uPad_y1,pad_x2,uPad_y2)
+#lPad_nuE_CCnue = rt.TPad("lPad_nuE_CCnue","lPad_nuE_CCnue",pad_x1,lPad_y1,pad_x2,lPad_y2)
+#lPad_nuE_CCnue.SetBottomMargin(bMargin)
+#uPad_nuE_CCnue.Draw()
+#lPad_nuE_CCnue.Draw()
+#uPad_nuE_CCnue.cd()
+#h_nuE_CCnue_nCuts.Draw("EHIST")
+#h_nuE_CCnue_wCuts.Draw("EHISTSAME")
+#leg_nuE_CCnue = rt.TLegend(0.7,0.7,0.9,0.9)
+#leg_nuE_CCnue.AddEntry(h_nuE_CCnue_nCuts, "Without Cuts", "l")
+#leg_nuE_CCnue.AddEntry(h_nuE_CCnue_wCuts, "With Cuts", "l")
+#leg_nuE_CCnue.Draw()
+#lPad_nuE_CCnue.cd()
+#h_nuE_CCnue_eff.Draw("E")
+#cnv_nuE_CCnue.Write()
 
 
