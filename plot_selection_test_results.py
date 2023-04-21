@@ -8,9 +8,9 @@ from helpers.plotting_functions import sortHists
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v17_nu_file.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v17_nue_file.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v17_extbnb_file.root", help="bnb nu input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_nu_file.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_nue_file.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_extbnb_file.root", help="bnb nu input file")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
 parser.add_argument("-s", "--confCut", type=float, default=9, help="electron class confidence cut value")
@@ -301,7 +301,7 @@ h_nuE_CCnue_wCuts = rt.TH1F("h_nuE_CCnue_wCuts","Neutrino Energy for True CCnue 
 h_nuE_CCnumu_wCuts = rt.TH1F("h_nuE_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
 h_nuE_NCnumu_wCuts = rt.TH1F("h_nuE_NCnumu_wCuts","Neutrino Energy for True NCnumu Events",30,0,3)
 h_nuE_NCnue_wCuts = rt.TH1F("h_nuE_NCnue_wCuts","Neutrino Energy for True NCnue Events",30,0,3)
-h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for True ext Events",30,0,3)
+h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for True ExtBNB Events",30,0,3)
 h_nuE_all_wCuts = rt.TH1F("h_nuE_all_wCuts","Neutrino Energy for all Events",30,0,3)
 h_nuE_CCnue_nCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
 h_nuE_CCnue_nCuts.SetLineColor(rt.kBlue)
@@ -323,6 +323,191 @@ h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection",30,0,3)
 h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_pur.SetLineColor(8)
 h_nuE_CCnue_pur.SetLineWidth(2)
+
+h_phScVsPrSum_allMC_bkg = rt.TH2F("h_phScVsPrSum_allMC_bkg","Photon Score vs. Purity for Largest e- Shower in Neutrino Background",21,0,1.05,21,-20,1)
+h_phScVsPrSum_allMC_bkg.GetXaxis().SetTitle("total simulated particle purity")
+h_phScVsPrSum_allMC_bkg.GetYaxis().SetTitle("photon score")
+
+h_piScVsPr_CCnumu_bkg = rt.TH2F("h_piScVsPr_CCnumu_bkg","CCnumu Background",21,0,1.05,21,-20,1)
+h_piScVsPr_CCnumu_bkg.GetXaxis().SetTitle("true pion purity")
+h_piScVsPr_CCnumu_bkg.GetYaxis().SetTitle("pion score")
+h_phScVsPr_CCnumu_bkg = rt.TH2F("h_phScVsPr_CCnumu_bkg","CCnumu Background",21,0,1.05,21,-20,1)
+h_phScVsPr_CCnumu_bkg.GetXaxis().SetTitle("true photon purity")
+h_phScVsPr_CCnumu_bkg.GetYaxis().SetTitle("photon score")
+h_elScVsPr_CCnumu_bkg = rt.TH2F("h_elScVsPr_CCnumu_bkg","CCnumu Background",21,0,1.05,21,-20,1)
+h_elScVsPr_CCnumu_bkg.GetXaxis().SetTitle("true electron purity")
+h_elScVsPr_CCnumu_bkg.GetYaxis().SetTitle("electron score")
+
+h_piScVsPr_NCnumu_bkg = rt.TH2F("h_piScVsPr_NCnumu_bkg","NCnumu Background",21,0,1.05,21,-20,1)
+h_piScVsPr_NCnumu_bkg.GetXaxis().SetTitle("true pion purity")
+h_piScVsPr_NCnumu_bkg.GetYaxis().SetTitle("pion score")
+h_phScVsPr_NCnumu_bkg = rt.TH2F("h_phScVsPr_NCnumu_bkg","NCnumu Background",21,0,1.05,21,-20,1)
+h_phScVsPr_NCnumu_bkg.GetXaxis().SetTitle("true photon purity")
+h_phScVsPr_NCnumu_bkg.GetYaxis().SetTitle("photon score")
+h_elScVsPr_NCnumu_bkg = rt.TH2F("h_elScVsPr_NCnumu_bkg","NCnumu Background",21,0,1.05,21,-20,1)
+h_elScVsPr_NCnumu_bkg.GetXaxis().SetTitle("true electron purity")
+h_elScVsPr_NCnumu_bkg.GetYaxis().SetTitle("electron score")
+
+h_piScVsPr_NCnue_bkg = rt.TH2F("h_piScVsPr_NCnue_bkg","NCnue Background",21,0,1.05,21,-20,1)
+h_piScVsPr_NCnue_bkg.GetXaxis().SetTitle("true pion purity")
+h_piScVsPr_NCnue_bkg.GetYaxis().SetTitle("pion score")
+h_phScVsPr_NCnue_bkg = rt.TH2F("h_phScVsPr_NCnue_bkg","NCnue Background",21,0,1.05,21,-20,1)
+h_phScVsPr_NCnue_bkg.GetXaxis().SetTitle("true photon purity")
+h_phScVsPr_NCnue_bkg.GetYaxis().SetTitle("photon score")
+h_elScVsPr_NCnue_bkg = rt.TH2F("h_elScVsPr_NCnue_bkg","NCnue Background",21,0,1.05,21,-20,1)
+h_elScVsPr_NCnue_bkg.GetXaxis().SetTitle("true electron purity")
+h_elScVsPr_NCnue_bkg.GetYaxis().SetTitle("electron score")
+
+h_piScElPrGr0_allMC_bkg = rt.TH1F("h_piScElPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_piScElPrEq0_allMC_bkg = rt.TH1F("h_piScElPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_piScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScElPrGr0_allMC_bkg.SetLineWidth(2)
+h_piScElPrGr0_allMC_bkg.SetLineColor(rt.kBlue)
+h_piScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScElPrEq0_allMC_bkg.SetLineWidth(2)
+h_piScElPrEq0_allMC_bkg.SetLineColor(rt.kBlue)
+h_piScElPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_muScElPrGr0_allMC_bkg = rt.TH1F("h_muScElPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_muScElPrEq0_allMC_bkg = rt.TH1F("h_muScElPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_muScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_muScElPrGr0_allMC_bkg.SetLineWidth(2)
+h_muScElPrGr0_allMC_bkg.SetLineColor(rt.kRed)
+h_muScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_muScElPrEq0_allMC_bkg.SetLineWidth(2)
+h_muScElPrEq0_allMC_bkg.SetLineColor(rt.kRed)
+h_muScElPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_phScPrSumGr0_allMC_bkg = rt.TH1F("h_phScPrSumGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_phScPrSumEq0_allMC_bkg = rt.TH1F("h_phScPrSumEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_phScPrSumGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrSumGr0_allMC_bkg.SetLineWidth(2)
+h_phScPrSumGr0_allMC_bkg.SetLineColor(8)
+h_phScPrSumEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrSumEq0_allMC_bkg.SetLineWidth(2)
+h_phScPrSumEq0_allMC_bkg.SetLineColor(8)
+h_phScPrSumEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_piScPrGr0_allMC_bkg = rt.TH1F("h_piScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_piScPrEq0_allMC_bkg = rt.TH1F("h_piScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_piScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_allMC_bkg.SetLineWidth(2)
+h_piScPrGr0_allMC_bkg.SetLineColor(rt.kBlue)
+h_piScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_allMC_bkg.SetLineWidth(2)
+h_piScPrEq0_allMC_bkg.SetLineColor(rt.kBlue)
+h_piScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_phScPrGr0_allMC_bkg = rt.TH1F("h_phScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_phScPrEq0_allMC_bkg = rt.TH1F("h_phScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_phScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_allMC_bkg.SetLineWidth(2)
+h_phScPrGr0_allMC_bkg.SetLineColor(8)
+h_phScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_allMC_bkg.SetLineWidth(2)
+h_phScPrEq0_allMC_bkg.SetLineColor(8)
+h_phScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_elScPrGr0_allMC_bkg = rt.TH1F("h_elScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_elScPrEq0_allMC_bkg = rt.TH1F("h_elScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
+h_elScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_allMC_bkg.SetLineWidth(2)
+h_elScPrGr0_allMC_bkg.SetLineColor(rt.kRed)
+h_elScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_allMC_bkg.SetLineWidth(2)
+h_elScPrEq0_allMC_bkg.SetLineColor(rt.kRed)
+h_elScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
+
+h_piScPrGr0_CCnumu_bkg = rt.TH1F("h_piScPrGr0_CCnumu_bkg","Pion Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_piScPrEq0_CCnumu_bkg = rt.TH1F("h_piScPrEq0_CCnumu_bkg","Pion Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_piScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_CCnumu_bkg.SetLineWidth(2)
+h_piScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_piScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_CCnumu_bkg.SetLineWidth(2)
+h_piScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_piScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_phScPrGr0_CCnumu_bkg = rt.TH1F("h_phScPrGr0_CCnumu_bkg","Photon Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_phScPrEq0_CCnumu_bkg = rt.TH1F("h_phScPrEq0_CCnumu_bkg","Photon Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_phScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_CCnumu_bkg.SetLineWidth(2)
+h_phScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_phScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_CCnumu_bkg.SetLineWidth(2)
+h_phScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_phScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_elScPrGr0_CCnumu_bkg = rt.TH1F("h_elScPrGr0_CCnumu_bkg","Electron Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_elScPrEq0_CCnumu_bkg = rt.TH1F("h_elScPrEq0_CCnumu_bkg","Electron Score for Largest e- Shower in CCnumu Background",21,-20,1)
+h_elScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_CCnumu_bkg.SetLineWidth(2)
+h_elScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_elScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_CCnumu_bkg.SetLineWidth(2)
+h_elScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
+h_elScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_piScPrGr0_NCnumu_bkg = rt.TH1F("h_piScPrGr0_NCnumu_bkg","Pion Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_piScPrEq0_NCnumu_bkg = rt.TH1F("h_piScPrEq0_NCnumu_bkg","Pion Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_piScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_NCnumu_bkg.SetLineWidth(2)
+h_piScPrGr0_NCnumu_bkg.SetLineColor(40)
+h_piScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_NCnumu_bkg.SetLineWidth(2)
+h_piScPrEq0_NCnumu_bkg.SetLineColor(40)
+h_piScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_phScPrGr0_NCnumu_bkg = rt.TH1F("h_phScPrGr0_NCnumu_bkg","Photon Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_phScPrEq0_NCnumu_bkg = rt.TH1F("h_phScPrEq0_NCnumu_bkg","Photon Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_phScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_NCnumu_bkg.SetLineWidth(2)
+h_phScPrGr0_NCnumu_bkg.SetLineColor(40)
+h_phScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_NCnumu_bkg.SetLineWidth(2)
+h_phScPrEq0_NCnumu_bkg.SetLineColor(40)
+h_phScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_elScPrGr0_NCnumu_bkg = rt.TH1F("h_elScPrGr0_NCnumu_bkg","Electron Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_elScPrEq0_NCnumu_bkg = rt.TH1F("h_elScPrEq0_NCnumu_bkg","Electron Score for Largest e- Shower in NCnumu Background",21,-20,1)
+h_elScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_NCnumu_bkg.SetLineWidth(2)
+h_elScPrGr0_NCnumu_bkg.SetLineColor(40)
+h_elScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_NCnumu_bkg.SetLineWidth(2)
+h_elScPrEq0_NCnumu_bkg.SetLineColor(40)
+h_elScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
+
+h_piScPrGr0_NCnue_bkg = rt.TH1F("h_piScPrGr0_NCnue_bkg","Pion Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_piScPrEq0_NCnue_bkg = rt.TH1F("h_piScPrEq0_NCnue_bkg","Pion Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_piScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_NCnue_bkg.SetLineWidth(2)
+h_piScPrGr0_NCnue_bkg.SetLineColor(8)
+h_piScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_NCnue_bkg.SetLineWidth(2)
+h_piScPrEq0_NCnue_bkg.SetLineColor(8)
+h_piScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
+
+h_phScPrGr0_NCnue_bkg = rt.TH1F("h_phScPrGr0_NCnue_bkg","Photon Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_phScPrEq0_NCnue_bkg = rt.TH1F("h_phScPrEq0_NCnue_bkg","Photon Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_phScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_NCnue_bkg.SetLineWidth(2)
+h_phScPrGr0_NCnue_bkg.SetLineColor(8)
+h_phScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_NCnue_bkg.SetLineWidth(2)
+h_phScPrEq0_NCnue_bkg.SetLineColor(8)
+h_phScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
+
+h_elScPrGr0_NCnue_bkg = rt.TH1F("h_elScPrGr0_NCnue_bkg","Electron Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_elScPrEq0_NCnue_bkg = rt.TH1F("h_elScPrEq0_NCnue_bkg","Electron Score for Largest e- Shower in NCnue Background",21,-20,1)
+h_elScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_NCnue_bkg.SetLineWidth(2)
+h_elScPrGr0_NCnue_bkg.SetLineColor(8)
+h_elScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_NCnue_bkg.SetLineWidth(2)
+h_elScPrEq0_NCnue_bkg.SetLineColor(8)
+h_elScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
+
 
 
 n_raw_CCnumu = 0
@@ -397,6 +582,11 @@ for i in range(tnu.GetEntries()):
   elMaxQElScore = -1.
   elMaxQPhScore = -1.
   elMaxQPiScore = -1.
+  elMaxQMuScore = -1.
+  elMaxQElPurity = -1.
+  elMaxQPhPurity = -1.
+  elMaxQPiPurity = -1.
+  elMaxQPuritySum = -1.
   elMaxQConf = -1.
   elMaxQFrac = -1.
   elMaxQ = -1.
@@ -437,6 +627,11 @@ for i in range(tnu.GetEntries()):
         elMaxQElScore = tnu.showerElScore[iS]
         elMaxQPhScore = tnu.showerPhScore[iS]
         elMaxQPiScore = tnu.showerPiScore[iS]
+        elMaxQMuScore = tnu.showerMuScore[iS]
+        elMaxQElPurity = tnu.showerTrueElPurity[iS]
+        elMaxQPhPurity = tnu.showerTruePhPurity[iS]
+        elMaxQPiPurity = tnu.showerTruePiPurity[iS]
+        elMaxQPuritySum = tnu.showerTrueElPurity[iS] + tnu.showerTruePhPurity[iS] + tnu.showerTruePiPurity[iS] + tnu.showerTrueMuPurity[iS] + tnu.showerTruePrPurity[iS]
         elMaxQConf = elConf
       if tnu.showerChargeFrac[iS] > elMaxQFrac:
         elMaxQFrac = tnu.showerChargeFrac[iS]
@@ -508,6 +703,77 @@ for i in range(tnu.GetEntries()):
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
           h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+
+    else:
+      h_phScVsPrSum_allMC_bkg.Fill(elMaxQPuritySum, elMaxQPhScore, tnu.xsecWeight)
+      if elMaxQPuritySum < 1e-3:
+        h_phScPrSumEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+      elif elMaxQPhPurity < 1e-3:
+        h_phScPrSumGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+      if elMaxQPiPurity < 1e-3:
+        h_piScPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+      else:
+        h_piScPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+      if elMaxQPhPurity < 1e-3:
+        h_phScPrEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+      else:
+        h_phScPrGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+      if elMaxQElPurity < 1e-3:
+        h_elScPrEq0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+        h_piScElPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        h_muScElPrEq0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
+      else:
+        h_elScPrGr0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+        h_piScElPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        h_muScElPrGr0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
+      if eventType == 0:
+        h_piScVsPr_CCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+        h_phScVsPr_CCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+        h_elScVsPr_CCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+        if elMaxQPiPurity < 1e-3:
+          h_piScPrEq0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        else:
+          h_piScPrGr0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        if elMaxQPhPurity < 1e-3:
+          h_phScPrEq0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        else:
+          h_phScPrGr0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQElPurity < 1e-3:
+          h_elScPrEq0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+        else:
+          h_elScPrGr0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+      if eventType == 1:
+        h_piScVsPr_NCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+        h_phScVsPr_NCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+        h_elScVsPr_NCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+        if elMaxQPiPurity < 1e-3:
+          h_piScPrEq0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        else:
+          h_piScPrGr0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        if elMaxQPhPurity < 1e-3:
+          h_phScPrEq0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        else:
+          h_phScPrGr0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQElPurity < 1e-3:
+          h_elScPrEq0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+        else:
+          h_elScPrGr0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+      if eventType == 2:
+        h_piScVsPr_NCnue_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+        h_phScVsPr_NCnue_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+        h_elScVsPr_NCnue_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+        if elMaxQPiPurity < 1e-3:
+          h_piScPrEq0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        else:
+          h_piScPrGr0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        if elMaxQPhPurity < 1e-3:
+          h_phScPrEq0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        else:
+          h_phScPrGr0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQElPurity < 1e-3:
+          h_elScPrEq0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+        else:
+          h_elScPrGr0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
     #--------------------------------------------------------------
     #if eventType == 0 and elMaxQElScore > -1. and (elMaxQPhScore > -1. or elMaxQPiScore > -1.):
     ##elif eventType == 0:
@@ -981,6 +1247,50 @@ h_elMaxComp_wQcut_CCnue.Scale(runs1to3POT/tnuePOTsum)
 h_elMaxComp_wQcut_NCnue.Scale(runs1to3POT/tnuPOTsum)
 h_elMaxComp_wQcut_ext.Scale(runs1to3POT/textPOTsum)
 
+h_phScVsPrSum_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+
+h_piScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+
+h_piScElPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScElPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_muScElPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_muScElPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+
+h_phScPrSumEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrSumGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+
+h_piScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_elScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
 
 
 def configureLegend(leg, h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext):
@@ -1329,6 +1639,168 @@ leg_muMaxQ = configureLegend(leg_muMaxQ, h_muMaxQ_CCnumu,
 leg_muMaxQ.Draw()
 #cnv_muMaxQ.SaveAs("muMaxQ.png")
 cnv_muMaxQ.Write()
+
+cnv_piScVsPr_CCnumu_bkg = rt.TCanvas("cnv_piScVsPr_CCnumu_bkg","cnv_piScVsPr_CCnumu_bkg")
+h_piScVsPr_CCnumu_bkg.Draw("COLZ")
+cnv_piScVsPr_CCnumu_bkg.Write()
+cnv_phScVsPr_CCnumu_bkg = rt.TCanvas("cnv_phScVsPr_CCnumu_bkg","cnv_phScVsPr_CCnumu_bkg")
+h_phScVsPr_CCnumu_bkg.Draw("COLZ")
+cnv_phScVsPr_CCnumu_bkg.Write()
+cnv_elScVsPr_CCnumu_bkg = rt.TCanvas("cnv_elScVsPr_CCnumu_bkg","cnv_elScVsPr_CCnumu_bkg")
+h_elScVsPr_CCnumu_bkg.Draw("COLZ")
+cnv_elScVsPr_CCnumu_bkg.Write()
+
+cnv_piScVsPr_NCnumu_bkg = rt.TCanvas("cnv_piScVsPr_NCnumu_bkg","cnv_piScVsPr_NCnumu_bkg")
+h_piScVsPr_NCnumu_bkg.Draw("COLZ")
+cnv_piScVsPr_NCnumu_bkg.Write()
+cnv_phScVsPr_NCnumu_bkg = rt.TCanvas("cnv_phScVsPr_NCnumu_bkg","cnv_phScVsPr_NCnumu_bkg")
+h_phScVsPr_NCnumu_bkg.Draw("COLZ")
+cnv_phScVsPr_NCnumu_bkg.Write()
+cnv_elScVsPr_NCnumu_bkg = rt.TCanvas("cnv_elScVsPr_NCnumu_bkg","cnv_elScVsPr_NCnumu_bkg")
+h_elScVsPr_NCnumu_bkg.Draw("COLZ")
+cnv_elScVsPr_NCnumu_bkg.Write()
+
+cnv_piScVsPr_NCnue_bkg = rt.TCanvas("cnv_piScVsPr_NCnue_bkg","cnv_piScVsPr_NCnue_bkg")
+h_piScVsPr_NCnue_bkg.Draw("COLZ")
+cnv_piScVsPr_NCnue_bkg.Write()
+cnv_phScVsPr_NCnue_bkg = rt.TCanvas("cnv_phScVsPr_NCnue_bkg","cnv_phScVsPr_NCnue_bkg")
+h_phScVsPr_NCnue_bkg.Draw("COLZ")
+cnv_phScVsPr_NCnue_bkg.Write()
+cnv_elScVsPr_NCnue_bkg = rt.TCanvas("cnv_elScVsPr_NCnue_bkg","cnv_elScVsPr_NCnue_bkg")
+h_elScVsPr_NCnue_bkg.Draw("COLZ")
+cnv_elScVsPr_NCnue_bkg.Write()
+
+cnv_phScVsPrSum_allMC_bkg = rt.TCanvas("cnv_phScVsPrSum_allMC_bkg","cnv_phScVsPrSum_allMC_bkg")
+h_phScVsPrSum_allMC_bkg.Draw("COLZ")
+cnv_phScVsPrSum_allMC_bkg.Write()
+
+cnv_scores_allMC_bkg = rt.TCanvas("cnv_scores_allMC_bkg","cnv_scores_allMC_bkg")
+hists_scores_allMC_bkg = sortHists([h_piScPrGr0_allMC_bkg, h_piScPrEq0_allMC_bkg, h_phScPrGr0_allMC_bkg, h_phScPrEq0_allMC_bkg])#, h_elScPrGr0_allMC_bkg, h_elScPrEq0_allMC_bkg])
+hists_scores_allMC_bkg[0].Draw("EHIST")
+for i in range(1,len(hists_scores_allMC_bkg)):
+  hists_scores_allMC_bkg[i].Draw("EHISTSAME")
+leg_scores_allMC_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_scores_allMC_bkg.AddEntry(h_piScPrEq0_allMC_bkg, "pion score, pion purity = 0", "l")
+leg_scores_allMC_bkg.AddEntry(h_piScPrGr0_allMC_bkg, "pion score, pion purity > 0", "l")
+leg_scores_allMC_bkg.AddEntry(h_phScPrEq0_allMC_bkg, "photon score, photon purity = 0", "l")
+leg_scores_allMC_bkg.AddEntry(h_phScPrGr0_allMC_bkg, "photon score, photon purity > 0", "l")
+#leg_scores_allMC_bkg.AddEntry(h_elScPrEq0_allMC_bkg, "electron score, electron purity = 0", "l")
+#leg_scores_allMC_bkg.AddEntry(h_elScPrGr0_allMC_bkg, "electron score, electron purity > 0", "l")
+leg_scores_allMC_bkg.Draw()
+cnv_scores_allMC_bkg.Write()
+
+cnv_crossScores_allMC_bkg = rt.TCanvas("cnv_crossScores_allMC_bkg","cnv_crossScores_allMC_bkg")
+hists_crossScores_allMC_bkg = sortHists([h_piScElPrGr0_allMC_bkg, h_piScElPrEq0_allMC_bkg, h_muScElPrGr0_allMC_bkg, h_muScElPrEq0_allMC_bkg])
+hists_crossScores_allMC_bkg[0].Draw("EHIST")
+for i in range(1,len(hists_crossScores_allMC_bkg)):
+  hists_crossScores_allMC_bkg[i].Draw("EHISTSAME")
+leg_crossScores_allMC_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_crossScores_allMC_bkg.AddEntry(h_piScElPrEq0_allMC_bkg, "pion score, electron purity = 0", "l")
+leg_crossScores_allMC_bkg.AddEntry(h_piScElPrGr0_allMC_bkg, "pion score, electron purity > 0", "l")
+leg_crossScores_allMC_bkg.AddEntry(h_muScElPrEq0_allMC_bkg, "muon score, electron purity = 0", "l")
+leg_crossScores_allMC_bkg.AddEntry(h_muScElPrGr0_allMC_bkg, "muon score, electron purity > 0", "l")
+leg_crossScores_allMC_bkg.Draw()
+cnv_crossScores_allMC_bkg.Write()
+
+cnv_cosmicScores_allMC_bkg = rt.TCanvas("cnv_cosmicScores_allMC_bkg","cnv_cosmicScores_allMC_bkg")
+hists_cosmicScores_allMC_bkg = sortHists([h_phScPrSumEq0_allMC_bkg,h_phScPrSumGr0_allMC_bkg])
+hists_cosmicScores_allMC_bkg[0].Draw("EHIST")
+hists_cosmicScores_allMC_bkg[1].Draw("EHISTSAME")
+leg_cosmicScores_allMC_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_cosmicScores_allMC_bkg.AddEntry(h_phScPrSumEq0_allMC_bkg, "photon score, sim particle purity = 0","l")
+leg_cosmicScores_allMC_bkg.AddEntry(h_phScPrSumGr0_allMC_bkg, "photon score, sim particle purity > 0 and photon purity = 0","l")
+leg_cosmicScores_allMC_bkg.Draw()
+cnv_cosmicScores_allMC_bkg.Write()
+
+cnv_piSc_CCnumu_bkg = rt.TCanvas("cnv_piSc_CCnumu_bkg","cnv_piSc_CCnumu_bkg")
+hists_piScPr_CCnumu_bkg = sortHists([h_piScPrEq0_CCnumu_bkg, h_piScPrGr0_CCnumu_bkg])
+hists_piScPr_CCnumu_bkg[0].Draw("EHIST")
+hists_piScPr_CCnumu_bkg[1].Draw("EHISTSAME")
+leg_piSc_CCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_piSc_CCnumu_bkg.AddEntry(h_piScPrEq0_CCnumu_bkg, "pion purity = 0", "l")
+leg_piSc_CCnumu_bkg.AddEntry(h_piScPrGr0_CCnumu_bkg, "pion purity > 0", "l")
+leg_piSc_CCnumu_bkg.Draw()
+cnv_piSc_CCnumu_bkg.Write()
+
+cnv_phSc_CCnumu_bkg = rt.TCanvas("cnv_phSc_CCnumu_bkg","cnv_phSc_CCnumu_bkg")
+hists_phScPr_CCnumu_bkg = sortHists([h_phScPrEq0_CCnumu_bkg, h_phScPrGr0_CCnumu_bkg])
+hists_phScPr_CCnumu_bkg[0].Draw("EHIST")
+hists_phScPr_CCnumu_bkg[1].Draw("EHISTSAME")
+leg_phSc_CCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_phSc_CCnumu_bkg.AddEntry(h_phScPrEq0_CCnumu_bkg, "photon purity = 0", "l")
+leg_phSc_CCnumu_bkg.AddEntry(h_phScPrGr0_CCnumu_bkg, "photon purity > 0", "l")
+leg_phSc_CCnumu_bkg.Draw()
+cnv_phSc_CCnumu_bkg.Write()
+
+cnv_elSc_CCnumu_bkg = rt.TCanvas("cnv_elSc_CCnumu_bkg","cnv_elSc_CCnumu_bkg")
+hists_elScPr_CCnumu_bkg = sortHists([h_elScPrEq0_CCnumu_bkg, h_elScPrGr0_CCnumu_bkg])
+hists_elScPr_CCnumu_bkg[0].Draw("EHIST")
+hists_elScPr_CCnumu_bkg[1].Draw("EHISTSAME")
+leg_elSc_CCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_elSc_CCnumu_bkg.AddEntry(h_elScPrEq0_CCnumu_bkg, "electron purity = 0", "l")
+leg_elSc_CCnumu_bkg.AddEntry(h_elScPrGr0_CCnumu_bkg, "electron purity > 0", "l")
+leg_elSc_CCnumu_bkg.Draw()
+cnv_elSc_CCnumu_bkg.Write()
+
+cnv_piSc_NCnumu_bkg = rt.TCanvas("cnv_piSc_NCnumu_bkg","cnv_piSc_NCnumu_bkg")
+hists_piScPr_NCnumu_bkg = sortHists([h_piScPrEq0_NCnumu_bkg, h_piScPrGr0_NCnumu_bkg])
+hists_piScPr_NCnumu_bkg[0].Draw("EHIST")
+hists_piScPr_NCnumu_bkg[1].Draw("EHISTSAME")
+leg_piSc_NCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_piSc_NCnumu_bkg.AddEntry(h_piScPrEq0_NCnumu_bkg, "pion purity = 0", "l")
+leg_piSc_NCnumu_bkg.AddEntry(h_piScPrGr0_NCnumu_bkg, "pion purity > 0", "l")
+leg_piSc_NCnumu_bkg.Draw()
+cnv_piSc_NCnumu_bkg.Write()
+
+cnv_phSc_NCnumu_bkg = rt.TCanvas("cnv_phSc_NCnumu_bkg","cnv_phSc_NCnumu_bkg")
+hists_phScPr_NCnumu_bkg = sortHists([h_phScPrEq0_NCnumu_bkg, h_phScPrGr0_NCnumu_bkg])
+hists_phScPr_NCnumu_bkg[0].Draw("EHIST")
+hists_phScPr_NCnumu_bkg[1].Draw("EHISTSAME")
+leg_phSc_NCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_phSc_NCnumu_bkg.AddEntry(h_phScPrEq0_NCnumu_bkg, "photon purity = 0", "l")
+leg_phSc_NCnumu_bkg.AddEntry(h_phScPrGr0_NCnumu_bkg, "photon purity > 0", "l")
+leg_phSc_NCnumu_bkg.Draw()
+cnv_phSc_NCnumu_bkg.Write()
+
+cnv_elSc_NCnumu_bkg = rt.TCanvas("cnv_elSc_NCnumu_bkg","cnv_elSc_NCnumu_bkg")
+hists_elScPr_NCnumu_bkg = sortHists([h_elScPrEq0_NCnumu_bkg, h_elScPrGr0_NCnumu_bkg])
+hists_elScPr_NCnumu_bkg[0].Draw("EHIST")
+hists_elScPr_NCnumu_bkg[1].Draw("EHISTSAME")
+leg_elSc_NCnumu_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_elSc_NCnumu_bkg.AddEntry(h_elScPrEq0_NCnumu_bkg, "electron purity = 0", "l")
+leg_elSc_NCnumu_bkg.AddEntry(h_elScPrGr0_NCnumu_bkg, "electron purity > 0", "l")
+leg_elSc_NCnumu_bkg.Draw()
+cnv_elSc_NCnumu_bkg.Write()
+
+cnv_piSc_NCnue_bkg = rt.TCanvas("cnv_piSc_NCnue_bkg","cnv_piSc_NCnue_bkg")
+hists_piScPr_NCnue_bkg = sortHists([h_piScPrEq0_NCnue_bkg, h_piScPrGr0_NCnue_bkg])
+hists_piScPr_NCnue_bkg[0].Draw("EHIST")
+hists_piScPr_NCnue_bkg[1].Draw("EHISTSAME")
+leg_piSc_NCnue_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_piSc_NCnue_bkg.AddEntry(h_piScPrEq0_NCnue_bkg, "pion purity = 0", "l")
+leg_piSc_NCnue_bkg.AddEntry(h_piScPrGr0_NCnue_bkg, "pion purity > 0", "l")
+leg_piSc_NCnue_bkg.Draw()
+cnv_piSc_NCnue_bkg.Write()
+
+cnv_phSc_NCnue_bkg = rt.TCanvas("cnv_phSc_NCnue_bkg","cnv_phSc_NCnue_bkg")
+hists_phScPr_NCnue_bkg = sortHists([h_phScPrEq0_NCnue_bkg, h_phScPrGr0_NCnue_bkg])
+hists_phScPr_NCnue_bkg[0].Draw("EHIST")
+hists_phScPr_NCnue_bkg[1].Draw("EHISTSAME")
+leg_phSc_NCnue_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_phSc_NCnue_bkg.AddEntry(h_phScPrEq0_NCnue_bkg, "photon purity = 0", "l")
+leg_phSc_NCnue_bkg.AddEntry(h_phScPrGr0_NCnue_bkg, "photon purity > 0", "l")
+leg_phSc_NCnue_bkg.Draw()
+cnv_phSc_NCnue_bkg.Write()
+
+cnv_elSc_NCnue_bkg = rt.TCanvas("cnv_elSc_NCnue_bkg","cnv_elSc_NCnue_bkg")
+hists_elScPr_NCnue_bkg = sortHists([h_elScPrEq0_NCnue_bkg, h_elScPrGr0_NCnue_bkg])
+hists_elScPr_NCnue_bkg[0].Draw("EHIST")
+hists_elScPr_NCnue_bkg[1].Draw("EHISTSAME")
+leg_elSc_NCnue_bkg = rt.TLegend(0.15,0.7,0.4,0.9)
+leg_elSc_NCnue_bkg.AddEntry(h_elScPrEq0_NCnue_bkg, "electron purity = 0", "l")
+leg_elSc_NCnue_bkg.AddEntry(h_elScPrGr0_NCnue_bkg, "electron purity > 0", "l")
+leg_elSc_NCnue_bkg.Draw()
+cnv_elSc_NCnue_bkg.Write()
 
 h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1)
 h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1)

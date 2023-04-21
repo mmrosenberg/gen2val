@@ -34,6 +34,7 @@ parser.add_argument("-d", "--device", type=str, default="cpu", help="gpu/cpu dev
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="prepare_selection_test_output.root", help="output file name")
 parser.add_argument("--makePlots", action="store_true", help="make image plots for specified event")
+parser.add_argument("--twoTask", action="store_true", help="use old two task class & completeness model")
 parser.add_argument("-r", "--run", type=int, default=0, help="run number for event to plot")
 parser.add_argument("-sr", "--subrun", type=int, default=0, help="subrun number for event to plot")
 parser.add_argument("-e", "--event", type=int, default=0, help="event number for event to plot")
@@ -42,23 +43,40 @@ parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v
 args = parser.parse_args()
 
 sys.path.append(args.model_path[:args.model_path.find("/checkpoints")])
-from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
-from datasets_reco_5ClassHardLabel_multiTask import mean, std
+if args.twoTask:
+  from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
+  from datasets_reco_5ClassHardLabel_multiTask import mean, std
+else:
+  from models_instanceNorm_reco_2chan_tripleTask import ResBlock, ResNet34
+  from datasets_reco_5ClassHardLabel_tripleTask import mean, std
 
 if args.isMC and args.makePlots:
+  import matplotlib as mpl
   import matplotlib.pyplot as plt
   import matplotlib.backends.backend_pdf
+  mpl.rcParams['figure.dpi'] = 300
   #plotfilename = "selection_test_images_run%i_subrun%i_event%i.pdf"%(args.run,args.subrun,args.event)
-  plotfilename = "selection_test_images_for_score_removed_CCnumu_background.pdf"
+  plotfilename = "selection_test_images_for_score_removed_CCnumu_background_highRes.pdf"
+  if args.twoTask:
+    plotfilename = plotfilename.replace(".pdf","_twoTask.pdf")
   outpdf = matplotlib.backends.backend_pdf.PdfPages(plotfilename)
 
 if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
 
+
 reco2Tag = "merged_dlana_"
 if args.isMC:
   reco2Tag = "merged_dlreco_"
-files = getFiles(reco2Tag, args.files, args.truth)
+
+if len(args.files) == 1 and ".txt" in args.files[0]:
+  larflowfiles = []
+  with open(args.files[0], "r") as larflowlist:
+    for line in larflowlist:
+      larflowfiles.append(line.replace("\n",""))
+  files = getFiles(reco2Tag, larflowfiles, args.truth)
+else:
+  files = getFiles(reco2Tag, args.files, args.truth)
 
 plotEvents = [[16960, 184, 9249], [16962, 75, 3769], [16935, 300, 15039], [16944, 110, 5549], [16947, 210, 10533], [18508, 291, 14580], [18527, 20, 1034], [18511, 29, 1461], [18514, 195, 9777], [18577, 320, 16019], [18525, 115, 5767], [18520, 13, 676], [18005, 67, 3367], [18021, 3, 166], [18031, 383, 19184], [18032, 515, 25798], [18860, 124, 6248], [18863, 152, 7650], [18874, 72, 3648], [18862, 415, 20765]]
 
@@ -207,9 +225,11 @@ def plotEventTitle(r, sr, e, primInfo):
   outpdf.savefig(fig)
 
 
-def plotImage(X, r, sr, e, pdg, purity, completeness, visE, compPred, elScore, phScore, muScore, piScore, prScore):
+def plotImage(X, r, sr, e, pdg, purity, completeness, visE, compPred, purPred, elScore, phScore, muScore, piScore, prScore):
   #pltmin = None
   #pltmax = None
+  if args.device != "cpu":
+    X = X.cpu()
   pltmin = -1.
   pltmax = 2.
   suptitlesize=6
@@ -249,7 +269,10 @@ def plotImage(X, r, sr, e, pdg, purity, completeness, visE, compPred, elScore, p
   plt.title("plane 2 all", fontsize=titlesize)
   plt.xticks(fontsize=ticksize)
   plt.yticks(fontsize=ticksize)
-  plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred), fontsize=suptitlesize)
+  if args.twoTask:
+    plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred), fontsize=suptitlesize)
+  else:
+    plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f, purity prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred, purPred), fontsize=suptitlesize)
   #plt.show()
   outpdf.savefig(fig)
   return
@@ -340,6 +363,7 @@ trackMuScore = array('f', maxNTrks*[0.])
 trackPiScore = array('f', maxNTrks*[0.])
 trackPrScore = array('f', maxNTrks*[0.])
 trackComp = array('f', maxNTrks*[0.])
+trackPurity = array('f', maxNTrks*[0.])
 trackTruePID = array('i', maxNTrks*[0])
 trackTruePurity = array('f', maxNTrks*[0.])
 trackTrueComp = array('f', maxNTrks*[0.])
@@ -367,6 +391,7 @@ showerMuScore = array('f', maxNShwrs*[0.])
 showerPiScore = array('f', maxNShwrs*[0.])
 showerPrScore = array('f', maxNShwrs*[0.])
 showerComp = array('f', maxNShwrs*[0])
+showerPurity = array('f', maxNShwrs*[0])
 showerTruePID = array('i', maxNShwrs*[0])
 showerTruePurity = array('f', maxNShwrs*[0.])
 showerTrueComp = array('f', maxNShwrs*[0.])
@@ -413,6 +438,7 @@ eventTree.Branch("trackMuScore", trackMuScore, 'trackMuScore[nTracks]/F')
 eventTree.Branch("trackPiScore", trackPiScore, 'trackPiScore[nTracks]/F')
 eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
 eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
+eventTree.Branch("trackPurity", trackPurity, 'trackPurity[nTracks]/F')
 eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
 eventTree.Branch("trackTruePurity", trackTruePurity, 'trackTruePurity[nTracks]/F')
 eventTree.Branch("trackTrueComp", trackTrueComp, 'trackTrueComp[nTracks]/F')
@@ -448,6 +474,7 @@ eventTree.Branch("showerMuScore", showerMuScore, 'showerMuScore[nShowers]/F')
 eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
 eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
 eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
+eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
 
 
 if args.isMC:
@@ -684,6 +711,7 @@ for filepair in files:
         trackPiScore[iTrk] = -99.
         trackPrScore[iTrk] = -99.
         trackComp[iTrk] = -1.
+        trackPurity[iTrk] = -1.
         continue
 
       prongImage = makeImage(prong_vv).to(args.device)
@@ -696,6 +724,8 @@ for filepair in files:
       trackPiScore[iTrk] = prongCNN_out[0][0][3].item()
       trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
       trackComp[iTrk] = prongCNN_out[1].item()
+      if not args.twoTask:
+        trackPurity[iTrk] = prongCNN_out[2].item()
 
       if args.isMC:
         pdg, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
@@ -720,8 +750,8 @@ for filepair in files:
             trackTruePrPurity[iTrk] = allPurities[iTru]
         if args.makePlots:
           plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                    trackCharge[iTrk], trackComp[iTrk], trackElScore[iTrk], trackPhScore[iTrk],
-                    trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
+                    trackCharge[iTrk], trackComp[iTrk], trackPurity[iTrk], trackElScore[iTrk],
+                    trackPhScore[iTrk], trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
       else:
         trackTruePID[iTrk] = 0
         trackTruePurity[iTrk] = -1.
@@ -761,6 +791,7 @@ for filepair in files:
         showerPiScore[iShw] = -99.
         showerPrScore[iShw] = -99.
         showerComp[iShw] = -1.
+        showerPurity[iShw] = -1.
         continue
 
       prongImage = makeImage(prong_vv).to(args.device)
@@ -773,6 +804,8 @@ for filepair in files:
       showerPiScore[iShw] = prongCNN_out[0][0][3].item()
       showerPrScore[iShw] = prongCNN_out[0][0][4].item()
       showerComp[iShw] = prongCNN_out[1].item()
+      if not args.twoTask:
+        showerPurity[iShw] = prongCNN_out[2].item()
 
       if args.isMC:
         pdg, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
@@ -797,8 +830,8 @@ for filepair in files:
             showerTruePrPurity[iShw] = allPurities[iTru]
         if args.makePlots:
           plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                    showerCharge[iShw], showerComp[iShw], showerElScore[iShw], showerPhScore[iShw],
-                    showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
+                    showerCharge[iShw], showerComp[iShw], showerPurity[iShw], showerElScore[iShw],
+                    showerPhScore[iShw], showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
       else:
         showerTruePID[iShw] = 0
         showerTruePurity[iShw] = -1.
