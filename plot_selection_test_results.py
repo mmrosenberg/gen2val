@@ -8,16 +8,17 @@ from helpers.plotting_functions import sortHists
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_nu_file.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_nue_file.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v18_extbnb_file.root", help="bnb nu input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_nu_file.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_nue_file.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_extbnb_file.root", help="bnb nu input file")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
+parser.add_argument("-p", "--purityCut", type=float, default=0., help="purity cut value")
 parser.add_argument("-s", "--confCut", type=float, default=9, help="electron class confidence cut value")
 parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron charge fraction cut value")
 parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="electron charge fraction cut value")
 parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
-parser.add_argument("-o", "--outfile", type=str, default="plot_selection_test_results_output.root", help="output root file name")
+parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output.root", help="output root file name")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -49,7 +50,7 @@ for i in range(tnuPOT.GetEntries()):
   tnuPOTsum = tnuPOTsum + tnuPOT.totGoodPOT
 
 #970: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v16_extbnb_file.root
-#17661: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v17_extbnb_file.root
+#17661: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v17+_extbnb_file.root
 #89559: number of run3 extbnb files (# in def: prod_extunbiased_swizzle_crt_inclusive_v6_v6a_goodruns_mcc9_run3)
 textPOTsum = (17661./89559.)*run3POT
 
@@ -136,6 +137,14 @@ h_elMaxComp_ext = rt.TH1F("h_elMaxComp_ext","Max Electron Completeness",21,0,1.0
 h_elMaxComp_CCnumu, h_elMaxComp_NCnumu, h_elMaxComp_CCnue, h_elMaxComp_NCnue, h_elMaxComp_ext = configureHists(h_elMaxComp_CCnumu,
  h_elMaxComp_NCnumu, h_elMaxComp_CCnue, h_elMaxComp_NCnue, h_elMaxComp_ext)
 
+h_elMaxPur_CCnumu = rt.TH1F("h_elMaxPur_CCnumu","Max Electron Purity",21,0,1.05)
+h_elMaxPur_NCnumu = rt.TH1F("h_elMaxPur_NCnumu","Max Electron Purity",21,0,1.05)
+h_elMaxPur_CCnue = rt.TH1F("h_elMaxPur_CCnue","Max Electron Purity",21,0,1.05)
+h_elMaxPur_NCnue = rt.TH1F("h_elMaxPur_NCnue","Max Electron Purity",21,0,1.05)
+h_elMaxPur_ext = rt.TH1F("h_elMaxPur_ext","Max Electron Purity",21,0,1.05)
+h_elMaxPur_CCnumu, h_elMaxPur_NCnumu, h_elMaxPur_CCnue, h_elMaxPur_NCnue, h_elMaxPur_ext = configureHists(h_elMaxPur_CCnumu,
+ h_elMaxPur_NCnumu, h_elMaxPur_CCnue, h_elMaxPur_NCnue, h_elMaxPur_ext)
+
 h_muMaxComp_CCnumu = rt.TH1F("h_muMaxComp_CCnumu","Max Muon Completeness",21,0,1.05)
 h_muMaxComp_NCnumu = rt.TH1F("h_muMaxComp_NCnumu","Max Muon Completeness",21,0,1.05)
 h_muMaxComp_CCnue = rt.TH1F("h_muMaxComp_CCnue","Max Muon Completeness",21,0,1.05)
@@ -151,6 +160,14 @@ h_elMaxQComp_NCnue = rt.TH1F("h_elMaxQComp_NCnue","Completeness for Largest Elec
 h_elMaxQComp_ext = rt.TH1F("h_elMaxQComp_ext","Completeness for Largest Electron Shower",21,0,1.05)
 h_elMaxQComp_CCnumu, h_elMaxQComp_NCnumu, h_elMaxQComp_CCnue, h_elMaxQComp_NCnue, h_elMaxQComp_ext = configureHists(h_elMaxQComp_CCnumu,
  h_elMaxQComp_NCnumu, h_elMaxQComp_CCnue, h_elMaxQComp_NCnue, h_elMaxQComp_ext)
+
+h_elMaxQPur_CCnumu = rt.TH1F("h_elMaxQPur_CCnumu","Purity for Largest Electron Shower",21,0,1.05)
+h_elMaxQPur_NCnumu = rt.TH1F("h_elMaxQPur_NCnumu","Purity for Largest Electron Shower",21,0,1.05)
+h_elMaxQPur_CCnue = rt.TH1F("h_elMaxQPur_CCnue","Purity for Largest Electron Shower",21,0,1.05)
+h_elMaxQPur_NCnue = rt.TH1F("h_elMaxQPur_NCnue","Purity for Largest Electron Shower",21,0,1.05)
+h_elMaxQPur_ext = rt.TH1F("h_elMaxQPur_ext","Purity for Largest Electron Shower",21,0,1.05)
+h_elMaxQPur_CCnumu, h_elMaxQPur_NCnumu, h_elMaxQPur_CCnue, h_elMaxQPur_NCnue, h_elMaxQPur_ext = configureHists(h_elMaxQPur_CCnumu,
+ h_elMaxQPur_NCnumu, h_elMaxQPur_CCnue, h_elMaxQPur_NCnue, h_elMaxQPur_ext)
 
 h_muMaxQComp_CCnumu = rt.TH1F("h_muMaxQComp_CCnumu","Completeness for Largest Muon Track",21,0,1.05)
 h_muMaxQComp_NCnumu = rt.TH1F("h_muMaxQComp_NCnumu","Completeness for Largest Muon Track",21,0,1.05)
@@ -315,11 +332,11 @@ h_nuE_all_wCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
 h_nuE_all_wCuts.SetLineColor(rt.kRed)
 h_nuE_all_wCuts.SetLineWidth(2)
 h_nuE_all_wCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","Inclusive CC nue Selection",30,0,3)
+h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","Inclusive CC nue Selection with Electron Confidence > %.1f"%args.confCut,30,0,3)
 h_nuE_CCnue_eff.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_eff.SetLineColor(rt.kBlack)
 h_nuE_CCnue_eff.SetLineWidth(2)
-h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection",30,0,3)
+h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection with Electron Confidence > %.1f"%args.confCut,30,0,3)
 h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_pur.SetLineColor(8)
 h_nuE_CCnue_pur.SetLineWidth(2)
@@ -576,7 +593,9 @@ for i in range(tnu.GetEntries()):
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
+  elMaxPur = -1.
   elMaxQComp = -1.
+  elMaxQPur = -1.
   elMaxQVtxDist = -1.
   elMaxQCosTheta = -1.
   elMaxQElScore = -1.
@@ -612,7 +631,7 @@ for i in range(tnu.GetEntries()):
       if tnu.trackComp[iT] > muMaxComp:
         muMaxComp = tnu.trackComp[iT]
   for iS in range(tnu.nShowers):
-    if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0 or tnu.showerDistToVtx[iS] > args.distCut or tnu.showerComp[iS] < args.compCut:
+    if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0 or tnu.showerDistToVtx[iS] > args.distCut or tnu.showerComp[iS] < args.compCut or tnu.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnu.showerPID[iS] == 11:
       nElectrons += 1
@@ -622,6 +641,7 @@ for i in range(tnu.GetEntries()):
       if tnu.showerCharge[iS] > elMaxQ:
         elMaxQ = tnu.showerCharge[iS]
         elMaxQComp = tnu.showerComp[iS]
+        elMaxQPur = tnu.showerPurity[iS]
         elMaxQVtxDist = tnu.showerDistToVtx[iS]
         elMaxQCosTheta = tnu.showerCosTheta[iS]
         elMaxQElScore = tnu.showerElScore[iS]
@@ -637,6 +657,8 @@ for i in range(tnu.GetEntries()):
         elMaxQFrac = tnu.showerChargeFrac[iS]
       if tnu.showerComp[iS] > elMaxComp:
         elMaxComp = tnu.showerComp[iS]
+      if tnu.showerPurity[iS] > elMaxPur:
+        elMaxPur = tnu.showerPurity[iS]
 
   if nMuons == 0:
     h_nEl_CCnumu, h_nEl_NCnumu, h_nEl_NCnue = FillNuHistos(h_nEl_CCnumu,
@@ -651,8 +673,12 @@ for i in range(tnu.GetEntries()):
       h_maxElConf_NCnumu, h_maxElConf_NCnue, maxElConf, tnu.xsecWeight, eventType)
     h_elMaxComp_CCnumu, h_elMaxComp_NCnumu, h_elMaxComp_NCnue = FillNuHistos(h_elMaxComp_CCnumu,
       h_elMaxComp_NCnumu, h_elMaxComp_NCnue, elMaxComp, tnu.xsecWeight, eventType)
+    h_elMaxPur_CCnumu, h_elMaxPur_NCnumu, h_elMaxPur_NCnue = FillNuHistos(h_elMaxPur_CCnumu,
+      h_elMaxPur_NCnumu, h_elMaxPur_NCnue, elMaxPur, tnu.xsecWeight, eventType)
     h_elMaxQComp_CCnumu, h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue = FillNuHistos(h_elMaxQComp_CCnumu,
       h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
+    h_elMaxQPur_CCnumu, h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue = FillNuHistos(h_elMaxQPur_CCnumu,
+      h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue, elMaxQPur, tnu.xsecWeight, eventType)
     h_elMaxQCosTheta_CCnumu, h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue = FillNuHistos(h_elMaxQCosTheta_CCnumu,
       h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue, elMaxQCosTheta, tnu.xsecWeight, eventType)
     h_elMaxQElScore_CCnumu, h_elMaxQElScore_NCnumu, h_elMaxQElScore_NCnue = FillNuHistos(h_elMaxQElScore_CCnumu,
@@ -800,16 +826,15 @@ for i in range(tnue.GetEntries()):
 
   tnue.GetEntry(i)
 
-  if abs(tnue.trueNuPDG != 12) or tnue.trueNuCCNC != 0 or isinf(tnue.xsecWeight):
+  if abs(tnue.trueNuPDG) != 12 or tnue.trueNuCCNC != 0 or isinf(tnue.xsecWeight):
     continue
 
   n_raw_CCnue += 1
   n_runs1to3_CCnue += tnue.xsecWeight
+  h_nuE_CCnue_nCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
 
   if tnu.nVertices < 1 or tnu.vtxIsFiducial != 1:
     continue
-
-  h_nuE_CCnue_nCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
 
   h_cosFrac_CCnue.Fill(tnue.vtxFracHitsOnCosmic, tnue.xsecWeight)
   #if tnue.vtxFracHitsOnCosmic < 0 or tnue.vtxFracHitsOnCosmic > 1.:
@@ -824,7 +849,9 @@ for i in range(tnue.GetEntries()):
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
+  elMaxPur = -1.
   elMaxQComp = -1.
+  elMaxQPur = -1.
   elMaxQVtxDist = -1.
   elMaxQCosTheta = -1.
   elMaxQElScore = -1.
@@ -855,7 +882,7 @@ for i in range(tnue.GetEntries()):
       if tnue.trackComp[iT] > muMaxComp:
         muMaxComp = tnue.trackComp[iT]
   for iS in range(tnue.nShowers):
-    if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0 or tnue.showerDistToVtx[iS] > args.distCut or tnue.showerComp[iS] < args.compCut:
+    if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0 or tnue.showerDistToVtx[iS] > args.distCut or tnue.showerComp[iS] < args.compCut or tnue.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnue.showerPID[iS] == 11:
       nElectrons += 1
@@ -865,6 +892,7 @@ for i in range(tnue.GetEntries()):
       if tnue.showerCharge[iS] > elMaxQ:
         elMaxQ = tnue.showerCharge[iS]
         elMaxQComp = tnue.showerComp[iS]
+        elMaxQPur = tnue.showerPurity[iS]
         elMaxQVtxDist = tnue.showerDistToVtx[iS]
         elMaxQCosTheta = tnue.showerCosTheta[iS]
         elMaxQElScore = tnue.showerElScore[iS]
@@ -875,6 +903,8 @@ for i in range(tnue.GetEntries()):
         elMaxQFrac = tnue.showerChargeFrac[iS]
       if tnue.showerComp[iS] > elMaxComp:
         elMaxComp = tnue.showerComp[iS]
+      if tnue.showerPurity[iS] > elMaxPur:
+        elMaxPur = tnue.showerPurity[iS]
 
   if nMuons == 0:
     h_nEl_CCnue.Fill(nElectrons, tnue.xsecWeight)
@@ -884,7 +914,9 @@ for i in range(tnue.GetEntries()):
   if nElectrons >= 1:
     h_maxElConf_CCnue.Fill(maxElConf, tnue.xsecWeight)
     h_elMaxComp_CCnue.Fill(elMaxComp, tnue.xsecWeight)
+    h_elMaxPur_CCnue.Fill(elMaxPur, tnue.xsecWeight)
     h_elMaxQComp_CCnue.Fill(elMaxQComp, tnue.xsecWeight)
+    h_elMaxQPur_CCnue.Fill(elMaxQPur, tnue.xsecWeight)
     h_elMaxQCosTheta_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
     h_elMaxQElScore_CCnue.Fill(elMaxQElScore, tnue.xsecWeight)
     h_elMaxQPhScore_CCnue.Fill(elMaxQPhScore, tnue.xsecWeight)
@@ -938,7 +970,9 @@ for i in range(text.GetEntries()):
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
+  elMaxPur = -1.
   elMaxQComp = -1.
+  elMaxQPur = -1.
   elMaxQVtxDist = -1.
   elMaxQCosTheta = -1.
   elMaxQElScore = -1.
@@ -968,7 +1002,7 @@ for i in range(text.GetEntries()):
       if text.trackComp[iT] > muMaxComp:
         muMaxComp = text.trackComp[iT]
   for iS in range(text.nShowers):
-    if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0 or text.showerDistToVtx[iS] > args.distCut or text.showerComp[iS] < args.compCut:
+    if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0 or text.showerDistToVtx[iS] > args.distCut or text.showerComp[iS] < args.compCut or text.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and text.showerPID[iS] == 11:
       nElectrons += 1
@@ -978,6 +1012,7 @@ for i in range(text.GetEntries()):
       if text.showerCharge[iS] > elMaxQ:
         elMaxQ = text.showerCharge[iS]
         elMaxQComp = text.showerComp[iS]
+        elMaxQPur = text.showerPurity[iS]
         elMaxQVtxDist = text.showerDistToVtx[iS]
         elMaxQCosTheta = text.showerCosTheta[iS]
         elMaxQElScore = text.showerElScore[iS]
@@ -988,6 +1023,8 @@ for i in range(text.GetEntries()):
         elMaxQFrac = text.showerChargeFrac[iS]
       if text.showerComp[iS] > elMaxComp:
         elMaxComp = text.showerComp[iS]
+      if text.showerPurity[iS] > elMaxPur:
+        elMaxPur = text.showerPurity[iS]
 
   if nMuons == 0:
     h_nEl_ext.Fill(nElectrons)
@@ -997,7 +1034,9 @@ for i in range(text.GetEntries()):
   if nElectrons >= 1:
     h_maxElConf_ext.Fill(maxElConf)
     h_elMaxComp_ext.Fill(elMaxComp)
+    h_elMaxPur_ext.Fill(elMaxPur)
     h_elMaxQComp_ext.Fill(elMaxQComp)
+    h_elMaxQPur_ext.Fill(elMaxQPur)
     h_elMaxQCosTheta_ext.Fill(elMaxQCosTheta)
     h_elMaxQElScore_ext.Fill(elMaxQElScore)
     h_elMaxQPhScore_ext.Fill(elMaxQPhScore)
@@ -1067,14 +1106,16 @@ h_nuE_CCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
 h_nuE_NCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
 h_nuE_CCnue_wCuts.Scale(runs1to3POT/tnuePOTsum)
 h_nuE_NCnue_wCuts.Scale(runs1to3POT/tnuPOTsum)
-h_nuE_ext_wCuts.Scale(runs1to3POT/textPOTsum)
+#h_nuE_ext_wCuts.Scale(runs1to3POT/textPOTsum)
 h_nuE_CCnue_eff.Divide(h_nuE_CCnue_wCuts,h_nuE_CCnue_nCuts,1,1,"B")
+#h_nuE_CCnue_eff.Divide(h_nuE_CCnue_wCuts,h_nuE_CCnue_nCuts,1,1)
 h_nuE_all_wCuts.Add(h_nuE_CCnumu_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_NCnumu_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_CCnue_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_NCnue_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_ext_wCuts)
-h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts,1,1,"B")
+#h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts,1,1,"B")
+h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts)
 
 h_cosFrac_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_cosFrac_NCnumu.Scale(runs1to3POT/tnuPOTsum)
@@ -1139,6 +1180,12 @@ h_elMaxComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
 h_elMaxComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
 h_elMaxComp_ext.Scale(runs1to3POT/textPOTsum)
 
+h_elMaxPur_CCnumu.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxPur_NCnumu.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxPur_CCnue.Scale(runs1to3POT/tnuePOTsum)
+h_elMaxPur_NCnue.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxPur_ext.Scale(runs1to3POT/textPOTsum)
+
 h_muMaxComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_muMaxComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_muMaxComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
@@ -1150,6 +1197,12 @@ h_elMaxQComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_elMaxQComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
 h_elMaxQComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
 h_elMaxQComp_ext.Scale(runs1to3POT/textPOTsum)
+
+h_elMaxQPur_CCnumu.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxQPur_NCnumu.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxQPur_CCnue.Scale(runs1to3POT/tnuePOTsum)
+h_elMaxQPur_NCnue.Scale(runs1to3POT/tnuPOTsum)
+h_elMaxQPur_ext.Scale(runs1to3POT/textPOTsum)
 
 h_muMaxQComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
 h_muMaxQComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
@@ -1376,6 +1429,18 @@ leg_elMaxComp.Draw()
 #cnv_elMaxComp.SaveAs("elMaxComp.png")
 cnv_elMaxComp.Write()
 
+cnv_elMaxPur = rt.TCanvas("cnv_elMaxPur","cnv_elMaxPur")
+hists_elMaxPur = sortHists([h_elMaxPur_CCnumu, h_elMaxPur_NCnumu, h_elMaxPur_CCnue, h_elMaxPur_NCnue, h_elMaxPur_ext])
+hists_elMaxPur[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxPur)):
+  hists_elMaxPur[i].Draw("EHISTSAME")
+leg_elMaxPur = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxPur = configureLegend(leg_elMaxPur, h_elMaxPur_CCnumu,
+  h_elMaxPur_NCnumu, h_elMaxPur_CCnue, h_elMaxPur_NCnue, h_elMaxPur_ext)
+leg_elMaxPur.Draw()
+#cnv_elMaxPur.SaveAs("elMaxPur.png")
+cnv_elMaxPur.Write()
+
 cnv_elMaxQComp = rt.TCanvas("cnv_elMaxQComp","cnv_elMaxQComp")
 hists_elMaxQComp = sortHists([h_elMaxQComp_CCnumu, h_elMaxQComp_NCnumu, h_elMaxQComp_CCnue, h_elMaxQComp_NCnue, h_elMaxQComp_ext])
 hists_elMaxQComp[0].Draw("EHIST")
@@ -1387,6 +1452,18 @@ leg_elMaxQComp = configureLegend(leg_elMaxQComp, h_elMaxQComp_CCnumu,
 leg_elMaxQComp.Draw()
 #cnv_elMaxQComp.SaveAs("elMaxQComp.png")
 cnv_elMaxQComp.Write()
+
+cnv_elMaxQPur = rt.TCanvas("cnv_elMaxQPur","cnv_elMaxQPur")
+hists_elMaxQPur = sortHists([h_elMaxQPur_CCnumu, h_elMaxQPur_NCnumu, h_elMaxQPur_CCnue, h_elMaxQPur_NCnue, h_elMaxQPur_ext])
+hists_elMaxQPur[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPur)):
+  hists_elMaxQPur[i].Draw("EHISTSAME")
+leg_elMaxQPur = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPur = configureLegend(leg_elMaxQPur, h_elMaxQPur_CCnumu,
+  h_elMaxQPur_NCnumu, h_elMaxQPur_CCnue, h_elMaxQPur_NCnue, h_elMaxQPur_ext)
+leg_elMaxQPur.Draw()
+#cnv_elMaxQPur.SaveAs("elMaxQPur.png")
+cnv_elMaxQPur.Write()
 
 cnv_elMaxQCosTheta = rt.TCanvas("cnv_elMaxQCosTheta","cnv_elMaxQCosTheta")
 hists_elMaxQCosTheta = sortHists([h_elMaxQCosTheta_CCnumu, h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_CCnue, h_elMaxQCosTheta_NCnue, h_elMaxQCosTheta_ext])
@@ -1802,9 +1879,10 @@ leg_elSc_NCnue_bkg.AddEntry(h_elScPrGr0_NCnue_bkg, "electron purity > 0", "l")
 leg_elSc_NCnue_bkg.Draw()
 cnv_elSc_NCnue_bkg.Write()
 
-h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1)
-h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1)
+h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
 cnv_CCnue_sel = rt.TCanvas("cnv_CCnue_sel","cnv_CCnue_sel")
+cnv_CCnue_sel.SetGrid()
 h_nuE_CCnue_eff.Draw("E")
 h_nuE_CCnue_pur.Draw("ESAME")
 leg_CCnue_sel = rt.TLegend(0.7,0.7,0.9,0.9)
@@ -1812,6 +1890,12 @@ leg_CCnue_sel.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
 leg_CCnue_sel.AddEntry(h_nuE_CCnue_pur, "purity", "l")
 leg_CCnue_sel.Draw()
 cnv_CCnue_sel.Write()
+
+h_nuE_CCnue_nCuts.Write()
+h_nuE_CCnue_wCuts.Write()
+h_nuE_all_wCuts.Write()
+h_nuE_CCnue_eff.Write()
+h_nuE_CCnue_pur.Write()
 
 #hMain_xTS = 0.0425
 #hMain_yTS = 0.05
