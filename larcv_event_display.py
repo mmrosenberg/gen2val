@@ -14,16 +14,22 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser("2D larcv event display script")
 parser.add_argument("-i", "--larcv_file", type=str, required=True, help="input larcv images file")
-parser.add_argument("--cosmicOnly", action="store_true", help="plot wirecell thrumu larcv images")
 parser.add_argument("-w","--wireName", type=str, default="wire", help="wire tree name")
+parser.add_argument("-e","--event", type=int, default=0, help="first entry to plot")
+parser.add_argument("-m","--min", type=float, default=-9999., help="minimum pixel value (none if < -999)")
+parser.add_argument("-M","--max", type=float, default=-9999., help="maximum pixel value (none if < -999)")
 args = parser.parse_args()
 
 
 def plotImage(adc_v):
-  pltmin = None
-  pltmax = None
-  #pltmin = -1.
-  pltmax = 100.
+  if args.min < -999:
+    pltmin = None
+  else:
+    pltmin = args.min
+  if args.max < -999:
+    pltmax = None
+  else:
+    pltmax = args.max
   ticksize=6
   fig = plt.figure(0, clear=True)
   fig.subplots_adjust(left=0.07, right=0.97, bottom=0.07, top=0.95, hspace=0.33)
@@ -45,10 +51,7 @@ iolcv.add_in_file(args.larcv_file)
 iolcv.reverse_all_products()
 iolcv.initialize()
 
-for i in range(iolcv.get_n_entries()):
+for i in range(args.event, iolcv.get_n_entries()):
   iolcv.read_entry(i)
-  if args.cosmicOnly:
-    evtImage2D = iolcv.get_data(larcv.kProductImage2D, "thrumu")
-  else:
-    evtImage2D = iolcv.get_data(larcv.kProductImage2D, args.wireName)
+  evtImage2D = iolcv.get_data(larcv.kProductImage2D, args.wireName)
   plotImage(evtImage2D.Image2DArray())
