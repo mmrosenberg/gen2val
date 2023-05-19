@@ -32,6 +32,7 @@ parser.add_argument("-w", "--weightfile", type=str, default="none", help="weight
 parser.add_argument("-m", "--model_path", type=str, required=True, help="path to prong CNN checkpoint file")
 parser.add_argument("-d", "--device", type=str, default="cpu", help="gpu/cpu device")
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
+parser.add_argument("-ana", "--dlana_input", help="using merged_dlana input files", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="prepare_selection_test_output.root", help="output file name")
 parser.add_argument("--makePlots", action="store_true", help="make image plots for specified event")
 parser.add_argument("--twoTask", action="store_true", help="use old two task class & completeness model")
@@ -65,9 +66,9 @@ if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
 
 
-reco2Tag = "merged_dlana_"
-if args.isMC:
-  reco2Tag = "merged_dlreco_"
+reco2Tag = "merged_dlreco_"
+if args.dlana_input:
+  reco2Tag = "merged_dlana_"
 
 if len(args.files) == 1 and ".txt" in args.files[0]:
   larflowfiles = []
