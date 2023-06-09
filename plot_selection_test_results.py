@@ -10,11 +10,12 @@ from helpers.plotting_functions import sortHists
 parser = argparse.ArgumentParser("Plot Selection Test Results")
 parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_nu_file.root", help="bnb nu input file")
 parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_nue_file.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_extbnb_file.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v19_extbnb_file.root", help="extbnb input file")
+parser.add_argument("-fdata", "--data_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v20_bnb5e19_file.root", help="bnb data input file")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
 parser.add_argument("-p", "--purityCut", type=float, default=0., help="purity cut value")
-parser.add_argument("-s", "--confCut", type=float, default=9, help="electron class confidence cut value")
+parser.add_argument("-s", "--confCut", type=float, default=7.3, help="electron class confidence cut value")
 parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron charge fraction cut value")
 parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="electron charge fraction cut value")
 parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
@@ -36,8 +37,15 @@ tnuePOT = fnue.Get("potTree")
 fext = rt.TFile(args.extbnb_file)
 text = fext.Get("EventTree")
 
+fdata = rt.TFile(args.data_file)
+tdata = fdata.Get("EventTree")
+
+out_data_sel_evts = open("selection_output/selected_bnb5e19_events.txt","w")
+out_data_sel_evts.write("fileid run subrun event visE\n")
+
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
 runs1to3POT = 6.67e+20
+targetPOT = 5e19
 
 tnuePOTsum = 0.
 for i in range(tnuePOT.GetEntries()):
@@ -318,7 +326,7 @@ h_nuE_CCnue_wCuts = rt.TH1F("h_nuE_CCnue_wCuts","Neutrino Energy for True CCnue 
 h_nuE_CCnumu_wCuts = rt.TH1F("h_nuE_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
 h_nuE_NCnumu_wCuts = rt.TH1F("h_nuE_NCnumu_wCuts","Neutrino Energy for True NCnumu Events",30,0,3)
 h_nuE_NCnue_wCuts = rt.TH1F("h_nuE_NCnue_wCuts","Neutrino Energy for True NCnue Events",30,0,3)
-h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for True ExtBNB Events",30,0,3)
+h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for ExtBNB Events",30,0,3)
 h_nuE_all_wCuts = rt.TH1F("h_nuE_all_wCuts","Neutrino Energy for all Events",30,0,3)
 h_nuE_CCnue_nCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
 h_nuE_CCnue_nCuts.SetLineColor(rt.kBlue)
@@ -340,6 +348,24 @@ h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection with Ele
 h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_pur.SetLineColor(8)
 h_nuE_CCnue_pur.SetLineWidth(2)
+
+h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Visible Energy for True CCnue Events",30,0,1e6)
+h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Visible Energy for True CCnumu Events",30,0,1e6)
+h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Visible Energy for True NCnumu Events",30,0,1e6)
+h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Visible Energy for True NCnue Events",30,0,1e6)
+h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Visible Energy for ExtBNB Events",30,0,1e6)
+h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Visible Energy for BNB Data Events",30,0,1e6)
+h_visE_CCnue_wCuts.SetFillColor(rt.kRed)
+h_visE_NCnue_wCuts.SetFillColor(8)
+h_visE_CCnumu_wCuts.SetFillColor(rt.kBlue)
+h_visE_NCnumu_wCuts.SetFillColor(40)
+h_visE_ext_wCuts.SetFillColor(rt.kBlack)
+h_visE_data_wCuts.SetLineColor(rt.kBlack)
+h_visE_data_wCuts.SetLineWidth(2)
+h_visE_data_wCuts.SetTitle("Inclusive CCnue Selected Events")
+h_visE_data_wCuts.GetYaxis().SetTitle("events per 5e+19 POT")
+h_visE_data_wCuts.GetXaxis().SetTitle("visible energy")
+h_visE_all_wCuts = rt.THStack("h_visE_all_wCuts", "Inclusive CCnue Selected Events")
 
 h_phScVsPrSum_allMC_bkg = rt.TH2F("h_phScVsPrSum_allMC_bkg","Photon Score vs. Purity for Largest e- Shower in Neutrino Background",21,0,1.05,21,-20,1)
 h_phScVsPrSum_allMC_bkg.GetXaxis().SetTitle("total simulated particle purity")
@@ -532,6 +558,7 @@ n_raw_NCnumu = 0
 n_raw_CCnue = 0
 n_raw_NCnue = 0
 n_raw_ext = 0
+n_raw_data = 0
 
 n_runs1to3_CCnumu = 0.
 n_runs1to3_CCnue = 0.
@@ -540,6 +567,7 @@ n_runs1to3_NCnumu_pass = 0.
 n_runs1to3_CCnue_pass = 0.
 n_runs1to3_NCnue_pass = 0.
 n_runs1to3_ext_pass = 0.
+n_runs1to3_data_pass = 0.
 
 
 def FillNuHistos(h_CCnumu, h_NCnumu, h_NCnue, val, weight, eventType):
@@ -588,6 +616,7 @@ for i in range(tnu.GetEntries()):
   if tnu.vtxFracHitsOnCosmic >= 1.:
     continue
 
+  visE = 0.
   nMuons = 0
   nElectrons = 0
   maxElConf = -1
@@ -616,6 +645,7 @@ for i in range(tnu.GetEntries()):
   muMaxQFrac = -1.
 
   for iT in range(tnu.nTracks):
+    visE += tnu.trackCharge[iT]
     if tnu.trackIsSecondary[iT] == 1:
       continue
     if tnu.trackClassified[iT] == 1 and tnu.trackPID[iT] == 13:
@@ -631,6 +661,7 @@ for i in range(tnu.GetEntries()):
       if tnu.trackComp[iT] > muMaxComp:
         muMaxComp = tnu.trackComp[iT]
   for iS in range(tnu.nShowers):
+    visE += tnu.showerCharge[iS]
     if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0 or tnu.showerDistToVtx[iS] > args.distCut or tnu.showerComp[iS] < args.compCut or tnu.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnu.showerPID[iS] == 11:
@@ -723,12 +754,15 @@ for i in range(tnu.GetEntries()):
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
           h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_visE_CCnumu_wCuts.Fill(visE, tnu.xsecWeight)
         if eventType == 1:
           n_runs1to3_NCnumu_pass += tnu.xsecWeight
           h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_visE_NCnumu_wCuts.Fill(visE, tnu.xsecWeight)
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
           h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_visE_NCnue_wCuts.Fill(visE, tnu.xsecWeight)
 
     else:
       h_phScVsPrSum_allMC_bkg.Fill(elMaxQPuritySum, elMaxQPhScore, tnu.xsecWeight)
@@ -844,6 +878,7 @@ for i in range(tnue.GetEntries()):
   if tnue.vtxFracHitsOnCosmic >= 1.:
     continue
 
+  visE = 0.
   nMuons = 0
   nElectrons = 0
   maxElConf = -1
@@ -867,6 +902,7 @@ for i in range(tnue.GetEntries()):
   muMaxQFrac = -1.
 
   for iT in range(tnue.nTracks):
+    visE += tnue.trackCharge[iT]
     if tnue.trackIsSecondary[iT] == 1:
       continue
     if tnue.trackClassified[iT] == 1 and tnue.trackPID[iT] == 13:
@@ -882,6 +918,7 @@ for i in range(tnue.GetEntries()):
       if tnue.trackComp[iT] > muMaxComp:
         muMaxComp = tnue.trackComp[iT]
   for iS in range(tnue.nShowers):
+    visE += tnue.showerCharge[iS]
     if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0 or tnue.showerDistToVtx[iS] > args.distCut or tnue.showerComp[iS] < args.compCut or tnue.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnue.showerPID[iS] == 11:
@@ -939,6 +976,7 @@ for i in range(tnue.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_CCnue_pass += tnue.xsecWeight
         h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
+        h_visE_CCnue_wCuts.Fill(visE, tnue.xsecWeight)
 
   if nMuons >= 1:
     h_muMaxComp_CCnue.Fill(muMaxComp, tnue.xsecWeight)
@@ -965,6 +1003,7 @@ for i in range(text.GetEntries()):
   if text.vtxFracHitsOnCosmic >= 1.:
     continue
 
+  visE = 0.
   nMuons = 0
   nElectrons = 0
   maxElConf = -1
@@ -987,6 +1026,7 @@ for i in range(text.GetEntries()):
   muMaxQCosTheta = -1.
   muMaxQFrac = -1.
   for iT in range(text.nTracks):
+    visE += text.trackCharge[iT]
     if text.trackIsSecondary[iT] == 1:
       continue
     if text.trackClassified[iT] == 1 and text.trackPID[iT] == 13:
@@ -1002,6 +1042,7 @@ for i in range(text.GetEntries()):
       if text.trackComp[iT] > muMaxComp:
         muMaxComp = text.trackComp[iT]
   for iS in range(text.nShowers):
+    visE += text.showerCharge[iS]
     if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0 or text.showerDistToVtx[iS] > args.distCut or text.showerComp[iS] < args.compCut or text.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and text.showerPID[iS] == 11:
@@ -1059,6 +1100,7 @@ for i in range(text.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_ext_pass += 1.
         h_nuE_ext_wCuts.Fill(text.trueNuE)
+        h_visE_ext_wCuts.Fill(visE)
 
   if nMuons >= 1:
     h_muMaxComp_ext.Fill(muMaxComp)
@@ -1070,13 +1112,66 @@ for i in range(text.GetEntries()):
 
 
 
-n_runs1to3_CCnumu *= (runs1to3POT/tnuPOTsum)
-n_runs1to3_CCnue *= (runs1to3POT/tnuePOTsum)
-n_runs1to3_CCnumu_pass *= runs1to3POT/tnuPOTsum
-n_runs1to3_NCnumu_pass *= runs1to3POT/tnuPOTsum
-n_runs1to3_CCnue_pass *= runs1to3POT/tnuePOTsum
-n_runs1to3_NCnue_pass *= runs1to3POT/tnuPOTsum
-n_runs1to3_ext_pass *= runs1to3POT/textPOTsum
+for i in range(tdata.GetEntries()):
+
+  tdata.GetEntry(i)
+
+  n_raw_data += 1
+
+  if tdata.nVertices < 1 or tdata.vtxIsFiducial != 1:
+    continue
+
+  h_cosFrac_ext.Fill(tdata.vtxFracHitsOnCosmic)
+
+  if tdata.vtxFracHitsOnCosmic >= 1.:
+    continue
+
+  visE = 0.
+  nMuons = 0
+  nElectrons = 0
+  elMaxQCosTheta = -1.
+  elMaxQConf = -1.
+  elMaxQFrac = -1.
+  elMaxQ = -1.
+  for iT in range(tdata.nTracks):
+    visE += tdata.trackCharge[iT]
+    if tdata.trackIsSecondary[iT] == 1:
+      continue
+    if tdata.trackClassified[iT] == 1 and tdata.trackPID[iT] == 13:
+      nMuons += 1
+  for iS in range(tdata.nShowers):
+    visE += tdata.showerCharge[iS]
+    if tdata.showerIsSecondary[iS] == 1 or tdata.showerClassified[iS] == 0 or tdata.showerDistToVtx[iS] > args.distCut or tdata.showerComp[iS] < args.compCut or tdata.showerPurity[iS] < args.purityCut:
+      continue
+    if nMuons == 0 and tdata.showerPID[iS] == 11:
+      nElectrons += 1
+      elConf = tdata.showerElScore[iS] - (tdata.showerPhScore[iS] + tdata.showerPiScore[iS])/2.
+      if tdata.showerCharge[iS] > elMaxQ:
+        elMaxQ = tdata.showerCharge[iS]
+        elMaxQCosTheta = tdata.showerCosTheta[iS]
+        elMaxQConf = elConf
+      if tdata.showerChargeFrac[iS] > elMaxQFrac:
+        elMaxQFrac = tdata.showerChargeFrac[iS]
+
+  if nElectrons >= 1:
+    if elMaxQConf > args.confCut:
+      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+        n_runs1to3_data_pass += 1.
+        h_visE_data_wCuts.Fill(visE)
+        out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, visE))
+
+
+
+out_data_sel_evts.close()
+
+n_runs1to3_CCnumu *= (targetPOT/tnuPOTsum)
+n_runs1to3_CCnue *= (targetPOT/tnuePOTsum)
+n_runs1to3_CCnumu_pass *= targetPOT/tnuPOTsum
+n_runs1to3_NCnumu_pass *= targetPOT/tnuPOTsum
+n_runs1to3_CCnue_pass *= targetPOT/tnuePOTsum
+n_runs1to3_NCnue_pass *= targetPOT/tnuPOTsum
+n_runs1to3_ext_pass *= targetPOT/textPOTsum
+n_predicted_tot_pass = n_runs1to3_CCnue_pass + n_runs1to3_NCnue_pass + n_runs1to3_CCnumu_pass + n_runs1to3_NCnumu_pass + n_runs1to3_ext_pass
 
 print()
 print("n_raw_CCnumu: ", n_raw_CCnumu)
@@ -1084,29 +1179,38 @@ print("n_raw_NCnumu: ", n_raw_NCnumu)
 print("n_raw_CCnue: ", n_raw_CCnue)
 print("n_raw_NCnue: ", n_raw_NCnue)
 print("n_raw_ext: ", n_raw_ext)
+print("n_raw_data: ", n_raw_data)
 print()
 print("n_runs1to3_CCnumu: ", n_runs1to3_CCnumu)
 print("n_runs1to3_CCnue: ", n_runs1to3_CCnue)
 print()
-print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_CCnue",h_cosFrac_CCnue.Integral(),runs1to3POT,tnuePOTsum))
-print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_CCnumu",h_cosFrac_CCnumu.Integral(),runs1to3POT,tnuPOTsum))
-print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_NCnue",h_cosFrac_NCnue.Integral(),runs1to3POT,tnuPOTsum))
-print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_NCnumu",h_cosFrac_NCnumu.Integral(),runs1to3POT,tnuPOTsum))
-print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_ext",h_cosFrac_ext.Integral(),runs1to3POT,textPOTsum))
+print("n_runs1to3_CCnue_pass: ", n_runs1to3_CCnue_pass)
+print("n_runs1to3_NCnue_pass: ", n_runs1to3_NCnue_pass)
+print("n_runs1to3_CCnumu_pass: ", n_runs1to3_CCnumu_pass)
+print("n_runs1to3_NCnumu_pass: ", n_runs1to3_NCnumu_pass)
+print("n_runs1to3_ext_pass: ", n_runs1to3_ext_pass)
+print("n_runs1to3_data_pass: ", n_runs1to3_data_pass)
+print("n_predicted_tot_pass: ", n_predicted_tot_pass)
+print()
+print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_CCnue",h_cosFrac_CCnue.Integral(),targetPOT,tnuePOTsum))
+print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_CCnumu",h_cosFrac_CCnumu.Integral(),targetPOT,tnuPOTsum))
+print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_NCnue",h_cosFrac_NCnue.Integral(),targetPOT,tnuPOTsum))
+print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_NCnumu",h_cosFrac_NCnumu.Integral(),targetPOT,tnuPOTsum))
+print("%s integral: %f ; scaling by %.2e/%.2e"%("h_cosFrac_ext",h_cosFrac_ext.Integral(),targetPOT,textPOTsum))
 print()
 print("CC nue cut efficiency: %f"%(n_runs1to3_CCnue_pass/n_runs1to3_CCnue))
-print("CC nue cut purity: %f"%(n_runs1to3_CCnue_pass/(n_runs1to3_CCnue_pass + n_runs1to3_NCnue_pass + n_runs1to3_CCnumu_pass + n_runs1to3_NCnumu_pass + n_runs1to3_ext_pass)))
+print("CC nue cut purity: %f"%(n_runs1to3_CCnue_pass/n_predicted_tot_pass))
 print()
 
 #print("h_cosFrac_CCnue unscaled integral: ", h_cosFrac_CCnue.Integral())
 #print("h_nEl_CCnue unscaled integral: ", h_nEl_CCnue.Integral())
 
-h_nuE_CCnue_nCuts.Scale(runs1to3POT/tnuePOTsum)
-h_nuE_CCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
-h_nuE_NCnumu_wCuts.Scale(runs1to3POT/tnuPOTsum)
-h_nuE_CCnue_wCuts.Scale(runs1to3POT/tnuePOTsum)
-h_nuE_NCnue_wCuts.Scale(runs1to3POT/tnuPOTsum)
-#h_nuE_ext_wCuts.Scale(runs1to3POT/textPOTsum)
+h_nuE_CCnue_nCuts.Scale(targetPOT/tnuePOTsum)
+h_nuE_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_nuE_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_nuE_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_nuE_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+#h_nuE_ext_wCuts.Scale(targetPOT/textPOTsum)
 h_nuE_CCnue_eff.Divide(h_nuE_CCnue_wCuts,h_nuE_CCnue_nCuts,1,1,"B")
 #h_nuE_CCnue_eff.Divide(h_nuE_CCnue_wCuts,h_nuE_CCnue_nCuts,1,1)
 h_nuE_all_wCuts.Add(h_nuE_CCnumu_wCuts)
@@ -1117,233 +1221,245 @@ h_nuE_all_wCuts.Add(h_nuE_ext_wCuts)
 #h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts,1,1,"B")
 h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts)
 
-h_cosFrac_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_cosFrac_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_cosFrac_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_cosFrac_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_cosFrac_ext.Scale(runs1to3POT/textPOTsum)
+h_visE_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCuts.Scale(targetPOT/textPOTsum)
 
-h_nEl_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nEl_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nEl_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_nEl_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_nEl_ext.Scale(runs1to3POT/textPOTsum)
+h_visE_all_wCuts.Add(h_visE_ext_wCuts)
+h_visE_all_wCuts.Add(h_visE_NCnue_wCuts)
+h_visE_all_wCuts.Add(h_visE_NCnumu_wCuts)
+h_visE_all_wCuts.Add(h_visE_CCnumu_wCuts)
+h_visE_all_wCuts.Add(h_visE_CCnue_wCuts)
+
+h_cosFrac_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_cosFrac_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_cosFrac_CCnue.Scale(targetPOT/tnuePOTsum)
+h_cosFrac_NCnue.Scale(targetPOT/tnuPOTsum)
+h_cosFrac_ext.Scale(targetPOT/textPOTsum)
+
+h_nEl_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_nEl_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_nEl_CCnue.Scale(targetPOT/tnuePOTsum)
+h_nEl_NCnue.Scale(targetPOT/tnuPOTsum)
+h_nEl_ext.Scale(targetPOT/textPOTsum)
 
 #print("h_cosFrac_CCnue scaled integral: ", h_cosFrac_CCnue.Integral())
 #print("h_nEl_CCnue scaled integral: ", h_nEl_CCnue.Integral())
 
-h_maxElConf_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_maxElConf_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_maxElConf_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_maxElConf_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_maxElConf_ext.Scale(runs1to3POT/textPOTsum)
+h_maxElConf_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxElConf_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxElConf_CCnue.Scale(targetPOT/tnuePOTsum)
+h_maxElConf_NCnue.Scale(targetPOT/tnuPOTsum)
+h_maxElConf_ext.Scale(targetPOT/textPOTsum)
 
-h_nMu_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nMu_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nMu_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_nMu_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_nMu_ext.Scale(runs1to3POT/textPOTsum)
+h_nMu_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_nMu_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_nMu_CCnue.Scale(targetPOT/tnuePOTsum)
+h_nMu_NCnue.Scale(targetPOT/tnuPOTsum)
+h_nMu_ext.Scale(targetPOT/textPOTsum)
 
-h_nCompMu_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nCompMu_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_nCompMu_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_nCompMu_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_nCompMu_ext.Scale(runs1to3POT/textPOTsum)
+h_nCompMu_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_nCompMu_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_nCompMu_CCnue.Scale(targetPOT/tnuePOTsum)
+h_nCompMu_NCnue.Scale(targetPOT/tnuPOTsum)
+h_nCompMu_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQ_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQ_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQ_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQ_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_ext.Scale(targetPOT/textPOTsum)
 
-h_muMaxQ_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQ_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQ_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_muMaxQ_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQ_ext.Scale(runs1to3POT/textPOTsum)
+h_muMaxQ_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQ_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQ_CCnue.Scale(targetPOT/tnuePOTsum)
+h_muMaxQ_NCnue.Scale(targetPOT/tnuPOTsum)
+h_muMaxQ_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQF_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQF_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQF_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQF_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_ext.Scale(targetPOT/textPOTsum)
 
-h_muMaxQF_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQF_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQF_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_muMaxQF_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQF_ext.Scale(runs1to3POT/textPOTsum)
+h_muMaxQF_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQF_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQF_CCnue.Scale(targetPOT/tnuePOTsum)
+h_muMaxQF_NCnue.Scale(targetPOT/tnuPOTsum)
+h_muMaxQF_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxPur_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxPur_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxPur_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxPur_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxPur_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxPur_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxPur_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxPur_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxPur_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxPur_ext.Scale(targetPOT/textPOTsum)
 
-h_muMaxComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_muMaxComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxComp_ext.Scale(runs1to3POT/textPOTsum)
+h_muMaxComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_muMaxComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_muMaxComp_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQPur_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPur_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPur_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQPur_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPur_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQPur_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPur_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPur_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPur_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPur_ext.Scale(targetPOT/textPOTsum)
 
-h_muMaxQComp_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQComp_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQComp_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_muMaxQComp_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQComp_ext.Scale(runs1to3POT/textPOTsum)
+h_muMaxQComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_muMaxQComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_muMaxQComp_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQCosTheta_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQCosTheta_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQCosTheta_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQCosTheta_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_ext.Scale(targetPOT/textPOTsum)
 
-h_muMaxQCosTheta_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQCosTheta_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQCosTheta_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_muMaxQCosTheta_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_muMaxQCosTheta_ext.Scale(runs1to3POT/textPOTsum)
+h_muMaxQCosTheta_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQCosTheta_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_muMaxQCosTheta_CCnue.Scale(targetPOT/tnuePOTsum)
+h_muMaxQCosTheta_NCnue.Scale(targetPOT/tnuPOTsum)
+h_muMaxQCosTheta_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQElScore_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQElScore_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQElScore_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQElScore_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQElScore_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQElScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQElScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQElScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQElScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQElScore_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQPhScore_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPhScore_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPhScore_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQPhScore_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPhScore_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQPhScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPhScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPhScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPhScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPhScore_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQPiScore_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPiScore_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPiScore_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQPiScore_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQPiScore_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQPiScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPiScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPiScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPiScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPiScore_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQConf_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQConf_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQConf_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQConf_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQConf_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQConf_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQConf_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQComp_wConfCut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_wConfCut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_wConfCut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQComp_wConfCut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQComp_wConfCut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQComp_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQComp_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQComp_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQVtxDist_wConfCut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQVtxDist_wConfCut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQVtxDist_wConfCut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQVtxDist_wConfCut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQVtxDist_wConfCut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQVtxDist_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQVtxDist_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQVtxDist_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQVtxDist_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQVtxDist_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQCosTheta_wConfCut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_wConfCut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_wConfCut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQCosTheta_wConfCut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQCosTheta_wConfCut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQCosTheta_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQCosTheta_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQCosTheta_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQ_wConfCut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wConfCut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wConfCut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQ_wConfCut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wConfCut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQ_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQ_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQF_wConfCut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wConfCut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wConfCut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQF_wConfCut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wConfCut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQF_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQF_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQ_wQFcut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wQFcut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wQFcut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQ_wQFcut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQ_wQFcut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQ_wQFcut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wQFcut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wQFcut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQ_wQFcut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQ_wQFcut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxComp_wQFcut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQFcut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQFcut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxComp_wQFcut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQFcut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxComp_wQFcut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQFcut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQFcut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxComp_wQFcut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQFcut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxQF_wQcut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wQcut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wQcut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxQF_wQcut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxQF_wQcut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxQF_wQcut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wQcut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wQcut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQF_wQcut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQF_wQcut_ext.Scale(targetPOT/textPOTsum)
 
-h_elMaxComp_wQcut_CCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQcut_NCnumu.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQcut_CCnue.Scale(runs1to3POT/tnuePOTsum)
-h_elMaxComp_wQcut_NCnue.Scale(runs1to3POT/tnuPOTsum)
-h_elMaxComp_wQcut_ext.Scale(runs1to3POT/textPOTsum)
+h_elMaxComp_wQcut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQcut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQcut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxComp_wQcut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxComp_wQcut_ext.Scale(targetPOT/textPOTsum)
 
-h_phScVsPrSum_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScVsPrSum_allMC_bkg.Scale(targetPOT/tnuPOTsum)
 
-h_piScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScVsPr_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScVsPr_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScVsPr_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScVsPr_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScVsPr_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScVsPr_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScVsPr_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScVsPr_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScVsPr_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScVsPr_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScVsPr_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScVsPr_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
 
-h_piScElPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScElPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_muScElPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_muScElPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScElPrGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScElPrEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_muScElPrGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_muScElPrEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
 
-h_phScPrSumEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrSumGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_phScPrSumEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrSumGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
 
-h_piScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrGr0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrEq0_allMC_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrGr0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrEq0_CCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrGr0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrEq0_NCnumu_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_piScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_phScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrGr0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
-h_elScPrEq0_NCnue_bkg.Scale(runs1to3POT/tnuPOTsum)
+h_piScPrGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrGr0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrEq0_allMC_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrGr0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrEq0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrGr0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrEq0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrGr0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrEq0_CCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrGr0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrEq0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrGr0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrEq0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrGr0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrEq0_NCnumu_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrGr0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_piScPrEq0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrGr0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_phScPrEq0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrGr0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
+h_elScPrEq0_NCnue_bkg.Scale(targetPOT/tnuPOTsum)
 
 
 def configureLegend(leg, h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext):
@@ -1891,11 +2007,34 @@ leg_CCnue_sel.AddEntry(h_nuE_CCnue_pur, "purity", "l")
 leg_CCnue_sel.Draw()
 cnv_CCnue_sel.Write()
 
+cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
+h_visE_data_wCuts.Draw("E")
+h_visE_all_wCuts.Draw("hist same")
+h_visE_data_wCuts.Draw("ESAME")
+leg_visE_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel.AddEntry(h_visE_ext_wCuts, "cosmic background (%.2f)"%h_visE_ext_wCuts.Integral(), "f")
+leg_visE_sel.AddEntry(h_visE_NCnue_wCuts, "NC nue (%.2f)"%h_visE_NCnue_wCuts.Integral(), "f")
+leg_visE_sel.AddEntry(h_visE_NCnumu_wCuts, "NC numu (%.2f)"%h_visE_NCnumu_wCuts.Integral(), "f")
+leg_visE_sel.AddEntry(h_visE_CCnumu_wCuts, "CC numu (%.2f)"%h_visE_CCnumu_wCuts.Integral(), "f")
+leg_visE_sel.AddEntry(h_visE_CCnue_wCuts, "CC nue (%.2f)"%h_visE_CCnue_wCuts.Integral(), "f")
+leg_visE_sel.AddEntry(h_visE_data_wCuts, "5e19 data (%.2f)"%h_visE_data_wCuts.Integral(), "l")
+leg_visE_sel.Draw()
+cnv_visE_sel.Write()
+
 h_nuE_CCnue_nCuts.Write()
 h_nuE_CCnue_wCuts.Write()
 h_nuE_all_wCuts.Write()
 h_nuE_CCnue_eff.Write()
 h_nuE_CCnue_pur.Write()
+
+h_visE_all_wCuts.Write()
+h_visE_data_wCuts.Write()
+h_visE_CCnue_wCuts.Write()
+h_visE_CCnumu_wCuts.Write()
+h_visE_NCnumu_wCuts.Write()
+h_visE_NCnue_wCuts.Write()
+h_visE_ext_wCuts.Write()
+
 
 #hMain_xTS = 0.0425
 #hMain_yTS = 0.05
