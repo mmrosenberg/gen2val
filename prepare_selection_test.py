@@ -19,6 +19,7 @@ import numpy as np
 
 from event_weighting.event_weight_helper import SumPOT, Weights
 from helpers.larflowreco_ana_funcs import *
+from helpers.pionEnergyEstimator import pionRange2T
 
 import torch
 from torch import nn
@@ -299,6 +300,7 @@ mcNuVertexer = ublarcvapp.mctools.NeutrinoVertex()
 prongvars = larflow.reco.NuSelProngVars()
 wcoverlapvars = larflow.reco.NuSelWCTaggerOverlap()
 flowTriples = larflow.prep.FlowTriples()
+piKEestimator = pionRange2T()
 
 model = ResNet34(2, ResBlock, outputs=5)
 if "cuda" in args.device and args.multiGPU:
@@ -337,6 +339,7 @@ trueLepPDG = array('i', [0])
 trueMuContained = array('i', [0])
 trueNuPDG = array('i', [0])
 trueNuCCNC = array('i', [0])
+recoNuE = array('f', [0.])
 nVertices = array('i', [0])
 vtxX = array('f', [0.])
 vtxY = array('f', [0.])
@@ -365,6 +368,7 @@ trackPiScore = array('f', maxNTrks*[0.])
 trackPrScore = array('f', maxNTrks*[0.])
 trackComp = array('f', maxNTrks*[0.])
 trackPurity = array('f', maxNTrks*[0.])
+trackRecoE = array('f', maxNTrks*[0.])
 trackTruePID = array('i', maxNTrks*[0])
 trackTruePurity = array('f', maxNTrks*[0.])
 trackTrueComp = array('f', maxNTrks*[0.])
@@ -393,6 +397,7 @@ showerPiScore = array('f', maxNShwrs*[0.])
 showerPrScore = array('f', maxNShwrs*[0.])
 showerComp = array('f', maxNShwrs*[0])
 showerPurity = array('f', maxNShwrs*[0])
+showerRecoE = array('f', maxNShwrs*[0])
 showerTruePID = array('i', maxNShwrs*[0])
 showerTruePurity = array('f', maxNShwrs*[0.])
 showerTrueComp = array('f', maxNShwrs*[0.])
@@ -412,6 +417,7 @@ eventTree.Branch("trueLepPDG", trueLepPDG, 'trueLepPDG/I')
 eventTree.Branch("trueMuContained", trueMuContained, 'trueMuContained/I')
 eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 eventTree.Branch("trueNuCCNC", trueNuCCNC, 'trueNuCCNC/I')
+eventTree.Branch("recoNuE", recoNuE, 'recoNuE/F')
 eventTree.Branch("nVertices", nVertices, 'nVertices/I')
 eventTree.Branch("vtxX", vtxX, 'vtxX/F')
 eventTree.Branch("vtxY", vtxY, 'vtxY/F')
@@ -440,6 +446,7 @@ eventTree.Branch("trackPiScore", trackPiScore, 'trackPiScore[nTracks]/F')
 eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
 eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
 eventTree.Branch("trackPurity", trackPurity, 'trackPurity[nTracks]/F')
+eventTree.Branch("trackRecoE", trackRecoE, 'trackRecoE[nTracks]/F')
 eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
 eventTree.Branch("trackTruePurity", trackTruePurity, 'trackTruePurity[nTracks]/F')
 eventTree.Branch("trackTrueComp", trackTrueComp, 'trackTrueComp[nTracks]/F')
@@ -476,6 +483,7 @@ eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
 eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
 eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
 eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
+eventTree.Branch("showerRecoE", showerRecoE, 'showerRecoE[nShowers]/F')
 
 
 if args.isMC:
@@ -679,6 +687,8 @@ for filepair in files:
     vertexCharge = 0.
     vertexNHits = 0
 
+    recoNuE[0] = 0.
+
 
     for iTrk, trackCls in enumerate(vertex.track_hitcluster_v):
 
@@ -713,6 +723,7 @@ for filepair in files:
         trackPrScore[iTrk] = -99.
         trackComp[iTrk] = -1.
         trackPurity[iTrk] = -1.
+        trackRecoE[iTrk] = -1.
         continue
 
       prongImage = makeImage(prong_vv).to(args.device)
@@ -727,6 +738,13 @@ for filepair in files:
       trackComp[iTrk] = prongCNN_out[1].item()
       if not args.twoTask:
         trackPurity[iTrk] = prongCNN_out[2].item()
+      if trackMuScore[iTrk] >= trackPiScore[iTrk] and trackMuScore[iTrk] >= trackPrScore[iTrk]:
+        trackRecoE[iTrk] = trackMuKE[iTrk]
+      elif trackPrScore[iTrk] >= trackMuScore[iTrk] and trackPrScore[iTrk] >= trackPiScore[iTrk]:
+        trackRecoE[iTrk] = trackPrKE[iTrk]
+      else:
+        trackRecoE[iTrk] = piKEestimator.Eval(getTrackLength(vertex.track_v[iTrk]))
+      recoNuE[0] += trackRecoE[iTrk]
 
       if args.isMC:
         pdg, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v)
@@ -775,6 +793,8 @@ for filepair in files:
       showerPl2E[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
       showerCosTheta[iShw] = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
       showerDistToVtx[iShw] = getVertexDistance(vertex.shower_trunk_v[iShw].Vertex(), vertex)
+      showerRecoE[iShw] = showerPl2E[iShw]
+      recoNuE[0] += showerPl2E[iShw]
 
       cropPt = vertex.shower_trunk_v[iShw].Vertex()
       prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,shower,cropPt,10.,512,512)

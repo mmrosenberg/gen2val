@@ -124,6 +124,14 @@ def getBestCompleteness(iolcv, vertex, lepPDG, totLepPixI, lepTickLists, lepPixe
   return bestComp
 
 
+def getTrackLength(track):
+  tracklen = 0
+  for i in range(track.NumberTrajectoryPoints()-1):
+    step = track.LocationAtPoint(i)
+    nextStep = track.LocationAtPoint(i+1)
+    tracklen += (nextStep-step).Mag();
+  return tracklen;
+
 def getDistance(a, b):
   return sqrt( (a.X() - b.X())**2 + (a.Y() - b.Y())**2 + (a.Z() - b.Z())**2)
 
