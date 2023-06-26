@@ -5,6 +5,7 @@ import ROOT as rt
 
 from math import isinf
 from helpers.plotting_functions import sortHists
+from helpers.larflowreco_ana_funcs import isFiducialWC
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
@@ -41,7 +42,7 @@ fdata = rt.TFile(args.data_file)
 tdata = fdata.Get("EventTree")
 
 out_data_sel_evts = open("selection_output/selected_bnb5e19_events.txt","w")
-out_data_sel_evts.write("fileid run subrun event visE\n")
+out_data_sel_evts.write("fileid run subrun event recoNuE\n")
 
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
 runs1to3POT = 6.67e+20
@@ -607,7 +608,8 @@ for i in range(tnu.GetEntries()):
   if eventType < 0:
     continue
 
-  if tnu.nVertices < 1 or tnu.vtxIsFiducial != 1:
+  vtxPos = rt.TVector3(tnu.vtxX, tnu.vtxY, tnu.vtxZ)
+  if tnu.nVertices < 1 or not isFiducialWC(vtxPos): #tnu.vtxIsFiducial != 1:
     continue
 
   h_cosFrac_CCnumu, h_cosFrac_NCnumu, h_cosFrac_NCnue = FillNuHistos(h_cosFrac_CCnumu,
@@ -867,7 +869,8 @@ for i in range(tnue.GetEntries()):
   n_runs1to3_CCnue += tnue.xsecWeight
   h_nuE_CCnue_nCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
 
-  if tnue.nVertices < 1 or tnue.vtxIsFiducial != 1:
+  vtxPos = rt.TVector3(tnue.vtxX, tnue.vtxY, tnue.vtxZ)
+  if tnue.nVertices < 1 or not isFiducialWC(vtxPos): #tnue.vtxIsFiducial != 1:
     continue
 
   h_cosFrac_CCnue.Fill(tnue.vtxFracHitsOnCosmic, tnue.xsecWeight)
@@ -995,7 +998,8 @@ for i in range(text.GetEntries()):
 
   n_raw_ext += 1
 
-  if text.nVertices < 1 or text.vtxIsFiducial != 1:
+  vtxPos = rt.TVector3(text.vtxX, text.vtxY, text.vtxZ)
+  if text.nVertices < 1 or not isFiducialWC(vtxPos): #text.vtxIsFiducial != 1:
     continue
 
   h_cosFrac_ext.Fill(text.vtxFracHitsOnCosmic)
@@ -1118,7 +1122,8 @@ for i in range(tdata.GetEntries()):
 
   n_raw_data += 1
 
-  if tdata.nVertices < 1 or tdata.vtxIsFiducial != 1:
+  vtxPos = rt.TVector3(tdata.vtxX, tdata.vtxY, tdata.vtxZ)
+  if tdata.nVertices < 1 or not isFiducialWC(vtxPos): #tdata.vtxIsFiducial != 1:
     continue
 
   h_cosFrac_ext.Fill(tdata.vtxFracHitsOnCosmic)
@@ -1158,7 +1163,7 @@ for i in range(tdata.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_data_pass += 1.
         h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
-        out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, visE))
+        out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, tdata.recoNuE))
 
 
 

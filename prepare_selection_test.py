@@ -567,7 +567,7 @@ for filepair in files:
       mcNuVertex = mcNuVertexer.getPos3DwSCE(ioll, sce)
       trueVtxPos = rt.TVector3(mcNuVertex[0], mcNuVertex[1], mcNuVertex[2])
 
-      if not isFiducial(trueVtxPos):
+      if not isFiducialWC(trueVtxPos):
         continue
 
       try:
@@ -688,7 +688,7 @@ for filepair in files:
     vtxY[0] = vertex.pos[1]
     vtxZ[0] = vertex.pos[2]
     vtxTVec3 = rt.TVector3(vertex.pos[0], vertex.pos[1], vertex.pos[2])
-    vtxIsFiducial[0] = int(isFiducial(vtxTVec3))
+    vtxIsFiducial[0] = int(isFiducialWC(vtxTVec3))
 
     nusel = larflow.reco.NuSelectionVariables()
     wcoverlapvars.analyze(vertex, nusel, iolcv)

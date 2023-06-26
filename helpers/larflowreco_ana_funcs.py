@@ -42,6 +42,9 @@ fidCrds.append( [detCrds[2][0] + 20. , detCrds[2][1] - 60.] )
 fidCrdsBig = [ [detCrds[0][0] + 10. , detCrds[0][1] - 10.] ]
 fidCrdsBig.append( [detCrds[1][0] + 10. , detCrds[1][1] - 10.] )
 fidCrdsBig.append( [detCrds[2][0] + 10. , detCrds[2][1] - 30.] )
+fidCrdsWC = [ [detCrds[0][0] + 3. , detCrds[0][1] - 3.] ]
+fidCrdsWC.append( [detCrds[1][0] + 3. , detCrds[1][1] - 3.] )
+fidCrdsWC.append( [detCrds[2][0] + 3. , detCrds[2][1] - 3.] )
 
 def inRange(x, bnd):
   return (x >= bnd[0] and x <= bnd[1])
@@ -51,6 +54,9 @@ def isFiducial(p):
 
 def isFiducialBig(p):
   return (inRange(p.X(),fidCrdsBig[0]) and inRange(p.Y(),fidCrdsBig[1]) and inRange(p.Z(),fidCrdsBig[2]))
+
+def isFiducialWC(p):
+  return (inRange(p.X(),fidCrdsWC[0]) and inRange(p.Y(),fidCrdsWC[1]) and inRange(p.Z(),fidCrdsWC[2]))
 
 def isInDetector(p):
   return (inRange(p.X(),detCrds[0]) and inRange(p.Y(),detCrds[1]) and inRange(p.Z(),detCrds[2]))
