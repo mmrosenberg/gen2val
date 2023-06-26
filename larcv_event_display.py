@@ -47,6 +47,24 @@ rt.gROOT.SetBatch(rt.kTRUE)
 
 def getBNB5e19EventString(lineBreaks=True):
   selDir="/home/matthew/microboone/tufts/gen2val/selection_output"
+  with open("%s/selected_bnb5e19_events_sorted_with_WC_recoE_plotBounds.txt"%selDir,"r") as evtFile:
+    for line in evtFile:
+      if "fileid" in line:
+        continue
+      data = line.split()
+      if int(data[1]) == args.run and int(data[2]) == args.subrun and int(data[3]) == args.event:
+        foundInGen2 = int(data[4])
+        foundInWC = int(data[5])
+        foundInGen2Str = "Yes" if foundInGen2 else "No"
+        foundInWCStr = "Yes" if foundInWC else "No"
+        recoNuE = data[6]+" MeV"
+        break
+  if lineBreaks:
+    return "run %i subrun %i event %i \n DL Gen2 reco neutrino energy: %s \n found in DL Gen2: %s \n found in wire cell: %s"%(args.run,args.subrun,args.event,recoNuE,foundInGen2Str,foundInWCStr)
+  return "run %i subrun %i event %i / DL Gen2 reco neutrino energy: %s / found in DL Gen2: %s / found in wire cell: %s"%(args.run,args.subrun,args.event,recoNuE,foundInGen2Str,foundInWCStr)
+
+def getBNB5e19EventString_visE(lineBreaks=True):
+  selDir="/home/matthew/microboone/tufts/gen2val/selection_output"
   with open("%s/selected_bnb5e19_events_sorted_withWC.txt"%selDir,"r") as evtFile1:
     for line in evtFile1:
       if "fileid" in line:
