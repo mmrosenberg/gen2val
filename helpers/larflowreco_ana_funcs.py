@@ -161,6 +161,18 @@ def getCosThetaBeamTrack(track):
                          anglePoint.Z() - recoStart.Z())
   return getCosTVecAngle(trackDir, beamDir)
 
+def getCosThetaGravTrack(track):
+  gravDir = rt.TVector3(0, -1, 0)
+  recoStart = track.Vertex()
+  for i in range(track.NumberTrajectoryPoints()):
+    anglePoint = track.LocationAtPoint(i)
+    if getDistance(recoStart, track.LocationAtPoint(i)) > 5.:
+      break
+  trackDir = rt.TVector3(anglePoint.X() - recoStart.X(),
+                         anglePoint.Y() - recoStart.Y(),
+                         anglePoint.Z() - recoStart.Z())
+  return getCosTVecAngle(trackDir, gravDir)
+
 def getCosThetaBeamShower(showerTrunk):
   beamDir = rt.TVector3(0, 0, 1)
   showerDir = rt.TVector3(showerTrunk.VertexDirection().X(),
@@ -168,6 +180,16 @@ def getCosThetaBeamShower(showerTrunk):
                           showerTrunk.VertexDirection().Z())
   return getCosTVecAngle(showerDir, beamDir)
 
+def getCosThetaGravShower(showerTrunk):
+  gravDir = rt.TVector3(0, -1, 0)
+  showerDir = rt.TVector3(showerTrunk.VertexDirection().X(),
+                          showerTrunk.VertexDirection().Y(),
+                          showerTrunk.VertexDirection().Z())
+  return getCosTVecAngle(showerDir, gravDir)
 
 
+def getSCECorrectedPos(point, sce):
+  offset = sce.GetPosOffsets(point.X(), point.Y(), point.Z())
+  corrected = rt.TVector3(point.X() - offset[0] + 0.7, point.Y() + offset[1], point.Z() + offset[2])
+  return corrected
 

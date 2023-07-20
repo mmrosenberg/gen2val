@@ -13,6 +13,7 @@ from larflow import larflow
 from math import sqrt as sqrt
 from math import acos as acos
 from math import pi
+from math import isinf
 
 from array import array
 import numpy as np
@@ -26,7 +27,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
-parser = argparse.ArgumentParser("Get Vertex and Prong Info Needed for Selections")
+parser = argparse.ArgumentParser("Make Flat NTuples for DLGen2 Analyses")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
 parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
 parser.add_argument("-w", "--weightfile", type=str, default="none", help="weights file (pickled python dict)")
@@ -34,38 +35,19 @@ parser.add_argument("-m", "--model_path", type=str, required=True, help="path to
 parser.add_argument("-d", "--device", type=str, default="cpu", help="gpu/cpu device")
 parser.add_argument("-mc", "--isMC", help="running over MC input", action="store_true")
 parser.add_argument("-ana", "--dlana_input", help="using merged_dlana input files", action="store_true")
-parser.add_argument("-o", "--outfile", type=str, default="prepare_selection_test_output.root", help="output file name")
-parser.add_argument("--makePlots", action="store_true", help="make image plots for specified event")
-parser.add_argument("--twoTask", action="store_true", help="use old two task class & completeness model")
+parser.add_argument("-o", "--outfile", type=str, default="dlgen2_flat_ntuple.root", help="output file name")
 parser.add_argument("-r", "--run", type=int, default=0, help="run number for event to plot")
 parser.add_argument("-sr", "--subrun", type=int, default=0, help="subrun number for event to plot")
 parser.add_argument("-e", "--event", type=int, default=0, help="event number for event to plot")
 parser.add_argument("--multiGPU", action="store_true", help="use multiple GPUs")
-parser.add_argument("--oldVtxBranch", help="use nufitted_v instead of nuvetoed_v for old reco", action="store_true")
 args = parser.parse_args()
 
 sys.path.append(args.model_path[:args.model_path.find("/checkpoints")])
-if args.twoTask:
-  from models_instanceNorm_reco_2chan_multiTask import ResBlock, ResNet34
-  from datasets_reco_5ClassHardLabel_multiTask import mean, std
-else:
-  from models_instanceNorm_reco_2chan_tripleTask import ResBlock, ResNet34
-  from datasets_reco_5ClassHardLabel_tripleTask import mean, std
-
-if args.isMC and args.makePlots:
-  import matplotlib as mpl
-  import matplotlib.pyplot as plt
-  import matplotlib.backends.backend_pdf
-  mpl.rcParams['figure.dpi'] = 300
-  #plotfilename = "selection_test_images_run%i_subrun%i_event%i.pdf"%(args.run,args.subrun,args.event)
-  plotfilename = "selection_test_images_for_score_removed_CCnumu_background_highRes.pdf"
-  if args.twoTask:
-    plotfilename = plotfilename.replace(".pdf","_twoTask.pdf")
-  outpdf = matplotlib.backends.backend_pdf.PdfPages(plotfilename)
+from models_instanceNorm_reco_2chan_tripleTask import ResBlock, ResNet34
+from datasets_reco_5ClassHardLabel_tripleTask import mean, std
 
 if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
-
 
 reco2Tag = "merged_dlreco_"
 if args.dlana_input:
@@ -79,8 +61,6 @@ if len(args.files) == 1 and ".txt" in args.files[0]:
   files = getFiles(reco2Tag, larflowfiles, args.truth)
 else:
   files = getFiles(reco2Tag, args.files, args.truth)
-
-plotEvents = [[16960, 184, 9249], [16962, 75, 3769], [16935, 300, 15039], [16944, 110, 5549], [16947, 210, 10533], [18508, 291, 14580], [18527, 20, 1034], [18511, 29, 1461], [18514, 195, 9777], [18577, 320, 16019], [18525, 115, 5767], [18520, 13, 676], [18005, 67, 3367], [18021, 3, 166], [18031, 383, 19184], [18032, 515, 25798], [18860, 124, 6248], [18863, 152, 7650], [18874, 72, 3648], [18862, 415, 20765]]
 
 
 def addClusterCharge(iolcv, cluster, vertexPixels, vertexCharge, threshold):
@@ -232,65 +212,6 @@ def makeImage(prong_vv):
   return torch.clamp(image, max=4.0)
 
 
-def plotEventTitle(r, sr, e, primInfo):
-  fig = plt.figure(0, clear=True)
-  plt.suptitle("\n\n\nRun %i Subrun %i Event %i \n\n\n %s"%(r, sr, e, primInfo), fontsize=12)
-  outpdf.savefig(fig)
-
-
-def plotImage(X, r, sr, e, pdg, purity, completeness, visE, compPred, purPred, elScore, phScore, muScore, piScore, prScore):
-  #pltmin = None
-  #pltmax = None
-  if args.device != "cpu":
-    X = X.cpu()
-  pltmin = -1.
-  pltmax = 2.
-  suptitlesize=6
-  titlesize=8
-  ticksize=6
-  X0 = X[:,0:2].reshape(X.shape[0], 2, 512, 512)
-  X1 = X[:,2:4].reshape(X.shape[0], 2, 512, 512)
-  X2 = X[:,4:].reshape(X.shape[0], 2, 512, 512)
-  fig = plt.figure(0, clear=True)
-  plt.subplot(2,3,1)
-  plt.imshow(X0.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 0 prong", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  plt.subplot(2,3,2)
-  plt.imshow(X1.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 1 prong", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  plt.subplot(2,3,3)
-  plt.imshow(X2.numpy()[0][0], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 2 prong", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  plt.subplot(2,3,4)
-  plt.imshow(X0.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 0 all", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  plt.subplot(2,3,5)
-  plt.imshow(X1.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 1 all", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  plt.subplot(2,3,6)
-  plt.imshow(X2.numpy()[0][1], vmin=pltmin, vmax=pltmax, cmap='jet')
-  plt.title("plane 2 all", fontsize=titlesize)
-  plt.xticks(fontsize=ticksize)
-  plt.yticks(fontsize=ticksize)
-  if args.twoTask:
-    plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred), fontsize=suptitlesize)
-  else:
-    plt.suptitle("Run %i Subrun %i Event %i  |  Prong: pdg %i, purity %.2f, completeness %.2f, visible energy %.2e \n e- score %.2f, photon score %.2f, mu score: %.2f, pi score %.2f, proton score %.2f, completeness prediction: %.2f, purity prediction: %.2f"%(r, sr, e, pdg, purity, completeness, visE, elScore, phScore, muScore, piScore, prScore, compPred, purPred), fontsize=suptitlesize)
-  #plt.show()
-  outpdf.savefig(fig)
-  return
-
-
 def getPID(cnnClass):
     if cnnClass == 0:
         return 11
@@ -339,25 +260,53 @@ if args.isMC:
 eventTree = rt.TTree("EventTree","EventTree")
 maxNTrks = 100
 maxNShwrs = 100
+maxNParts = 1000
 fileid = array('i', [0])
 run = array('i', [0])
 subrun = array('i', [0])
 event = array('i', [0])
 xsecWeight = array('f', [0.])
 trueNuE = array('f', [0.])
-trueLepE = array('f', [0.])
-trueLepPDG = array('i', [0])
-trueMuContained = array('i', [0])
 trueNuPDG = array('i', [0])
 trueNuCCNC = array('i', [0])
+trueVtxX = array('f', [0.])
+trueVtxY = array('f', [0.])
+trueVtxZ = array('f', [0.])
+trueLepE = array('f', [0.])
+trueLepPDG = array('i', [0])
+nTruePrimParts = array('i', [0])
+truePrimPartPDG = array('i', maxNParts*[0])
+truePrimPartX = array('f', maxNParts*[0.])
+truePrimPartY = array('f', maxNParts*[0.])
+truePrimPartZ = array('f', maxNParts*[0.])
+truePrimPartPx = array('f', maxNParts*[0.])
+truePrimPartPy = array('f', maxNParts*[0.])
+truePrimPartPz = array('f', maxNParts*[0.])
+truePrimPartE = array('f', maxNParts*[0.])
+truePrimPartContained = array('i', maxNParts*[0])
+nTrueSimParts = array('i', [0])
+trueSimPartPDG = array('i', maxNParts*[0])
+trueSimPartTID = array('i', maxNParts*[0])
+trueSimPartMID = array('i', maxNParts*[0])
+trueSimPartProcess = array('i', maxNParts*[0])
+trueSimPartX = array('f', maxNParts*[0.])
+trueSimPartY = array('f', maxNParts*[0.])
+trueSimPartZ = array('f', maxNParts*[0.])
+trueSimPartEDepX = array('f', maxNParts*[0.])
+trueSimPartEDepY = array('f', maxNParts*[0.])
+trueSimPartEDepZ = array('f', maxNParts*[0.])
+trueSimPartPx = array('f', maxNParts*[0.])
+trueSimPartPy = array('f', maxNParts*[0.])
+trueSimPartPz = array('f', maxNParts*[0.])
+trueSimPartE = array('f', maxNParts*[0.])
+trueSimPartContained = array('i', maxNParts*[0])
 recoNuE = array('f', [0.])
-nVertices = array('i', [0])
+foundVertex = array('i', [0])
 vtxX = array('f', [0.])
 vtxY = array('f', [0.])
 vtxZ = array('f', [0.])
 vtxIsFiducial = array('i', [0])
 vtxDistToTrue = array('f', [0.])
-vtxBestComp = array('f', [0.])
 vtxScore = array('f', [0.])
 vtxFracHitsOnCosmic = array('f', [0.])
 nTracks = array('i', [0])
@@ -366,8 +315,6 @@ trackNHits = array('i', maxNTrks*[0])
 trackHitFrac = array('f', maxNTrks*[0.])
 trackCharge = array('f', maxNTrks*[0.])
 trackChargeFrac = array('f', maxNTrks*[0.])
-trackMuKE = array('f', maxNTrks*[0.])
-trackPrKE = array('f', maxNTrks*[0.])
 trackCosTheta = array('f', maxNTrks*[0.])
 trackCosThetaY = array('f', maxNTrks*[0.])
 trackDistToVtx = array('f', maxNTrks*[0.])
@@ -397,9 +344,6 @@ showerNHits = array('i', maxNShwrs*[0])
 showerHitFrac = array('f', maxNShwrs*[0.])
 showerCharge = array('f', maxNShwrs*[0.])
 showerChargeFrac = array('f', maxNShwrs*[0.])
-showerPl0E = array('f', maxNShwrs*[0.])
-showerPl1E = array('f', maxNShwrs*[0.])
-showerPl2E = array('f', maxNShwrs*[0.])
 showerCosTheta = array('f', maxNShwrs*[0.])
 showerCosThetaY = array('f', maxNShwrs*[0.])
 showerDistToVtx = array('f', maxNShwrs*[0.])
@@ -429,19 +373,46 @@ eventTree.Branch("subrun", subrun, 'subrun/I')
 eventTree.Branch("event", event, 'event/I')
 eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
 eventTree.Branch("trueNuE", trueNuE, 'trueNuE/F')
-eventTree.Branch("trueLepE", trueLepE, 'trueLepE/F')
-eventTree.Branch("trueLepPDG", trueLepPDG, 'trueLepPDG/I')
-eventTree.Branch("trueMuContained", trueMuContained, 'trueMuContained/I')
 eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
 eventTree.Branch("trueNuCCNC", trueNuCCNC, 'trueNuCCNC/I')
+eventTree.Branch("trueVtxX", trueVtxX, 'trueVtxX/F')
+eventTree.Branch("trueVtxY", trueVtxY, 'trueVtxY/F')
+eventTree.Branch("trueVtxZ", trueVtxZ, 'trueVtxZ/F')
+eventTree.Branch("trueLepE", trueLepE, 'trueLepE/F')
+eventTree.Branch("trueLepPDG", trueLepPDG, 'trueLepPDG/I')
+eventTree.Branch("nTruePrimParts", nTruePrimParts, 'nTruePrimParts/I')
+eventTree.Branch("truePrimPartPDG", truePrimPartPDG, 'truePrimPartPDG[nTruePrimParts]/I')
+eventTree.Branch("truePrimPartX", truePrimPartX, 'truePrimPartX[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartY", truePrimPartY, 'truePrimPartY[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartZ", truePrimPartZ, 'truePrimPartZ[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartPx", truePrimPartPx, 'truePrimPartPx[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartPy", truePrimPartPy, 'truePrimPartPy[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartPz", truePrimPartPz, 'truePrimPartPz[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartE", truePrimPartE, 'truePrimPartE[nTruePrimParts]/F')
+eventTree.Branch("truePrimPartContained", truePrimPartContained, 'truePrimPartContained[nTruePrimParts]/I')
+eventTree.Branch("nTrueSimParts", nTrueSimParts, 'nTrueSimParts/I')
+eventTree.Branch("trueSimPartPDG", trueSimPartPDG, 'trueSimPartPDG[nTrueSimParts]/I')
+eventTree.Branch("trueSimPartTID", trueSimPartTID, 'trueSimPartTID[nTrueSimParts]/I')
+eventTree.Branch("trueSimPartMID", trueSimPartMID, 'trueSimPartMID[nTrueSimParts]/I')
+eventTree.Branch("trueSimPartProcess", trueSimPartProcess, 'trueSimPartProcess[nTrueSimParts]/I')
+eventTree.Branch("trueSimPartX", trueSimPartX, 'trueSimPartX[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartY", trueSimPartY, 'trueSimPartY[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartZ", trueSimPartZ, 'trueSimPartZ[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartEDepX", trueSimPartEDepX, 'trueSimPartEDepX[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartEDepY", trueSimPartEDepY, 'trueSimPartEDepY[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartEDepZ", trueSimPartEDepZ, 'trueSimPartEDepZ[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartPx", trueSimPartPx, 'trueSimPartPx[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartPy", trueSimPartPy, 'trueSimPartPy[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartPz", trueSimPartPz, 'trueSimPartPz[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartE", trueSimPartE, 'trueSimPartE[nTrueSimParts]/F')
+eventTree.Branch("trueSimPartContained", trueSimPartContained, 'trueSimPartContained[nTrueSimParts]/I')
 eventTree.Branch("recoNuE", recoNuE, 'recoNuE/F')
-eventTree.Branch("nVertices", nVertices, 'nVertices/I')
+eventTree.Branch("foundVertex", foundVertex, 'foundVertex/I')
 eventTree.Branch("vtxX", vtxX, 'vtxX/F')
 eventTree.Branch("vtxY", vtxY, 'vtxY/F')
 eventTree.Branch("vtxZ", vtxZ, 'vtxZ/F')
 eventTree.Branch("vtxIsFiducial", vtxIsFiducial, 'vtxIsFiducial/I')
 eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
-eventTree.Branch("vtxBestComp", vtxBestComp, 'vtxBestComp/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
 eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmic/F')
 eventTree.Branch("nTracks", nTracks, 'nTracks/I')
@@ -450,8 +421,6 @@ eventTree.Branch("trackNHits", trackNHits, 'trackNHits[nTracks]/I')
 eventTree.Branch("trackHitFrac", trackHitFrac, 'trackHitFrac[nTracks]/F')
 eventTree.Branch("trackCharge", trackCharge, 'trackCharge[nTracks]/F')
 eventTree.Branch("trackChargeFrac", trackChargeFrac, 'trackChargeFrac[nTracks]/F')
-eventTree.Branch("trackMuKE", trackMuKE, 'trackMuKE[nTracks]/F')
-eventTree.Branch("trackPrKE", trackPrKE, 'trackPrKE[nTracks]/F')
 eventTree.Branch("trackCosTheta", trackCosTheta, 'trackCosTheta[nTracks]/F')
 eventTree.Branch("trackCosThetaY", trackCosThetaY, 'trackCosThetaY[nTracks]/F')
 eventTree.Branch("trackDistToVtx", trackDistToVtx, 'trackDistToVtx[nTracks]/F')
@@ -481,14 +450,19 @@ eventTree.Branch("showerNHits", showerNHits, 'showerNHits[nShowers]/I')
 eventTree.Branch("showerHitFrac", showerHitFrac, 'showerHitFrac[nShowers]/F')
 eventTree.Branch("showerCharge", showerCharge, 'showerCharge[nShowers]/F')
 eventTree.Branch("showerChargeFrac", showerChargeFrac, 'showerChargeFrac[nShowers]/F')
-eventTree.Branch("showerPl0E", showerPl0E, 'showerPl0E[nShowers]/F')
-eventTree.Branch("showerPl1E", showerPl1E, 'showerPl1E[nShowers]/F')
-eventTree.Branch("showerPl2E", showerPl2E, 'showerPl2E[nShowers]/F')
 eventTree.Branch("showerCosTheta", showerCosTheta, 'showerCosTheta[nShowers]/F')
 eventTree.Branch("showerCosThetaY", showerCosThetaY, 'showerCosThetaY[nShowers]/F')
 eventTree.Branch("showerDistToVtx", showerDistToVtx, 'showerDistToVtx[nShowers]/F')
 eventTree.Branch("showerClassified", showerClassified, 'showerClassified[nShowers]/I')
 eventTree.Branch("showerPID", showerPID, 'showerPID[nShowers]/I')
+eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
+eventTree.Branch("showerPhScore", showerPhScore, 'showerPhScore[nShowers]/F')
+eventTree.Branch("showerMuScore", showerMuScore, 'showerMuScore[nShowers]/F')
+eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
+eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
+eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
+eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
+eventTree.Branch("showerRecoE", showerRecoE, 'showerRecoE[nShowers]/F')
 eventTree.Branch("showerTruePID", showerTruePID, 'showerTruePID[nShowers]/I')
 eventTree.Branch("showerTrueTID", showerTrueTID, 'showerTrueTID[nShowers]/I')
 eventTree.Branch("showerTrueE", showerTrueE, 'showerTrueE[nShowers]/F')
@@ -499,14 +473,6 @@ eventTree.Branch("showerTruePhPurity", showerTruePhPurity, 'showerTruePhPurity[n
 eventTree.Branch("showerTrueMuPurity", showerTrueMuPurity, 'showerTrueMuPurity[nShowers]/F')
 eventTree.Branch("showerTruePiPurity", showerTruePiPurity, 'showerTruePiPurity[nShowers]/F')
 eventTree.Branch("showerTruePrPurity", showerTruePrPurity, 'showerTruePrPurity[nShowers]/F')
-eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
-eventTree.Branch("showerPhScore", showerPhScore, 'showerPhScore[nShowers]/F')
-eventTree.Branch("showerMuScore", showerMuScore, 'showerMuScore[nShowers]/F')
-eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
-eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
-eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
-eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
-eventTree.Branch("showerRecoE", showerRecoE, 'showerRecoE[nShowers]/F')
 
 
 if args.isMC:
@@ -562,9 +528,6 @@ for filepair in files:
 
     if args.isMC:
 
-      if args.makePlots and [kpst.run, kpst.subrun, kpst.event] not in plotEvents:
-        continue
-
       mctruth = ioll.get_data(larlite.data.kMCTruth, "generator")
       nuInt = mctruth.at(0).GetNeutrino()
       lep = nuInt.Lepton()
@@ -576,60 +539,96 @@ for filepair in files:
 
       try:
         xsecWeight[0] = weights.get(kpst.run, kpst.subrun, kpst.event)
+        if isinf(xsecWeight[0]):
+          continue
       except:
         print("Couldn't find weight for run %i, subrun %i, event %i in %s!!!"%(kpst.run, kpst.subrun, kpst.event, args.weightfile))
         continue
 
       if nuInt.CCNC() == 0:
-
-        if lep.PdgCode() not in [11,13]:
-          continue
-
-        lepPDG = lep.PdgCode()
-
-        if lepPDG == 13:
-          mcleptons = ioll.get_data(larlite.data.kMCTrack, "mcreco")
-        if lepPDG == 11:
-          mcleptons = ioll.get_data(larlite.data.kMCShower, "mcreco")
-        for mclepton in mcleptons:
-          if mclepton.PdgCode() == lepPDG and mclepton.Process() == 'primary':
-            mcLeptonUnCorr = mclepton
-            break
-  
-        if not MCLeptonOkay(lep, mcLeptonUnCorr):
-          print("Couldn't find MC lepton match!!!")
-          continue
-
-        totLepPixI, lepTickLists, lepPixelDictList = getLeptonPixels(lepPDG, ioll, iolcv)
-        if not totLepPixI > 0.:
-          continue
-
-        trueMuContained[0] = -1
-        if lepPDG == 13:
-          if isInDetector(mcLeptonUnCorr.End()):
-            trueMuContained[0] = 1
-          else:
-            trueMuContained[0] = 0
-
-        trueLepPDG[0] = lepPDG
+        trueLepPDG[0] = lep.PdgCode()
         trueLepE[0] = lep.Momentum().E()
-
-      else: #from "if nuInt.CCNC"
+      else:
         trueLepPDG[0] = 0
         trueLepE[0] = -9.
 
       trueNuPDG[0] = nuInt.Nu().PdgCode()
       trueNuCCNC[0] = nuInt.CCNC()
       trueNuE[0] = nuInt.Nu().Momentum().E()
-      
+      trueVtxX[0] = trueVtxPos.X()
+      trueVtxY[0] = trueVtxPos.Y()
+      trueVtxZ[0] = trueVtxPos.Z()
+
+      nTruePrimParts[0] = 0
+      iPP = 0
+      for mcpart in mctruth.at(0).GetParticles():
+        if mcpart.StatusCode() == 1:
+          nTruePrimParts[0] += 1
+          truePrimPartPDG[iPP] = mcpart.PdgCode()
+          sceCorrectedStartPos = getSCECorrectedPos(mcpart.Position(0), sce)
+          sceCorrectedEndPos = getSCECorrectedPos(mcpart.Position(mcpart.Trajectory().size()-1), sce)
+          truePrimPartX[iPP] = sceCorrectedStartPos.X()
+          truePrimPartY[iPP] = sceCorrectedStartPos.Y()
+          truePrimPartZ[iPP] = sceCorrectedStartPos.Z()
+          truePrimPartPx[iPP] = mcpart.Momentum(0).Px()
+          truePrimPartPy[iPP] = mcpart.Momentum(0).Py()
+          truePrimPartPz[iPP] = mcpart.Momentum(0).Pz()
+          truePrimPartE[iPP] = mcpart.Momentum(0).E()
+          truePrimPartContained[iPP] = isFiducialWC(sceCorrectedEndPos)
+          iPP += 1
+
+      mctracks = ioll.get_data(larlite.data.kMCTrack, "mcreco")
+      mcshowers = ioll.get_data(larlite.data.kMCShower, "mcreco")
+
+      nTrueSimParts[0] = 0
+      iDS = 0
+      for mcparts in [mctracks, mcshowers]:
+        for mcpart in mcparts:
+          nTrueSimParts[0] += 1
+          trueSimPartPDG[iDS] = mcpart.PdgCode()
+          trueSimPartTID[iDS] = mcpart.TrackID()
+          trueSimPartMID[iDS] = mcpart.MotherTrackID()
+          if mcpart.Process() == 'primary':
+            trueSimPartProcess[iDS] = 0
+          elif mcpart.Process() == 'Decay':
+            trueSimPartProcess[iDS] = 1
+          else:
+            trueSimPartProcess[iDS] = 2
+          sceCorrectedStartPos = getSCECorrectedPos(mcpart.Start(), sce)
+          sceCorrectedEndPos = getSCECorrectedPos(mcpart.End(), sce)
+          trueSimPartX[iDS] = sceCorrectedStartPos.X()
+          trueSimPartY[iDS] = sceCorrectedStartPos.Y()
+          trueSimPartZ[iDS] = sceCorrectedStartPos.Z()
+          if mcpart.PdgCode() == 22:
+            print("found gamma")
+            mcpart
+            print(mcpart.DetProfile().X(), mcpart.DetProfile().Y(), mcpart.DetProfile().Z())
+            trueSimPartEDepX[iDS] = mcpart.DetProfile().X()
+            trueSimPartEDepY[iDS] = mcpart.DetProfile().Y()
+            trueSimPartEDepZ[iDS] = mcpart.DetProfile().Z()
+          else:
+            trueSimPartEDepX[iDS] = sceCorrectedStartPos.X()
+            trueSimPartEDepY[iDS] = sceCorrectedStartPos.Y()
+            trueSimPartEDepZ[iDS] = sceCorrectedStartPos.Z()
+          trueSimPartPx[iDS] = mcpart.Start().Px()
+          trueSimPartPy[iDS] = mcpart.Start().Py()
+          trueSimPartPz[iDS] = mcpart.Start().Pz()
+          trueSimPartE[iDS] = mcpart.Start().E()
+          trueSimPartContained[iDS] = isFiducialWC(sceCorrectedEndPos)
+          iDS += 1
 
     else: #from "if args.isMC"
+      xsecWeight[0] = -1.
       trueLepPDG[0] = 0
-      trueMuContained[0] = -1
       trueLepE[0] = -9.
       trueNuPDG[0] = 0
       trueNuCCNC[0] = -1
       trueNuE[0] = -9.
+      trueVtxX[0] = -999.
+      trueVtxY[0] = -999.
+      trueVtxZ[0] = -999.
+      nTruePrimParts[0] = -1
+      nTrueSimParts[0] = -1
 
     fileid[0] = -1
     for tag in filepair[0].split("_"):
@@ -640,29 +639,23 @@ for filepair in files:
     subrun[0] = kpst.subrun
     event[0] = kpst.event
 
-    vertices = kpst.nuvetoed_v
-    if args.oldVtxBranch:
-      vertices = kpst.nufitted_v
-  
-    nVertices[0] = 0
+    foundVertex[0] = 0
     vtxScore[0] = -1.
-    foundVertex = False
-    for vtx in vertices:
+    for vtx in kpst.nuvetoed_v:
       if vtx.keypoint_type != 0:
         continue
-      nVertices[0] += 1
-      foundVertex = True
+      foundVertex[0] = 1
       if vtx.netNuScore > vtxScore[0]:
         vtxScore[0] = vtx.netNuScore
         vertex = vtx
 
-    if not foundVertex:
-      vtxX[0] = -9999.
-      vtxY[0] = -9999.
-      vtxZ[0] = -9999.
+    if foundVertex[0] == 0:
+      recoNuE[0] = -9.
+      vtxX[0] = -999.
+      vtxY[0] = -999.
+      vtxZ[0] = -999.
       vtxIsFiducial[0] = -1
       vtxDistToTrue[0] = -99.
-      vtxBestComp[0] = -1.
       vtxFracHitsOnCosmic[0] = -1.
       nTracks[0] = 0
       nShowers[0] = 0
@@ -671,26 +664,14 @@ for filepair in files:
 
     if args.isMC:
       vtxDistToTrue[0] = getVertexDistance(trueVtxPos, vertex)
-      if nuInt.CCNC() == 0:
-        vtxBestComp[0] = getBestCompleteness(iolcv, vertex, lepPDG, totLepPixI, lepTickLists, lepPixelDictList)
-      else:
-        vtxBestComp[0] = -1.
       mcpg = ublarcvapp.mctools.MCPixelPGraph()
       mcpg.set_adc_treename("wire")
       mcpg.buildgraph(iolcv, ioll)
       mcpm = ublarcvapp.mctools.MCPixelPMap()
       mcpm.set_adc_treename("wire")
       mcpm.buildmap(iolcv, mcpg)
-      if args.makePlots:
-        primaryPartInfo = "Primary Particles:\n\n"
-        for node in mcpg.node_v:
-          if (node.tid == node.mtid and node.origin == 1 and node.process == "primary"):
-            primaryPartInfo += "  %i (%.2f MeV)\n"%(node.pid, node.E_MeV)
-        #primaryPartInfo = primaryPartInfo[:-2]
-        plotEventTitle(run[0], subrun[0], event[0], primaryPartInfo)
     else:
       vtxDistToTrue[0] = -99.
-      vtxBestComp[0] = -1.
 
     vtxX[0] = vertex.pos[0]
     vtxY[0] = vertex.pos[1]
@@ -723,8 +704,6 @@ for filepair in files:
       trackIsSecondary[iTrk] = vertex.track_isSecondary_v[iTrk]
       trackNHits[iTrk] = trackCls.size()
       trackCharge[iTrk], vertexPixels, vertexCharge = addClusterCharge(iolcv,trackCls,vertexPixels,vertexCharge,10.)
-      trackMuKE[iTrk] = vertex.track_kemu_v[iTrk]
-      trackPrKE[iTrk] = vertex.track_keproton_v[iTrk]
       nTrajPoints = vertex.track_v[iTrk].NumberTrajectoryPoints()
       trackLength = getDistance(vertex.track_v[iTrk].Vertex(),vertex.track_v[iTrk].End()) if (nTrajPoints > 1) else -9.
       goodTrack = nTrajPoints > 1 and trackLength > 1e-6
@@ -764,12 +743,11 @@ for filepair in files:
       trackPiScore[iTrk] = prongCNN_out[0][0][3].item()
       trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
       trackComp[iTrk] = prongCNN_out[1].item()
-      if not args.twoTask:
-        trackPurity[iTrk] = prongCNN_out[2].item()
+      trackPurity[iTrk] = prongCNN_out[2].item()
       if trackMuScore[iTrk] >= trackPiScore[iTrk] and trackMuScore[iTrk] >= trackPrScore[iTrk]:
-        trackRecoE[iTrk] = trackMuKE[iTrk]
+        trackRecoE[iTrk] = vertex.track_kemu_v[iTrk]
       elif trackPrScore[iTrk] >= trackMuScore[iTrk] and trackPrScore[iTrk] >= trackPiScore[iTrk]:
-        trackRecoE[iTrk] = trackPrKE[iTrk]
+        trackRecoE[iTrk] = vertex.track_keproton_v[iTrk]
       else:
         trackRecoE[iTrk] = piKEestimator.Eval(getTrackLength(vertex.track_v[iTrk]))
       recoNuE[0] += trackRecoE[iTrk]
@@ -797,10 +775,6 @@ for filepair in files:
             trackTruePiPurity[iTrk] = allPurities[iTru]
           if current_pdg == 2212:
             trackTruePrPurity[iTrk] = allPurities[iTru]
-        if args.makePlots:
-          plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                    trackCharge[iTrk], trackComp[iTrk], trackPurity[iTrk], trackElScore[iTrk],
-                    trackPhScore[iTrk], trackMuScore[iTrk], trackPiScore[iTrk], trackPrScore[iTrk])
       else:
         trackTruePID[iTrk] = 0
         trackTrueTID[iTrk] = -1
@@ -820,14 +794,11 @@ for filepair in files:
       showerIsSecondary[iShw] = vertex.shower_isSecondary_v[iShw]
       showerNHits[iShw] = shower.size()
       showerCharge[iShw], vertexPixels, vertexCharge = addClusterCharge(iolcv,shower,vertexPixels,vertexCharge, 10.)
-      showerPl0E[iShw] = vertex.shower_plane_mom_vv[iShw][0].E()
-      showerPl1E[iShw] = vertex.shower_plane_mom_vv[iShw][1].E()
-      showerPl2E[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
       showerCosTheta[iShw] = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
       showerCosThetaY[iShw] = getCosThetaGravShower(vertex.shower_trunk_v[iShw])
       showerDistToVtx[iShw] = getVertexDistance(vertex.shower_trunk_v[iShw].Vertex(), vertex)
-      showerRecoE[iShw] = showerPl2E[iShw]
-      recoNuE[0] += showerPl2E[iShw]
+      showerRecoE[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
+      recoNuE[0] += vertex.shower_plane_mom_vv[iShw][2].E()
 
       cropPt = vertex.shower_trunk_v[iShw].Vertex()
       prong_vv = flowTriples.make_cropped_initial_sparse_prong_image_reco(adc_v,thrumu_v,shower,cropPt,10.,512,512)
@@ -858,8 +829,7 @@ for filepair in files:
       showerPiScore[iShw] = prongCNN_out[0][0][3].item()
       showerPrScore[iShw] = prongCNN_out[0][0][4].item()
       showerComp[iShw] = prongCNN_out[1].item()
-      if not args.twoTask:
-        showerPurity[iShw] = prongCNN_out[2].item()
+      showerPurity[iShw] = prongCNN_out[2].item()
 
       if args.isMC:
         pdg, trackid, trueE, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v, ioll)
@@ -884,10 +854,6 @@ for filepair in files:
             showerTruePiPurity[iShw] = allPurities[iTru]
           if current_pdg == 2212:
             showerTruePrPurity[iShw] = allPurities[iTru]
-        if args.makePlots:
-          plotImage(prongImage, run[0], subrun[0], event[0], pdg, purity, completeness,
-                    showerCharge[iShw], showerComp[iShw], showerPurity[iShw], showerElScore[iShw],
-                    showerPhScore[iShw], showerMuScore[iShw], showerPiScore[iShw], showerPrScore[iShw])
       else:
         showerTruePID[iShw] = 0
         showerTrueTID[iShw] = -1
@@ -930,7 +896,4 @@ eventTree.Write("",rt.TObject.kOverwrite)
 if args.isMC:
   potTree.Write("",rt.TObject.kOverwrite)
 outRootFile.Close()
-
-if args.isMC and args.makePlots:
-  outpdf.close()
 
