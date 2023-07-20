@@ -9,8 +9,8 @@ from helpers.larflowreco_ana_funcs import isFiducialWC
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_nu_file.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_nue_file.root", help="bnb nu input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nu_file.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nue_file.root", help="bnb nu input file")
 parser.add_argument("-fext", "--extbnb_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root", help="extbnb input file")
 parser.add_argument("-fdata", "--data_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_bnb5e19_file.root", help="bnb data input file")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
@@ -21,6 +21,7 @@ parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron c
 parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="electron charge fraction cut value")
 parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
 parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output.root", help="output root file name")
+parser.add_argument("--recoEOverflow", help="plot overflow bin for final recoE selection plot", action="store_true")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -350,12 +351,20 @@ h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
 h_nuE_CCnue_pur.SetLineColor(8)
 h_nuE_CCnue_pur.SetLineWidth(2)
 
-h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",30,0,6)
-h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",30,0,6)
-h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",30,0,6)
-h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",30,0,6)
-h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",30,0,6)
-h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",30,0,6)
+if args.recoEOverflow:
+  h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",14,0,2.8)
+  h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",14,0,2.8)
+  h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",14,0,2.8)
+  h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",14,0,2.8)
+  h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",14,0,2.8)
+  h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",14,0,2.8)
+else:
+  h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",30,0,6)
+  h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",30,0,6)
+  h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",30,0,6)
+  h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",30,0,6)
+  h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",30,0,6)
+  h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",30,0,6)
 h_visE_CCnue_wCuts.SetFillColor(rt.kRed)
 h_visE_NCnue_wCuts.SetFillColor(8)
 h_visE_CCnumu_wCuts.SetFillColor(rt.kBlue)
@@ -756,15 +765,24 @@ for i in range(tnu.GetEntries()):
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
           h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+            h_visE_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+          else:
+            h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
         if eventType == 1:
           n_runs1to3_NCnumu_pass += tnu.xsecWeight
           h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+            h_visE_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+          else:
+            h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
           h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+            h_visE_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
+          else:
+            h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
 
     else:
       h_phScVsPrSum_allMC_bkg.Fill(elMaxQPuritySum, elMaxQPhScore, tnu.xsecWeight)
@@ -979,7 +997,10 @@ for i in range(tnue.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_CCnue_pass += tnue.xsecWeight
         h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
-        h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
+        if args.recoEOverflow and tnue.recoNuE/1000. > 2.6:
+          h_visE_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+        else:
+          h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
 
   if nMuons >= 1:
     h_muMaxComp_CCnue.Fill(muMaxComp, tnue.xsecWeight)
@@ -1104,7 +1125,10 @@ for i in range(text.GetEntries()):
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_ext_pass += 1.
         h_nuE_ext_wCuts.Fill(text.trueNuE)
-        h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
+        if args.recoEOverflow and text.recoNuE/1000. > 2.6:
+          h_visE_ext_wCuts.Fill(2.7)
+        else:
+          h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
 
   if nMuons >= 1:
     h_muMaxComp_ext.Fill(muMaxComp)
@@ -1162,7 +1186,10 @@ for i in range(tdata.GetEntries()):
     if elMaxQConf > args.confCut:
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_data_pass += 1.
-        h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
+        if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
+          h_visE_data_wCuts.Fill(2.7)
+        else:
+          h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
         out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, tdata.recoNuE))
 
 

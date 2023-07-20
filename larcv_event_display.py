@@ -45,6 +45,31 @@ outfile = rt.TFile("event_display_hists.root","RECREATE")
 rt.gStyle.SetOptStat(0)
 rt.gROOT.SetBatch(rt.kTRUE)
 
+def getBNB5e19EventString_newEvents(lineBreaks=True):
+  selDir="/home/matthew/microboone/tufts/gen2val/selection_output"
+  with open("%s/selected_bnb5e19_events_expandedGen2FV_and_WCFCPC_all.txt"%selDir,"r") as evtFile:
+    for line in evtFile:
+      if "fileid" in line:
+        continue
+      data = line.split()
+      if int(data[1]) == args.run and int(data[2]) == args.subrun and int(data[3]) == args.event:
+        foundInGen2 = int(data[4])
+        foundInWC = int(data[5])
+        foundInGen2Str = "Yes" if foundInGen2 else "No"
+        foundInWCStr = "Yes" if foundInWC else "No"
+        if "-1" in data[6]:
+          recoNuE = "?"
+        else:
+          recoNuE = ("%.2f"%float(data[6]))+" MeV"
+        if "-1" in data[7]:
+          recoNuE_WC = "?"
+        else:
+          recoNuE_WC = ("%.2f"%float(data[7]))+" MeV"
+        break
+  if lineBreaks:
+    return "run %i subrun %i event %i \n DL Gen2 reco neutrino energy: %s \n Wire Cell reco neutrino energy: %s \n found in DL Gen2: %s \n found in wire cell: %s"%(args.run,args.subrun,args.event,recoNuE,recoNuE_WC,foundInGen2Str,foundInWCStr)
+  return "run %i subrun %i event %i / DL Gen2 reco neutrino energy: %s / found in DL Gen2: %s / found in wire cell: %s"%(args.run,args.subrun,args.event,recoNuE,foundInGen2Str,foundInWCStr)
+
 def getBNB5e19EventString(lineBreaks=True):
   selDir="/home/matthew/microboone/tufts/gen2val/selection_output"
   with open("%s/selected_bnb5e19_events_sorted_with_WC_recoE_plotBounds.txt"%selDir,"r") as evtFile:
@@ -139,7 +164,7 @@ def plotImage(adc_v):
     plt.yticks(fontsize=ticksize)
   if zoom:
     if args.look_up_event:
-      plt.suptitle(getBNB5e19EventString())
+      plt.suptitle(getBNB5e19EventString_newEvents())
     else:
       plt.suptitle("run %i subrun %i event %i"%(args.run,args.subrun,args.event))
   if args.output_dir != "":
@@ -224,9 +249,9 @@ def plotImageRoot(adc_v):
   lat = rt.TLatex()
   if args.look_up_event:
     if zoom:
-      lat.DrawLatexNDC(.05,.95,getBNB5e19EventString(False))
+      lat.DrawLatexNDC(.05,.95,getBNB5e19EventString_newEvents(False))
     else:
-      lat.DrawLatexNDC(.4,.95,getBNB5e19EventString(False))
+      lat.DrawLatexNDC(.4,.95,getBNB5e19EventString_newEvents(False))
   else:
     lat.DrawLatexNDC(.4,.95,"run %i subrun %i event %i"%(args.run,args.subrun,args.event))
   outfile.cd()
