@@ -600,9 +600,6 @@ for filepair in files:
           trueSimPartY[iDS] = sceCorrectedStartPos.Y()
           trueSimPartZ[iDS] = sceCorrectedStartPos.Z()
           if mcpart.PdgCode() == 22:
-            print("found gamma")
-            mcpart
-            print(mcpart.DetProfile().X(), mcpart.DetProfile().Y(), mcpart.DetProfile().Z())
             trueSimPartEDepX[iDS] = mcpart.DetProfile().X()
             trueSimPartEDepY[iDS] = mcpart.DetProfile().Y()
             trueSimPartEDepZ[iDS] = mcpart.DetProfile().Z()
