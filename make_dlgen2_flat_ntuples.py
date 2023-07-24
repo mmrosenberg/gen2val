@@ -265,48 +265,50 @@ fileid = array('i', [0])
 run = array('i', [0])
 subrun = array('i', [0])
 event = array('i', [0])
-xsecWeight = array('f', [0.])
-trueNuE = array('f', [0.])
-trueNuPDG = array('i', [0])
-trueNuCCNC = array('i', [0])
-trueVtxX = array('f', [0.])
-trueVtxY = array('f', [0.])
-trueVtxZ = array('f', [0.])
-trueLepE = array('f', [0.])
-trueLepPDG = array('i', [0])
-nTruePrimParts = array('i', [0])
-truePrimPartPDG = array('i', maxNParts*[0])
-truePrimPartX = array('f', maxNParts*[0.])
-truePrimPartY = array('f', maxNParts*[0.])
-truePrimPartZ = array('f', maxNParts*[0.])
-truePrimPartPx = array('f', maxNParts*[0.])
-truePrimPartPy = array('f', maxNParts*[0.])
-truePrimPartPz = array('f', maxNParts*[0.])
-truePrimPartE = array('f', maxNParts*[0.])
-truePrimPartContained = array('i', maxNParts*[0])
-nTrueSimParts = array('i', [0])
-trueSimPartPDG = array('i', maxNParts*[0])
-trueSimPartTID = array('i', maxNParts*[0])
-trueSimPartMID = array('i', maxNParts*[0])
-trueSimPartProcess = array('i', maxNParts*[0])
-trueSimPartX = array('f', maxNParts*[0.])
-trueSimPartY = array('f', maxNParts*[0.])
-trueSimPartZ = array('f', maxNParts*[0.])
-trueSimPartEDepX = array('f', maxNParts*[0.])
-trueSimPartEDepY = array('f', maxNParts*[0.])
-trueSimPartEDepZ = array('f', maxNParts*[0.])
-trueSimPartPx = array('f', maxNParts*[0.])
-trueSimPartPy = array('f', maxNParts*[0.])
-trueSimPartPz = array('f', maxNParts*[0.])
-trueSimPartE = array('f', maxNParts*[0.])
-trueSimPartContained = array('i', maxNParts*[0])
+if args.isMC:
+  xsecWeight = array('f', [0.])
+  trueNuE = array('f', [0.])
+  trueNuPDG = array('i', [0])
+  trueNuCCNC = array('i', [0])
+  trueVtxX = array('f', [0.])
+  trueVtxY = array('f', [0.])
+  trueVtxZ = array('f', [0.])
+  trueLepE = array('f', [0.])
+  trueLepPDG = array('i', [0])
+  nTruePrimParts = array('i', [0])
+  truePrimPartPDG = array('i', maxNParts*[0])
+  truePrimPartX = array('f', maxNParts*[0.])
+  truePrimPartY = array('f', maxNParts*[0.])
+  truePrimPartZ = array('f', maxNParts*[0.])
+  truePrimPartPx = array('f', maxNParts*[0.])
+  truePrimPartPy = array('f', maxNParts*[0.])
+  truePrimPartPz = array('f', maxNParts*[0.])
+  truePrimPartE = array('f', maxNParts*[0.])
+  truePrimPartContained = array('i', maxNParts*[0])
+  nTrueSimParts = array('i', [0])
+  trueSimPartPDG = array('i', maxNParts*[0])
+  trueSimPartTID = array('i', maxNParts*[0])
+  trueSimPartMID = array('i', maxNParts*[0])
+  trueSimPartProcess = array('i', maxNParts*[0])
+  trueSimPartX = array('f', maxNParts*[0.])
+  trueSimPartY = array('f', maxNParts*[0.])
+  trueSimPartZ = array('f', maxNParts*[0.])
+  trueSimPartEDepX = array('f', maxNParts*[0.])
+  trueSimPartEDepY = array('f', maxNParts*[0.])
+  trueSimPartEDepZ = array('f', maxNParts*[0.])
+  trueSimPartPx = array('f', maxNParts*[0.])
+  trueSimPartPy = array('f', maxNParts*[0.])
+  trueSimPartPz = array('f', maxNParts*[0.])
+  trueSimPartE = array('f', maxNParts*[0.])
+  trueSimPartContained = array('i', maxNParts*[0])
 recoNuE = array('f', [0.])
 foundVertex = array('i', [0])
 vtxX = array('f', [0.])
 vtxY = array('f', [0.])
 vtxZ = array('f', [0.])
 vtxIsFiducial = array('i', [0])
-vtxDistToTrue = array('f', [0.])
+if args.isMC:
+  vtxDistToTrue = array('f', [0.])
 vtxScore = array('f', [0.])
 vtxFracHitsOnCosmic = array('f', [0.])
 nTracks = array('i', [0])
@@ -328,16 +330,17 @@ trackPrScore = array('f', maxNTrks*[0.])
 trackComp = array('f', maxNTrks*[0.])
 trackPurity = array('f', maxNTrks*[0.])
 trackRecoE = array('f', maxNTrks*[0.])
-trackTruePID = array('i', maxNTrks*[0])
-trackTrueTID = array('i', maxNTrks*[0])
-trackTrueE = array('f', maxNTrks*[0])
-trackTruePurity = array('f', maxNTrks*[0.])
-trackTrueComp = array('f', maxNTrks*[0.])
-trackTrueElPurity = array('f', maxNTrks*[0.])
-trackTruePhPurity = array('f', maxNTrks*[0.])
-trackTrueMuPurity = array('f', maxNTrks*[0.])
-trackTruePiPurity = array('f', maxNTrks*[0.])
-trackTruePrPurity = array('f', maxNTrks*[0.])
+if args.isMC:
+  trackTruePID = array('i', maxNTrks*[0])
+  trackTrueTID = array('i', maxNTrks*[0])
+  trackTrueE = array('f', maxNTrks*[0])
+  trackTruePurity = array('f', maxNTrks*[0.])
+  trackTrueComp = array('f', maxNTrks*[0.])
+  trackTrueElPurity = array('f', maxNTrks*[0.])
+  trackTruePhPurity = array('f', maxNTrks*[0.])
+  trackTrueMuPurity = array('f', maxNTrks*[0.])
+  trackTruePiPurity = array('f', maxNTrks*[0.])
+  trackTruePrPurity = array('f', maxNTrks*[0.])
 nShowers = array('i', [0])
 showerIsSecondary = array('i', maxNShwrs*[0])
 showerNHits = array('i', maxNShwrs*[0])
@@ -357,62 +360,65 @@ showerPrScore = array('f', maxNShwrs*[0.])
 showerComp = array('f', maxNShwrs*[0])
 showerPurity = array('f', maxNShwrs*[0])
 showerRecoE = array('f', maxNShwrs*[0])
-showerTruePID = array('i', maxNShwrs*[0])
-showerTrueTID = array('i', maxNShwrs*[0])
-showerTrueE = array('f', maxNShwrs*[0])
-showerTruePurity = array('f', maxNShwrs*[0.])
-showerTrueComp = array('f', maxNShwrs*[0.])
-showerTrueElPurity = array('f', maxNShwrs*[0.])
-showerTruePhPurity = array('f', maxNShwrs*[0.])
-showerTrueMuPurity = array('f', maxNShwrs*[0.])
-showerTruePiPurity = array('f', maxNShwrs*[0.])
-showerTruePrPurity = array('f', maxNShwrs*[0.])
+if args.isMC:
+  showerTruePID = array('i', maxNShwrs*[0])
+  showerTrueTID = array('i', maxNShwrs*[0])
+  showerTrueE = array('f', maxNShwrs*[0])
+  showerTruePurity = array('f', maxNShwrs*[0.])
+  showerTrueComp = array('f', maxNShwrs*[0.])
+  showerTrueElPurity = array('f', maxNShwrs*[0.])
+  showerTruePhPurity = array('f', maxNShwrs*[0.])
+  showerTrueMuPurity = array('f', maxNShwrs*[0.])
+  showerTruePiPurity = array('f', maxNShwrs*[0.])
+  showerTruePrPurity = array('f', maxNShwrs*[0.])
 eventTree.Branch("fileid", fileid, 'fileid/I')
 eventTree.Branch("run", run, 'run/I')
 eventTree.Branch("subrun", subrun, 'subrun/I')
 eventTree.Branch("event", event, 'event/I')
-eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
-eventTree.Branch("trueNuE", trueNuE, 'trueNuE/F')
-eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
-eventTree.Branch("trueNuCCNC", trueNuCCNC, 'trueNuCCNC/I')
-eventTree.Branch("trueVtxX", trueVtxX, 'trueVtxX/F')
-eventTree.Branch("trueVtxY", trueVtxY, 'trueVtxY/F')
-eventTree.Branch("trueVtxZ", trueVtxZ, 'trueVtxZ/F')
-eventTree.Branch("trueLepE", trueLepE, 'trueLepE/F')
-eventTree.Branch("trueLepPDG", trueLepPDG, 'trueLepPDG/I')
-eventTree.Branch("nTruePrimParts", nTruePrimParts, 'nTruePrimParts/I')
-eventTree.Branch("truePrimPartPDG", truePrimPartPDG, 'truePrimPartPDG[nTruePrimParts]/I')
-eventTree.Branch("truePrimPartX", truePrimPartX, 'truePrimPartX[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartY", truePrimPartY, 'truePrimPartY[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartZ", truePrimPartZ, 'truePrimPartZ[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartPx", truePrimPartPx, 'truePrimPartPx[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartPy", truePrimPartPy, 'truePrimPartPy[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartPz", truePrimPartPz, 'truePrimPartPz[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartE", truePrimPartE, 'truePrimPartE[nTruePrimParts]/F')
-eventTree.Branch("truePrimPartContained", truePrimPartContained, 'truePrimPartContained[nTruePrimParts]/I')
-eventTree.Branch("nTrueSimParts", nTrueSimParts, 'nTrueSimParts/I')
-eventTree.Branch("trueSimPartPDG", trueSimPartPDG, 'trueSimPartPDG[nTrueSimParts]/I')
-eventTree.Branch("trueSimPartTID", trueSimPartTID, 'trueSimPartTID[nTrueSimParts]/I')
-eventTree.Branch("trueSimPartMID", trueSimPartMID, 'trueSimPartMID[nTrueSimParts]/I')
-eventTree.Branch("trueSimPartProcess", trueSimPartProcess, 'trueSimPartProcess[nTrueSimParts]/I')
-eventTree.Branch("trueSimPartX", trueSimPartX, 'trueSimPartX[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartY", trueSimPartY, 'trueSimPartY[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartZ", trueSimPartZ, 'trueSimPartZ[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartEDepX", trueSimPartEDepX, 'trueSimPartEDepX[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartEDepY", trueSimPartEDepY, 'trueSimPartEDepY[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartEDepZ", trueSimPartEDepZ, 'trueSimPartEDepZ[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartPx", trueSimPartPx, 'trueSimPartPx[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartPy", trueSimPartPy, 'trueSimPartPy[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartPz", trueSimPartPz, 'trueSimPartPz[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartE", trueSimPartE, 'trueSimPartE[nTrueSimParts]/F')
-eventTree.Branch("trueSimPartContained", trueSimPartContained, 'trueSimPartContained[nTrueSimParts]/I')
+if args.isMC:
+  eventTree.Branch("xsecWeight", xsecWeight, 'xsecWeight/F')
+  eventTree.Branch("trueNuE", trueNuE, 'trueNuE/F')
+  eventTree.Branch("trueNuPDG", trueNuPDG, 'trueNuPDG/I')
+  eventTree.Branch("trueNuCCNC", trueNuCCNC, 'trueNuCCNC/I')
+  eventTree.Branch("trueVtxX", trueVtxX, 'trueVtxX/F')
+  eventTree.Branch("trueVtxY", trueVtxY, 'trueVtxY/F')
+  eventTree.Branch("trueVtxZ", trueVtxZ, 'trueVtxZ/F')
+  eventTree.Branch("trueLepE", trueLepE, 'trueLepE/F')
+  eventTree.Branch("trueLepPDG", trueLepPDG, 'trueLepPDG/I')
+  eventTree.Branch("nTruePrimParts", nTruePrimParts, 'nTruePrimParts/I')
+  eventTree.Branch("truePrimPartPDG", truePrimPartPDG, 'truePrimPartPDG[nTruePrimParts]/I')
+  eventTree.Branch("truePrimPartX", truePrimPartX, 'truePrimPartX[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartY", truePrimPartY, 'truePrimPartY[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartZ", truePrimPartZ, 'truePrimPartZ[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartPx", truePrimPartPx, 'truePrimPartPx[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartPy", truePrimPartPy, 'truePrimPartPy[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartPz", truePrimPartPz, 'truePrimPartPz[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartE", truePrimPartE, 'truePrimPartE[nTruePrimParts]/F')
+  eventTree.Branch("truePrimPartContained", truePrimPartContained, 'truePrimPartContained[nTruePrimParts]/I')
+  eventTree.Branch("nTrueSimParts", nTrueSimParts, 'nTrueSimParts/I')
+  eventTree.Branch("trueSimPartPDG", trueSimPartPDG, 'trueSimPartPDG[nTrueSimParts]/I')
+  eventTree.Branch("trueSimPartTID", trueSimPartTID, 'trueSimPartTID[nTrueSimParts]/I')
+  eventTree.Branch("trueSimPartMID", trueSimPartMID, 'trueSimPartMID[nTrueSimParts]/I')
+  eventTree.Branch("trueSimPartProcess", trueSimPartProcess, 'trueSimPartProcess[nTrueSimParts]/I')
+  eventTree.Branch("trueSimPartX", trueSimPartX, 'trueSimPartX[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartY", trueSimPartY, 'trueSimPartY[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartZ", trueSimPartZ, 'trueSimPartZ[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEDepX", trueSimPartEDepX, 'trueSimPartEDepX[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEDepY", trueSimPartEDepY, 'trueSimPartEDepY[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEDepZ", trueSimPartEDepZ, 'trueSimPartEDepZ[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartPx", trueSimPartPx, 'trueSimPartPx[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartPy", trueSimPartPy, 'trueSimPartPy[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartPz", trueSimPartPz, 'trueSimPartPz[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartE", trueSimPartE, 'trueSimPartE[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartContained", trueSimPartContained, 'trueSimPartContained[nTrueSimParts]/I')
 eventTree.Branch("recoNuE", recoNuE, 'recoNuE/F')
 eventTree.Branch("foundVertex", foundVertex, 'foundVertex/I')
 eventTree.Branch("vtxX", vtxX, 'vtxX/F')
 eventTree.Branch("vtxY", vtxY, 'vtxY/F')
 eventTree.Branch("vtxZ", vtxZ, 'vtxZ/F')
 eventTree.Branch("vtxIsFiducial", vtxIsFiducial, 'vtxIsFiducial/I')
-eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
+if args.isMC:
+  eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
 eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmic/F')
 eventTree.Branch("nTracks", nTracks, 'nTracks/I')
@@ -434,16 +440,17 @@ eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
 eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
 eventTree.Branch("trackPurity", trackPurity, 'trackPurity[nTracks]/F')
 eventTree.Branch("trackRecoE", trackRecoE, 'trackRecoE[nTracks]/F')
-eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
-eventTree.Branch("trackTrueTID", trackTrueTID, 'trackTrueTID[nTracks]/I')
-eventTree.Branch("trackTrueE", trackTrueE, 'trackTrueE[nTracks]/F')
-eventTree.Branch("trackTruePurity", trackTruePurity, 'trackTruePurity[nTracks]/F')
-eventTree.Branch("trackTrueComp", trackTrueComp, 'trackTrueComp[nTracks]/F')
-eventTree.Branch("trackTrueElPurity", trackTrueElPurity, 'trackTrueElPurity[nTracks]/F')
-eventTree.Branch("trackTruePhPurity", trackTruePhPurity, 'trackTruePhPurity[nTracks]/F')
-eventTree.Branch("trackTrueMuPurity", trackTrueMuPurity, 'trackTrueMuPurity[nTracks]/F')
-eventTree.Branch("trackTruePiPurity", trackTruePiPurity, 'trackTruePiPurity[nTracks]/F')
-eventTree.Branch("trackTruePrPurity", trackTruePrPurity, 'trackTruePrPurity[nTracks]/F')
+if args.isMC:
+  eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
+  eventTree.Branch("trackTrueTID", trackTrueTID, 'trackTrueTID[nTracks]/I')
+  eventTree.Branch("trackTrueE", trackTrueE, 'trackTrueE[nTracks]/F')
+  eventTree.Branch("trackTruePurity", trackTruePurity, 'trackTruePurity[nTracks]/F')
+  eventTree.Branch("trackTrueComp", trackTrueComp, 'trackTrueComp[nTracks]/F')
+  eventTree.Branch("trackTrueElPurity", trackTrueElPurity, 'trackTrueElPurity[nTracks]/F')
+  eventTree.Branch("trackTruePhPurity", trackTruePhPurity, 'trackTruePhPurity[nTracks]/F')
+  eventTree.Branch("trackTrueMuPurity", trackTrueMuPurity, 'trackTrueMuPurity[nTracks]/F')
+  eventTree.Branch("trackTruePiPurity", trackTruePiPurity, 'trackTruePiPurity[nTracks]/F')
+  eventTree.Branch("trackTruePrPurity", trackTruePrPurity, 'trackTruePrPurity[nTracks]/F')
 eventTree.Branch("nShowers", nShowers, 'nShowers/I')
 eventTree.Branch("showerIsSecondary", showerIsSecondary, 'showerIsSecondary[nShowers]/I')
 eventTree.Branch("showerNHits", showerNHits, 'showerNHits[nShowers]/I')
@@ -463,16 +470,17 @@ eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
 eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
 eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
 eventTree.Branch("showerRecoE", showerRecoE, 'showerRecoE[nShowers]/F')
-eventTree.Branch("showerTruePID", showerTruePID, 'showerTruePID[nShowers]/I')
-eventTree.Branch("showerTrueTID", showerTrueTID, 'showerTrueTID[nShowers]/I')
-eventTree.Branch("showerTrueE", showerTrueE, 'showerTrueE[nShowers]/F')
-eventTree.Branch("showerTruePurity", showerTruePurity, 'showerTruePurity[nShowers]/F')
-eventTree.Branch("showerTrueComp", showerTrueComp, 'showerTrueComp[nShowers]/F')
-eventTree.Branch("showerTrueElPurity", showerTrueElPurity, 'showerTrueElPurity[nShowers]/F')
-eventTree.Branch("showerTruePhPurity", showerTruePhPurity, 'showerTruePhPurity[nShowers]/F')
-eventTree.Branch("showerTrueMuPurity", showerTrueMuPurity, 'showerTrueMuPurity[nShowers]/F')
-eventTree.Branch("showerTruePiPurity", showerTruePiPurity, 'showerTruePiPurity[nShowers]/F')
-eventTree.Branch("showerTruePrPurity", showerTruePrPurity, 'showerTruePrPurity[nShowers]/F')
+if args.isMC:
+  eventTree.Branch("showerTruePID", showerTruePID, 'showerTruePID[nShowers]/I')
+  eventTree.Branch("showerTrueTID", showerTrueTID, 'showerTrueTID[nShowers]/I')
+  eventTree.Branch("showerTrueE", showerTrueE, 'showerTrueE[nShowers]/F')
+  eventTree.Branch("showerTruePurity", showerTruePurity, 'showerTruePurity[nShowers]/F')
+  eventTree.Branch("showerTrueComp", showerTrueComp, 'showerTrueComp[nShowers]/F')
+  eventTree.Branch("showerTrueElPurity", showerTrueElPurity, 'showerTrueElPurity[nShowers]/F')
+  eventTree.Branch("showerTruePhPurity", showerTruePhPurity, 'showerTruePhPurity[nShowers]/F')
+  eventTree.Branch("showerTrueMuPurity", showerTrueMuPurity, 'showerTrueMuPurity[nShowers]/F')
+  eventTree.Branch("showerTruePiPurity", showerTruePiPurity, 'showerTruePiPurity[nShowers]/F')
+  eventTree.Branch("showerTruePrPurity", showerTruePrPurity, 'showerTruePrPurity[nShowers]/F')
 
 
 if args.isMC:
@@ -614,18 +622,18 @@ for filepair in files:
           trueSimPartContained[iDS] = isFiducialWC(sceCorrectedEndPos)
           iDS += 1
 
-    else: #from "if args.isMC"
-      xsecWeight[0] = -1.
-      trueLepPDG[0] = 0
-      trueLepE[0] = -9.
-      trueNuPDG[0] = 0
-      trueNuCCNC[0] = -1
-      trueNuE[0] = -9.
-      trueVtxX[0] = -999.
-      trueVtxY[0] = -999.
-      trueVtxZ[0] = -999.
-      nTruePrimParts[0] = -1
-      nTrueSimParts[0] = -1
+    #else: #from "if args.isMC"
+    #  xsecWeight[0] = -1.
+    #  trueLepPDG[0] = 0
+    #  trueLepE[0] = -9.
+    #  trueNuPDG[0] = 0
+    #  trueNuCCNC[0] = -1
+    #  trueNuE[0] = -9.
+    #  trueVtxX[0] = -999.
+    #  trueVtxY[0] = -999.
+    #  trueVtxZ[0] = -999.
+    #  nTruePrimParts[0] = -1
+    #  nTrueSimParts[0] = -1
 
     fileid[0] = -1
     for tag in filepair[0].split("_"):
@@ -667,8 +675,8 @@ for filepair in files:
       mcpm = ublarcvapp.mctools.MCPixelPMap()
       mcpm.set_adc_treename("wire")
       mcpm.buildmap(iolcv, mcpg)
-    else:
-      vtxDistToTrue[0] = -99.
+    #else:
+    #  vtxDistToTrue[0] = -99.
 
     vtxX[0] = vertex.pos[0]
     vtxY[0] = vertex.pos[1]
@@ -772,17 +780,17 @@ for filepair in files:
             trackTruePiPurity[iTrk] = allPurities[iTru]
           if current_pdg == 2212:
             trackTruePrPurity[iTrk] = allPurities[iTru]
-      else:
-        trackTruePID[iTrk] = 0
-        trackTrueTID[iTrk] = -1
-        trackTrueE[iTrk] = -1.
-        trackTruePurity[iTrk] = -1.
-        trackTrueComp[iTrk] = -1.
-        trackTrueElPurity[iTrk] = -1.
-        trackTruePhPurity[iTrk] = -1.
-        trackTrueMuPurity[iTrk] = -1.
-        trackTruePiPurity[iTrk] = -1.
-        trackTruePrPurity[iTrk] = -1.
+      #else:
+      #  trackTruePID[iTrk] = 0
+      #  trackTrueTID[iTrk] = -1
+      #  trackTrueE[iTrk] = -1.
+      #  trackTruePurity[iTrk] = -1.
+      #  trackTrueComp[iTrk] = -1.
+      #  trackTrueElPurity[iTrk] = -1.
+      #  trackTruePhPurity[iTrk] = -1.
+      #  trackTrueMuPurity[iTrk] = -1.
+      #  trackTruePiPurity[iTrk] = -1.
+      #  trackTruePrPurity[iTrk] = -1.
 
 
     for iShw, shower in enumerate(vertex.shower_v):
@@ -851,17 +859,17 @@ for filepair in files:
             showerTruePiPurity[iShw] = allPurities[iTru]
           if current_pdg == 2212:
             showerTruePrPurity[iShw] = allPurities[iTru]
-      else:
-        showerTruePID[iShw] = 0
-        showerTrueTID[iShw] = -1
-        showerTrueE[iShw] = -1.
-        showerTruePurity[iShw] = -1.
-        showerTrueComp[iShw] = -1.
-        showerTrueElPurity[iShw] = -1.
-        showerTruePhPurity[iShw] = -1.
-        showerTrueMuPurity[iShw] = -1.
-        showerTruePiPurity[iShw] = -1.
-        showerTruePrPurity[iShw] = -1.
+      #else:
+      #  showerTruePID[iShw] = 0
+      #  showerTrueTID[iShw] = -1
+      #  showerTrueE[iShw] = -1.
+      #  showerTruePurity[iShw] = -1.
+      #  showerTrueComp[iShw] = -1.
+      #  showerTrueElPurity[iShw] = -1.
+      #  showerTruePhPurity[iShw] = -1.
+      #  showerTrueMuPurity[iShw] = -1.
+      #  showerTruePiPurity[iShw] = -1.
+      #  showerTruePrPurity[iShw] = -1.
 
 
     for i in range(nTracks[0]):
