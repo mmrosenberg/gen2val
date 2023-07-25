@@ -660,7 +660,8 @@ for filepair in files:
       vtxY[0] = -999.
       vtxZ[0] = -999.
       vtxIsFiducial[0] = -1
-      vtxDistToTrue[0] = -99.
+      if args.isMC:
+        vtxDistToTrue[0] = -99.
       vtxFracHitsOnCosmic[0] = -1.
       nTracks[0] = 0
       nShowers[0] = 0
