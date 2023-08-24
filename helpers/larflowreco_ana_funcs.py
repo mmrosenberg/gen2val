@@ -141,6 +141,13 @@ def getTrackLength(track):
 def getDistance(a, b):
   return sqrt( (a.X() - b.X())**2 + (a.Y() - b.Y())**2 + (a.Z() - b.Z())**2)
 
+def getDirection(a, b):
+  dirX = b.X() - a.X()
+  dirY = b.Y() - a.Y()
+  dirZ = b.Z() - a.Z()
+  mag = sqrt(dirX**2 + dirY**2 + dirZ**2)
+  return (dirX/mag, dirY/mag, dirZ/mag)
+
 def getCosTVecAngle(a, b):
   aMag = sqrt(a.X()**2 + a.Y()**2 + a.Z()**2)
   bMag = sqrt(b.X()**2 + b.Y()**2 + b.Z()**2)

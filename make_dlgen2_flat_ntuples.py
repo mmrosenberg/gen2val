@@ -39,6 +39,7 @@ parser.add_argument("-o", "--outfile", type=str, default="dlgen2_flat_ntuple.roo
 parser.add_argument("-r", "--run", type=int, default=0, help="run number for event to plot")
 parser.add_argument("-sr", "--subrun", type=int, default=0, help="subrun number for event to plot")
 parser.add_argument("-e", "--event", type=int, default=0, help="event number for event to plot")
+parser.add_argument("-nkp","--noKeypoints", action="store_true", help="don't save keypoint info")
 parser.add_argument("--multiGPU", action="store_true", help="use multiple GPUs")
 args = parser.parse_args()
 
@@ -258,6 +259,7 @@ if args.isMC:
   potTree.Branch("totGoodPOT", totGoodPOT, 'totGoodPOT/F')
 
 eventTree = rt.TTree("EventTree","EventTree")
+maxNKpts = 500
 maxNTrks = 100
 maxNShwrs = 100
 maxNParts = 1000
@@ -311,6 +313,14 @@ if args.isMC:
   vtxDistToTrue = array('f', [0.])
 vtxScore = array('f', [0.])
 vtxFracHitsOnCosmic = array('f', [0.])
+if not args.noKeypoints:
+  nKeypoints = array('i', [0])
+  kpClusterType = array('i', maxNKpts*[0])
+  kpFilterType = array('i', maxNKpts*[0])
+  kpMaxScore = array('f', maxNKpts*[0.])
+  kpMaxPosX = array('f', maxNKpts*[0.])
+  kpMaxPosY = array('f', maxNKpts*[0.])
+  kpMaxPosZ = array('f', maxNKpts*[0.])
 nTracks = array('i', [0])
 trackIsSecondary = array('i', maxNTrks*[0])
 trackNHits = array('i', maxNTrks*[0])
@@ -320,6 +330,15 @@ trackChargeFrac = array('f', maxNTrks*[0.])
 trackCosTheta = array('f', maxNTrks*[0.])
 trackCosThetaY = array('f', maxNTrks*[0.])
 trackDistToVtx = array('f', maxNTrks*[0.])
+trackStartPosX = array('f', maxNTrks*[0.])
+trackStartPosY = array('f', maxNTrks*[0.])
+trackStartPosZ = array('f', maxNTrks*[0.])
+trackStartDirX = array('f', maxNTrks*[0.])
+trackStartDirY = array('f', maxNTrks*[0.])
+trackStartDirZ = array('f', maxNTrks*[0.])
+trackEndPosX = array('f', maxNTrks*[0.])
+trackEndPosY = array('f', maxNTrks*[0.])
+trackEndPosZ = array('f', maxNTrks*[0.])
 trackClassified = array('i', maxNTrks*[0])
 trackPID = array('i', maxNTrks*[0])
 trackElScore = array('f', maxNTrks*[0.])
@@ -350,6 +369,12 @@ showerChargeFrac = array('f', maxNShwrs*[0.])
 showerCosTheta = array('f', maxNShwrs*[0.])
 showerCosThetaY = array('f', maxNShwrs*[0.])
 showerDistToVtx = array('f', maxNShwrs*[0.])
+showerStartPosX = array('f', maxNShwrs*[0.])
+showerStartPosY = array('f', maxNShwrs*[0.])
+showerStartPosZ = array('f', maxNShwrs*[0.])
+showerStartDirX = array('f', maxNShwrs*[0.])
+showerStartDirY = array('f', maxNShwrs*[0.])
+showerStartDirZ = array('f', maxNShwrs*[0.])
 showerClassified = array('i', maxNShwrs*[0])
 showerPID = array('i', maxNShwrs*[0])
 showerElScore = array('f', maxNShwrs*[0.])
@@ -421,6 +446,14 @@ if args.isMC:
   eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
 eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmic/F')
+if not args.noKeypoints:
+  eventTree.Branch("nKeypoints", nKeypoints, 'nKeypoints/I')
+  eventTree.Branch("kpClusterType", kpClusterType, 'kpClusterType[nKeypoints]/I')
+  eventTree.Branch("kpFilterType", kpFilterType, 'kpFilterType[nKeypoints]/I')
+  eventTree.Branch("kpMaxScore", kpMaxScore, 'kpMaxScore[nKeypoints]/F')
+  eventTree.Branch("kpMaxPosX", kpMaxPosX, 'kpMaxPosX[nKeypoints]/F')
+  eventTree.Branch("kpMaxPosY", kpMaxPosY, 'kpMaxPosY[nKeypoints]/F')
+  eventTree.Branch("kpMaxPosZ", kpMaxPosZ, 'kpMaxPosZ[nKeypoints]/F')
 eventTree.Branch("nTracks", nTracks, 'nTracks/I')
 eventTree.Branch("trackIsSecondary", trackIsSecondary, 'trackIsSecondary[nTracks]/I')
 eventTree.Branch("trackNHits", trackNHits, 'trackNHits[nTracks]/I')
@@ -430,6 +463,15 @@ eventTree.Branch("trackChargeFrac", trackChargeFrac, 'trackChargeFrac[nTracks]/F
 eventTree.Branch("trackCosTheta", trackCosTheta, 'trackCosTheta[nTracks]/F')
 eventTree.Branch("trackCosThetaY", trackCosThetaY, 'trackCosThetaY[nTracks]/F')
 eventTree.Branch("trackDistToVtx", trackDistToVtx, 'trackDistToVtx[nTracks]/F')
+eventTree.Branch("trackStartPosX", trackStartPosX, 'trackStartPosX[nTracks]/F')
+eventTree.Branch("trackStartPosY", trackStartPosY, 'trackStartPosY[nTracks]/F')
+eventTree.Branch("trackStartPosZ", trackStartPosZ, 'trackStartPosZ[nTracks]/F')
+eventTree.Branch("trackStartDirX", trackStartDirX, 'trackStartDirX[nTracks]/F')
+eventTree.Branch("trackStartDirY", trackStartDirY, 'trackStartDirY[nTracks]/F')
+eventTree.Branch("trackStartDirZ", trackStartDirZ, 'trackStartDirZ[nTracks]/F')
+eventTree.Branch("trackEndPosX", trackEndPosX, 'trackEndPosX[nTracks]/F')
+eventTree.Branch("trackEndPosY", trackEndPosY, 'trackEndPosY[nTracks]/F')
+eventTree.Branch("trackEndPosZ", trackEndPosZ, 'trackEndPosZ[nTracks]/F')
 eventTree.Branch("trackClassified", trackClassified, 'trackClassified[nTracks]/I')
 eventTree.Branch("trackPID", trackPID, 'trackPID[nTracks]/I')
 eventTree.Branch("trackElScore", trackElScore, 'trackElScore[nTracks]/F')
@@ -460,6 +502,12 @@ eventTree.Branch("showerChargeFrac", showerChargeFrac, 'showerChargeFrac[nShower
 eventTree.Branch("showerCosTheta", showerCosTheta, 'showerCosTheta[nShowers]/F')
 eventTree.Branch("showerCosThetaY", showerCosThetaY, 'showerCosThetaY[nShowers]/F')
 eventTree.Branch("showerDistToVtx", showerDistToVtx, 'showerDistToVtx[nShowers]/F')
+eventTree.Branch("showerStartPosX", showerStartPosX, 'showerStartPosX[nShowers]/F')
+eventTree.Branch("showerStartPosY", showerStartPosY, 'showerStartPosY[nShowers]/F')
+eventTree.Branch("showerStartPosZ", showerStartPosZ, 'showerStartPosZ[nShowers]/F')
+eventTree.Branch("showerStartDirX", showerStartDirX, 'showerStartDirX[nShowers]/F')
+eventTree.Branch("showerStartDirY", showerStartDirY, 'showerStartDirY[nShowers]/F')
+eventTree.Branch("showerStartDirZ", showerStartDirZ, 'showerStartDirZ[nShowers]/F')
 eventTree.Branch("showerClassified", showerClassified, 'showerClassified[nShowers]/I')
 eventTree.Branch("showerPID", showerPID, 'showerPID[nShowers]/I')
 eventTree.Branch("showerElScore", showerElScore, 'showerElScore[nShowers]/F')
@@ -644,6 +692,41 @@ for filepair in files:
     subrun[0] = kpst.subrun
     event[0] = kpst.event
 
+    if not args.noKeypoints:
+      nKeypoints[0] = 0
+      for kp in kpst.kpc_nu_v:
+        kpClusterType[nKeypoints[0]] = kp._cluster_type
+        kpFilterType[nKeypoints[0]] = 0
+        kpMaxScore[nKeypoints[0]] = kp.max_score
+        kpMaxPosX[nKeypoints[0]] = kp.max_pt_v[0]
+        kpMaxPosY[nKeypoints[0]] = kp.max_pt_v[1]
+        kpMaxPosZ[nKeypoints[0]] = kp.max_pt_v[2]
+        nKeypoints[0] += 1
+      for kp in kpst.kpc_track_v:
+        kpClusterType[nKeypoints[0]] = kp._cluster_type
+        kpFilterType[nKeypoints[0]] = 0
+        kpMaxScore[nKeypoints[0]] = kp.max_score
+        kpMaxPosX[nKeypoints[0]] = kp.max_pt_v[0]
+        kpMaxPosY[nKeypoints[0]] = kp.max_pt_v[1]
+        kpMaxPosZ[nKeypoints[0]] = kp.max_pt_v[2]
+        nKeypoints[0] += 1
+      for kp in kpst.kpc_shower_v:
+        kpClusterType[nKeypoints[0]] = kp._cluster_type
+        kpFilterType[nKeypoints[0]] = 0
+        kpMaxScore[nKeypoints[0]] = kp.max_score
+        kpMaxPosX[nKeypoints[0]] = kp.max_pt_v[0]
+        kpMaxPosY[nKeypoints[0]] = kp.max_pt_v[1]
+        kpMaxPosZ[nKeypoints[0]] = kp.max_pt_v[2]
+        nKeypoints[0] += 1
+      for kp in kpst.kpc_cosmic_v:
+        kpClusterType[nKeypoints[0]] = kp._cluster_type
+        kpFilterType[nKeypoints[0]] = 1
+        kpMaxScore[nKeypoints[0]] = kp.max_score
+        kpMaxPosX[nKeypoints[0]] = kp.max_pt_v[0]
+        kpMaxPosY[nKeypoints[0]] = kp.max_pt_v[1]
+        kpMaxPosZ[nKeypoints[0]] = kp.max_pt_v[2]
+        nKeypoints[0] += 1
+
     foundVertex[0] = 0
     vtxScore[0] = -1.
     for vtx in kpst.nuvetoed_v:
@@ -716,6 +799,21 @@ for filepair in files:
       trackCosTheta[iTrk] = getCosThetaBeamTrack(vertex.track_v[iTrk]) if goodTrack else -9.
       trackCosThetaY[iTrk] = getCosThetaGravTrack(vertex.track_v[iTrk]) if goodTrack else -9.
       trackDistToVtx[iTrk] = getVertexDistance(vertex.track_v[iTrk].Vertex(), vertex) if goodTrack else -9.
+      trackStartPosX[iTrk] = vertex.track_v[iTrk].Vertex().X() if goodTrack else -9.
+      trackStartPosY[iTrk] = vertex.track_v[iTrk].Vertex().Y() if goodTrack else -9.
+      trackStartPosZ[iTrk] = vertex.track_v[iTrk].Vertex().Z() if goodTrack else -9.
+      trackEndPosX[iTrk] = vertex.track_v[iTrk].End().X() if goodTrack else -9.
+      trackEndPosY[iTrk] = vertex.track_v[iTrk].End().Y() if goodTrack else -9.
+      trackEndPosZ[iTrk] = vertex.track_v[iTrk].End().Z() if goodTrack else -9.
+      trackDirPt1 = vertex.track_v[iTrk].Vertex()
+      trackDirPt2 = vertex.track_v[iTrk].Vertex()
+      for iTrj in range(vertex.track_v[iTrk].NumberTrajectoryPoints()):
+        trackDirPt2 = vertex.track_v[iTrk].LocationAtPoint(iTrj)
+        if getDistance(trackDirPt1, trackDirPt2) > 5.:
+          break
+      trackDir = getDirection(trackDirPt1, trackDirPt2) if goodTrack else (0,0,0)
+      trackStartDirX[iTrk], trackStartDirY[iTrk], trackStartDirZ[iTrk] = trackDir
+      
 
       skip = True
       if goodTrack:
@@ -803,6 +901,11 @@ for filepair in files:
       showerCosTheta[iShw] = getCosThetaBeamShower(vertex.shower_trunk_v[iShw])
       showerCosThetaY[iShw] = getCosThetaGravShower(vertex.shower_trunk_v[iShw])
       showerDistToVtx[iShw] = getVertexDistance(vertex.shower_trunk_v[iShw].Vertex(), vertex)
+      showerStartPosX[iShw] = vertex.shower_trunk_v[iShw].Vertex().X()
+      showerStartPosY[iShw] = vertex.shower_trunk_v[iShw].Vertex().Y()
+      showerStartPosZ[iShw] = vertex.shower_trunk_v[iShw].Vertex().Z()
+      showerDir = getDirection(vertex.shower_trunk_v[iShw].Vertex(), vertex.shower_trunk_v[iShw].End())
+      showerStartDirX[iShw], showerStartDirY[iShw], showerStartDirZ[iShw] = showerDir
       showerRecoE[iShw] = vertex.shower_plane_mom_vv[iShw][2].E()
       recoNuE[0] += vertex.shower_plane_mom_vv[iShw][2].E()
 

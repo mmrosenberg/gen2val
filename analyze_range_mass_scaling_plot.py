@@ -25,7 +25,7 @@ from helpers.pionEnergyEstimator import pionRange2T
 #    return self.intercept + self.slope*length
 
 
-f = rt.TFile("analyze_range_mass_scaling_output.root")
+f = rt.TFile("analyze_range_mass_scaling_process_output.root")
 t = f.Get("ParticleTree")
 
 h_pi = rt.TH2F("h_pi","h_pi",800,0,800,2000,0,2000)
@@ -60,6 +60,7 @@ for ix in range(1,801):
 
 fspline = rt.TFile("/home/matthew/microboone/tufts/ubdl/larflow/larflow/Reco/data/Proton_Muon_Range_dEdx_LAr_TSplines.root")
 muSpline = fspline.Get("sMuonRange2T")
+prSpline = fspline.Get("sProtonRange2T")
 KE_mu_spline = [muSpline.Eval(range_mu[i]) for i in range(800)]
 KE_pi_spline1 = [muSpline.Eval(range_pi[i])*1.32 for i in range(800)]
 KE_pi_spline2 = [muSpline.Eval(range_pi[i]*1.32) for i in range(800)]
@@ -79,6 +80,16 @@ KE_pi_spline3 = [piKEestimator.Eval(range_pi[i]) for i in range(800)]
 #print(piKEestimator.range[:60])
 #print("interpolation KE points:")
 #print(piKEestimator.KE[:60])
+
+
+print("range, Emu, Epi, Epr:")
+for t in range(1,11,1):
+  try:
+    r = 0.3*t
+    print(r, muSpline.Eval(r), piKEestimator.Eval(r), prSpline.Eval(r))
+  except: 
+    continue
+
 
 g_pi = rt.TGraph(800,np.array(range_pi),np.array(KE_pi))
 g_mu = rt.TGraph(800,np.array(range_mu),np.array(KE_mu))
