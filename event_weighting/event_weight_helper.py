@@ -33,8 +33,8 @@ def SumPOT(infile):
   return totPOT, totGoodPOT
 
 
-def WriteWeights(inrootfile):
-  f = rt.TFile(inrootfile)
+def WriteWeights(inrootfile, inrootdir):
+  f = rt.TFile(inrootdir+"/"+inrootfile)
   t = f.Get("eventweight_tree")
   weights = {}
   for i in range(t.GetEntries()):
@@ -52,5 +52,5 @@ def WriteWeights(inrootfile):
 
 if __name__ == "__main__":
   #print(SumPOT(sys.argv[1]))
-  WriteWeights(sys.argv[1])
+  WriteWeights(sys.argv[1], sys.argv[2])
 
