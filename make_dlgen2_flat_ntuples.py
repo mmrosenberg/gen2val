@@ -29,7 +29,7 @@ import torchvision.transforms as transforms
 
 parser = argparse.ArgumentParser("Make Flat NTuples for DLGen2 Analyses")
 parser.add_argument("-f", "--files", required=True, type=str, nargs="+", help="input kpsreco files")
-parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list")
+parser.add_argument("-t", "--truth", required=True, type=str, help="text file containing merged_dlreco list or merged_dlreco file for single input")
 parser.add_argument("-w", "--weightfile", type=str, default="none", help="weights file (pickled python dict)")
 parser.add_argument("-m", "--model_path", type=str, required=True, help="path to prong CNN checkpoint file")
 parser.add_argument("-d", "--device", type=str, default="cpu", help="gpu/cpu device")
@@ -54,14 +54,17 @@ reco2Tag = "merged_dlreco_"
 if args.dlana_input:
   reco2Tag = "merged_dlana_"
 
-if len(args.files) == 1 and ".txt" in args.files[0]:
-  larflowfiles = []
-  with open(args.files[0], "r") as larflowlist:
-    for line in larflowlist:
-      larflowfiles.append(line.replace("\n",""))
-  files = getFiles(reco2Tag, larflowfiles, args.truth)
+if ".root" in args.truth and len(args.files) == 1 and ".root" in args.files[0]:
+  files = [ [args.files[0], args.truth] ]
 else:
-  files = getFiles(reco2Tag, args.files, args.truth)
+  if len(args.files) == 1 and ".txt" in args.files[0]:
+    larflowfiles = []
+    with open(args.files[0], "r") as larflowlist:
+      for line in larflowlist:
+        larflowfiles.append(line.replace("\n",""))
+    files = getFiles(reco2Tag, larflowfiles, args.truth)
+  else:
+    files = getFiles(reco2Tag, args.files, args.truth)
 
 
 def addClusterCharge(iolcv, cluster, vertexPixels, vertexCharge, threshold):
