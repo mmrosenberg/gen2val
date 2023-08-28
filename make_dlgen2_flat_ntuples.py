@@ -2,7 +2,6 @@
 import os,sys,argparse
 
 import ROOT as rt
-import uproot
 
 from larlite import larlite
 from larlite import larutil
