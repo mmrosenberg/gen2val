@@ -5,14 +5,15 @@ import ROOT as rt
 
 from math import isinf
 from helpers.plotting_functions import sortHists
-from helpers.larflowreco_ana_funcs import isFiducialWC
+from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
 parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nu_file.root", help="bnb nu input file")
 parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nue_file.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root", help="extbnb input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial.root", help="extbnb input file")
 parser.add_argument("-fdata", "--data_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_bnb5e19_file.root", help="bnb data input file")
+parser.add_argument("-vfc", "--vertexFracOnCosCut", type=float, default=1., help="vtxFracHitsOnCosmic cut")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
 parser.add_argument("-p", "--purityCut", type=float, default=0., help="purity cut value")
@@ -22,6 +23,11 @@ parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="elec
 parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
 parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output.root", help="output root file name")
 parser.add_argument("--recoEOverflow", help="plot overflow bin for final recoE selection plot", action="store_true")
+parser.add_argument("--oldVertexVar", help="use old nVertices variable for vertex found cut", action="store_true")
+parser.add_argument("--makeKPplots", help="make keypoint plots", action="store_true")
+parser.add_argument("--smallFV", help="use 20cm fiducial volume", action="store_true")
+parser.add_argument("--NPMLCosmicConfig", help="used extBNB file and incorrect scaling from NPML plots", action="store_true")
+parser.add_argument("--printEXTinfo", help="print event info for selected cosmic background", action="store_true")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -36,7 +42,10 @@ fnue = rt.TFile(args.bnbnue_file)
 tnue = fnue.Get("EventTree")
 tnuePOT = fnue.Get("potTree")
 
-fext = rt.TFile(args.extbnb_file)
+if args.NPMLCosmicConfig:
+  fext = rt.TFile("selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root")
+else:
+  fext = rt.TFile(args.extbnb_file)
 text = fext.Get("EventTree")
 
 fdata = rt.TFile(args.data_file)
@@ -47,7 +56,9 @@ out_data_sel_evts.write("fileid run subrun event recoNuE\n")
 
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
 runs1to3POT = 6.67e+20
-targetPOT = 4.43e19
+#targetPOT = 4.43e19
+targetPOT = 4.4e+19
+targetPOTstring = "4.4e+19"
 
 tnuePOTsum = 0.
 for i in range(tnuePOT.GetEntries()):
@@ -62,22 +73,37 @@ for i in range(tnuPOT.GetEntries()):
 #970: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v16_extbnb_file.root
 #17661: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v17+_extbnb_file.root
 #89559: number of run3 extbnb files (# in def: prod_extunbiased_swizzle_crt_inclusive_v6_v6a_goodruns_mcc9_run3)
-textPOTsum = (17661./89559.)*run3POT
+#textPOTsum = (17661./89559.)*run3POT
+#from Zarko's POT counting for selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root:
+#textPOTsum = 1.3298521464785359e+19
+#from Zarko's POT counting for flat_ntuples/dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial.root
+#textPOTsum = 2.561872704628622e+19
+
+if args.NPMLCosmicConfig:
+  textPOTsum = (17661./89559.)*run3POT
+else:
+  if args.extbnb_file == "selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root":
+    textPOTsum = 1.3298521464785359e+19
+  elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file:
+    textPOTsum = 2.561872704628622e+19
+  else:
+    sys.exit("POT for input extBNB file unknown")
+
 
 def configureHists(h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext):
-  h_CCnumu.GetYaxis().SetTitle("events per 6.67e+20 POT")
+  h_CCnumu.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_CCnumu.SetLineColor(rt.kBlue)
   h_CCnumu.SetLineWidth(2)
-  h_NCnumu.GetYaxis().SetTitle("events per 6.67e+20 POT")
+  h_NCnumu.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_NCnumu.SetLineColor(40)
   h_NCnumu.SetLineWidth(2)
-  h_CCnue.GetYaxis().SetTitle("events per 6.67e+20 POT")
+  h_CCnue.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_CCnue.SetLineColor(rt.kRed)
   h_CCnue.SetLineWidth(2)
-  h_NCnue.GetYaxis().SetTitle("events per 6.67e+20 POT")
+  h_NCnue.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_NCnue.SetLineColor(8)
   h_NCnue.SetLineWidth(2)
-  h_ext.GetYaxis().SetTitle("events per 6.67e+20 POT")
+  h_ext.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_ext.SetLineColor(rt.kBlack)
   h_ext.SetLineWidth(2)
   return h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext
@@ -106,6 +132,39 @@ h_nMu_NCnue = rt.TH1F("h_nMu_NCnue","Number of Reco Muons",10,0,10)
 h_nMu_ext = rt.TH1F("h_nMu_ext","Number of Reco Muons",10,0,10)
 h_nMu_CCnumu, h_nMu_NCnumu, h_nMu_CCnue, h_nMu_NCnue, h_nMu_ext = configureHists(h_nMu_CCnumu,
  h_nMu_NCnumu, h_nMu_CCnue, h_nMu_NCnue, h_nMu_ext)
+
+if args.makeKPplots:
+  h_cosKPDist_CCnumu = rt.TH1F("h_cosKPDist_CCnumu","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_NCnumu = rt.TH1F("h_cosKPDist_NCnumu","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_CCnue = rt.TH1F("h_cosKPDist_CCnue","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_NCnue = rt.TH1F("h_cosKPDist_NCnue","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_ext = rt.TH1F("h_cosKPDist_ext","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_CCnumu, h_cosKPDist_NCnumu, h_cosKPDist_CCnue, h_cosKPDist_NCnue, h_cosKPDist_ext = configureHists(h_cosKPDist_CCnumu,
+   h_cosKPDist_NCnumu, h_cosKPDist_CCnue, h_cosKPDist_NCnue, h_cosKPDist_ext)
+  
+  h_tEndKPDist_CCnumu = rt.TH1F("h_tEndKPDist_CCnumu","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_NCnumu = rt.TH1F("h_tEndKPDist_NCnumu","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_CCnue = rt.TH1F("h_tEndKPDist_CCnue","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_NCnue = rt.TH1F("h_tEndKPDist_NCnue","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_ext = rt.TH1F("h_tEndKPDist_ext","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_CCnumu, h_tEndKPDist_NCnumu, h_tEndKPDist_CCnue, h_tEndKPDist_NCnue, h_tEndKPDist_ext = configureHists(h_tEndKPDist_CCnumu,
+   h_tEndKPDist_NCnumu, h_tEndKPDist_CCnue, h_tEndKPDist_NCnue, h_tEndKPDist_ext)
+  
+  h_cosKPDist_wConfCut_CCnumu = rt.TH1F("h_cosKPDist_wConfCut_CCnumu","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_wConfCut_NCnumu = rt.TH1F("h_cosKPDist_wConfCut_NCnumu","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_wConfCut_CCnue = rt.TH1F("h_cosKPDist_wConfCut_CCnue","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_wConfCut_NCnue = rt.TH1F("h_cosKPDist_wConfCut_NCnue","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_wConfCut_ext = rt.TH1F("h_cosKPDist_wConfCut_ext","Distance to Nearest Cosmic KP (cm)",500,0,1000)
+  h_cosKPDist_wConfCut_CCnumu, h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_CCnue, h_cosKPDist_wConfCut_NCnue, h_cosKPDist_wConfCut_ext = configureHists(h_cosKPDist_wConfCut_CCnumu,
+   h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_CCnue, h_cosKPDist_wConfCut_NCnue, h_cosKPDist_wConfCut_ext)
+  
+  h_tEndKPDist_wConfCut_CCnumu = rt.TH1F("h_tEndKPDist_wConfCut_CCnumu","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_wConfCut_NCnumu = rt.TH1F("h_tEndKPDist_wConfCut_NCnumu","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_wConfCut_CCnue = rt.TH1F("h_tEndKPDist_wConfCut_CCnue","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_wConfCut_NCnue = rt.TH1F("h_tEndKPDist_wConfCut_NCnue","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_wConfCut_ext = rt.TH1F("h_tEndKPDist_wConfCut_ext","Distance to Nearest Track End KP (cm)",500,0,1000)
+  h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_CCnue, h_tEndKPDist_wConfCut_NCnue, h_tEndKPDist_wConfCut_ext = configureHists(h_tEndKPDist_wConfCut_CCnumu,
+   h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_CCnue, h_tEndKPDist_wConfCut_NCnue, h_tEndKPDist_wConfCut_ext)
 
 h_maxElConf_CCnumu = rt.TH1F("h_maxElConf_CCnumu","Max \"Electron Confidence Score\"",21,-1,20)
 h_maxElConf_NCnumu = rt.TH1F("h_maxElConf_NCnumu","Max \"Electron Confidence Score\"",21,-1,20)
@@ -328,28 +387,56 @@ h_nuE_CCnue_wCuts = rt.TH1F("h_nuE_CCnue_wCuts","Neutrino Energy for True CCnue 
 h_nuE_CCnumu_wCuts = rt.TH1F("h_nuE_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
 h_nuE_NCnumu_wCuts = rt.TH1F("h_nuE_NCnumu_wCuts","Neutrino Energy for True NCnumu Events",30,0,3)
 h_nuE_NCnue_wCuts = rt.TH1F("h_nuE_NCnue_wCuts","Neutrino Energy for True NCnue Events",30,0,3)
-h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for ExtBNB Events",30,0,3)
+#h_nuE_ext_wCuts = rt.TH1F("h_nuE_ext_wCuts","Neutrino Energy for ExtBNB Events",30,0,3)
 h_nuE_all_wCuts = rt.TH1F("h_nuE_all_wCuts","Neutrino Energy for all Events",30,0,3)
-h_nuE_CCnue_nCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_nuE_CCnue_nCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_nuE_CCnue_nCuts.SetLineColor(rt.kBlue)
 h_nuE_CCnue_nCuts.SetLineWidth(2)
-h_nuE_CCnue_nCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_CCnue_wCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_nuE_CCnue_nCuts.GetXaxis().SetTitle("true neutrino energy (GeV)")
+h_nuE_CCnue_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_nuE_CCnue_wCuts.SetLineColor(rt.kRed)
 h_nuE_CCnue_wCuts.SetLineWidth(2)
-h_nuE_CCnue_wCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_all_wCuts.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_nuE_CCnue_wCuts.GetXaxis().SetTitle("true neutrino energy (GeV)")
+h_nuE_all_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_nuE_all_wCuts.SetLineColor(rt.kRed)
 h_nuE_all_wCuts.SetLineWidth(2)
-h_nuE_all_wCuts.GetXaxis().SetTitle("neutrino energy (GeV)")
-h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","Inclusive CC nue Selection with Electron Confidence > %.1f"%args.confCut,30,0,3)
-h_nuE_CCnue_eff.GetXaxis().SetTitle("neutrino energy (GeV)")
+h_nuE_all_wCuts.GetXaxis().SetTitle("true neutrino energy (GeV)")
+h_nuE_CCnue_eff = rt.TH1F("h_nuE_CCnue_eff","Inclusive CC nue Selection MC Predictions",30,0,3)
+h_nuE_CCnue_eff.GetXaxis().SetTitle("true neutrino energy (GeV)")
 h_nuE_CCnue_eff.SetLineColor(rt.kBlack)
 h_nuE_CCnue_eff.SetLineWidth(2)
-h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection with Electron Confidence > %.1f"%args.confCut,30,0,3)
-h_nuE_CCnue_pur.GetXaxis().SetTitle("neutrino energy (GeV)")
+h_nuE_CCnue_pur = rt.TH1F("h_nuE_CCnue_pur","Inclusive CC nue Selection MC Predictions",30,0,3)
+h_nuE_CCnue_pur.GetXaxis().SetTitle("true neutrino energy (GeV)")
 h_nuE_CCnue_pur.SetLineColor(8)
 h_nuE_CCnue_pur.SetLineWidth(2)
+
+h_nuEr_CCnue_nCuts = rt.TH1F("h_nuEr_CCnue_nCuts","Neutrino Energy for True CCnue Events",30,0,3)
+h_nuEr_CCnue_wCuts = rt.TH1F("h_nuEr_CCnue_wCuts","Neutrino Energy for True CCnue Events",30,0,3)
+h_nuEr_CCnumu_wCuts = rt.TH1F("h_nuEr_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
+h_nuEr_NCnumu_wCuts = rt.TH1F("h_nuEr_NCnumu_wCuts","Neutrino Energy for True NCnumu Events",30,0,3)
+h_nuEr_NCnue_wCuts = rt.TH1F("h_nuEr_NCnue_wCuts","Neutrino Energy for True NCnue Events",30,0,3)
+h_nuEr_ext_wCuts = rt.TH1F("h_nuEr_ext_wCuts","Neutrino Energy for ExtBNB Events",30,0,3)
+h_nuEr_all_wCuts = rt.TH1F("h_nuEr_all_wCuts","Neutrino Energy for all Events",30,0,3)
+h_nuEr_CCnue_nCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
+h_nuEr_CCnue_nCuts.SetLineColor(rt.kBlue)
+h_nuEr_CCnue_nCuts.SetLineWidth(2)
+h_nuEr_CCnue_nCuts.GetXaxis().SetTitle("reco neutrino energy (GeV)")
+h_nuEr_CCnue_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
+h_nuEr_CCnue_wCuts.SetLineColor(rt.kRed)
+h_nuEr_CCnue_wCuts.SetLineWidth(2)
+h_nuEr_CCnue_wCuts.GetXaxis().SetTitle("reco neutrino energy (GeV)")
+h_nuEr_all_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
+h_nuEr_all_wCuts.SetLineColor(rt.kRed)
+h_nuEr_all_wCuts.SetLineWidth(2)
+h_nuEr_all_wCuts.GetXaxis().SetTitle("reco neutrino energy (GeV)")
+h_nuEr_CCnue_eff = rt.TH1F("h_nuEr_CCnue_eff","Inclusive CC nue Selection MC Predictions",30,0,3)
+h_nuEr_CCnue_eff.GetXaxis().SetTitle("reco neutrino energy (GeV)")
+h_nuEr_CCnue_eff.SetLineColor(rt.kBlack)
+h_nuEr_CCnue_eff.SetLineWidth(2)
+h_nuEr_CCnue_pur = rt.TH1F("h_nuEr_CCnue_pur","Inclusive CC nue Selection MC Predictions",30,0,3)
+h_nuEr_CCnue_pur.GetXaxis().SetTitle("reco neutrino energy (GeV)")
+h_nuEr_CCnue_pur.SetLineColor(8)
+h_nuEr_CCnue_pur.SetLineWidth(2)
 
 if args.recoEOverflow:
   h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",14,0,2.8)
@@ -369,11 +456,11 @@ h_visE_CCnue_wCuts.SetFillColor(rt.kRed)
 h_visE_NCnue_wCuts.SetFillColor(8)
 h_visE_CCnumu_wCuts.SetFillColor(rt.kBlue)
 h_visE_NCnumu_wCuts.SetFillColor(40)
-h_visE_ext_wCuts.SetFillColor(rt.kBlack)
+h_visE_ext_wCuts.SetFillColor(12)
 h_visE_data_wCuts.SetLineColor(rt.kBlack)
 h_visE_data_wCuts.SetLineWidth(2)
 h_visE_data_wCuts.SetTitle("Inclusive CCnue Selected Events")
-h_visE_data_wCuts.GetYaxis().SetTitle("events per 4.43e+19 POT")
+h_visE_data_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_visE_data_wCuts.GetXaxis().SetTitle("reconstructed neutrino energy (GeV)")
 h_visE_all_wCuts = rt.THStack("h_visE_all_wCuts", "Inclusive CCnue Selected Events")
 
@@ -413,150 +500,150 @@ h_elScVsPr_NCnue_bkg.GetYaxis().SetTitle("electron score")
 
 h_piScElPrGr0_allMC_bkg = rt.TH1F("h_piScElPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_piScElPrEq0_allMC_bkg = rt.TH1F("h_piScElPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_piScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScElPrGr0_allMC_bkg.SetLineWidth(2)
 h_piScElPrGr0_allMC_bkg.SetLineColor(rt.kBlue)
-h_piScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScElPrEq0_allMC_bkg.SetLineWidth(2)
 h_piScElPrEq0_allMC_bkg.SetLineColor(rt.kBlue)
 h_piScElPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_muScElPrGr0_allMC_bkg = rt.TH1F("h_muScElPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_muScElPrEq0_allMC_bkg = rt.TH1F("h_muScElPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_muScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_muScElPrGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_muScElPrGr0_allMC_bkg.SetLineWidth(2)
 h_muScElPrGr0_allMC_bkg.SetLineColor(rt.kRed)
-h_muScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_muScElPrEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_muScElPrEq0_allMC_bkg.SetLineWidth(2)
 h_muScElPrEq0_allMC_bkg.SetLineColor(rt.kRed)
 h_muScElPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_phScPrSumGr0_allMC_bkg = rt.TH1F("h_phScPrSumGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_phScPrSumEq0_allMC_bkg = rt.TH1F("h_phScPrSumEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_phScPrSumGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrSumGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrSumGr0_allMC_bkg.SetLineWidth(2)
 h_phScPrSumGr0_allMC_bkg.SetLineColor(8)
-h_phScPrSumEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrSumEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrSumEq0_allMC_bkg.SetLineWidth(2)
 h_phScPrSumEq0_allMC_bkg.SetLineColor(8)
 h_phScPrSumEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_piScPrGr0_allMC_bkg = rt.TH1F("h_piScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_piScPrEq0_allMC_bkg = rt.TH1F("h_piScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_piScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrGr0_allMC_bkg.SetLineWidth(2)
 h_piScPrGr0_allMC_bkg.SetLineColor(rt.kBlue)
-h_piScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrEq0_allMC_bkg.SetLineWidth(2)
 h_piScPrEq0_allMC_bkg.SetLineColor(rt.kBlue)
 h_piScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_phScPrGr0_allMC_bkg = rt.TH1F("h_phScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_phScPrEq0_allMC_bkg = rt.TH1F("h_phScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_phScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrGr0_allMC_bkg.SetLineWidth(2)
 h_phScPrGr0_allMC_bkg.SetLineColor(8)
-h_phScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrEq0_allMC_bkg.SetLineWidth(2)
 h_phScPrEq0_allMC_bkg.SetLineColor(8)
 h_phScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_elScPrGr0_allMC_bkg = rt.TH1F("h_elScPrGr0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
 h_elScPrEq0_allMC_bkg = rt.TH1F("h_elScPrEq0_allMC_bkg","Particle Scores for Largest e- Shower in Neutrino Background",21,-20,1)
-h_elScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrGr0_allMC_bkg.SetLineWidth(2)
 h_elScPrGr0_allMC_bkg.SetLineColor(rt.kRed)
-h_elScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_allMC_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrEq0_allMC_bkg.SetLineWidth(2)
 h_elScPrEq0_allMC_bkg.SetLineColor(rt.kRed)
 h_elScPrEq0_allMC_bkg.SetLineStyle(rt.kDashed)
 
 h_piScPrGr0_CCnumu_bkg = rt.TH1F("h_piScPrGr0_CCnumu_bkg","Pion Score for Largest e- Shower in CCnumu Background",21,-20,1)
 h_piScPrEq0_CCnumu_bkg = rt.TH1F("h_piScPrEq0_CCnumu_bkg","Pion Score for Largest e- Shower in CCnumu Background",21,-20,1)
-h_piScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrGr0_CCnumu_bkg.SetLineWidth(2)
 h_piScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
-h_piScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrEq0_CCnumu_bkg.SetLineWidth(2)
 h_piScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
 h_piScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_phScPrGr0_CCnumu_bkg = rt.TH1F("h_phScPrGr0_CCnumu_bkg","Photon Score for Largest e- Shower in CCnumu Background",21,-20,1)
 h_phScPrEq0_CCnumu_bkg = rt.TH1F("h_phScPrEq0_CCnumu_bkg","Photon Score for Largest e- Shower in CCnumu Background",21,-20,1)
-h_phScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrGr0_CCnumu_bkg.SetLineWidth(2)
 h_phScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
-h_phScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrEq0_CCnumu_bkg.SetLineWidth(2)
 h_phScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
 h_phScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_elScPrGr0_CCnumu_bkg = rt.TH1F("h_elScPrGr0_CCnumu_bkg","Electron Score for Largest e- Shower in CCnumu Background",21,-20,1)
 h_elScPrEq0_CCnumu_bkg = rt.TH1F("h_elScPrEq0_CCnumu_bkg","Electron Score for Largest e- Shower in CCnumu Background",21,-20,1)
-h_elScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrGr0_CCnumu_bkg.SetLineWidth(2)
 h_elScPrGr0_CCnumu_bkg.SetLineColor(rt.kBlue)
-h_elScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_CCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrEq0_CCnumu_bkg.SetLineWidth(2)
 h_elScPrEq0_CCnumu_bkg.SetLineColor(rt.kBlue)
 h_elScPrEq0_CCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_piScPrGr0_NCnumu_bkg = rt.TH1F("h_piScPrGr0_NCnumu_bkg","Pion Score for Largest e- Shower in NCnumu Background",21,-20,1)
 h_piScPrEq0_NCnumu_bkg = rt.TH1F("h_piScPrEq0_NCnumu_bkg","Pion Score for Largest e- Shower in NCnumu Background",21,-20,1)
-h_piScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrGr0_NCnumu_bkg.SetLineWidth(2)
 h_piScPrGr0_NCnumu_bkg.SetLineColor(40)
-h_piScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrEq0_NCnumu_bkg.SetLineWidth(2)
 h_piScPrEq0_NCnumu_bkg.SetLineColor(40)
 h_piScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_phScPrGr0_NCnumu_bkg = rt.TH1F("h_phScPrGr0_NCnumu_bkg","Photon Score for Largest e- Shower in NCnumu Background",21,-20,1)
 h_phScPrEq0_NCnumu_bkg = rt.TH1F("h_phScPrEq0_NCnumu_bkg","Photon Score for Largest e- Shower in NCnumu Background",21,-20,1)
-h_phScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrGr0_NCnumu_bkg.SetLineWidth(2)
 h_phScPrGr0_NCnumu_bkg.SetLineColor(40)
-h_phScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrEq0_NCnumu_bkg.SetLineWidth(2)
 h_phScPrEq0_NCnumu_bkg.SetLineColor(40)
 h_phScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_elScPrGr0_NCnumu_bkg = rt.TH1F("h_elScPrGr0_NCnumu_bkg","Electron Score for Largest e- Shower in NCnumu Background",21,-20,1)
 h_elScPrEq0_NCnumu_bkg = rt.TH1F("h_elScPrEq0_NCnumu_bkg","Electron Score for Largest e- Shower in NCnumu Background",21,-20,1)
-h_elScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrGr0_NCnumu_bkg.SetLineWidth(2)
 h_elScPrGr0_NCnumu_bkg.SetLineColor(40)
-h_elScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_NCnumu_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrEq0_NCnumu_bkg.SetLineWidth(2)
 h_elScPrEq0_NCnumu_bkg.SetLineColor(40)
 h_elScPrEq0_NCnumu_bkg.SetLineStyle(rt.kDashed)
 
 h_piScPrGr0_NCnue_bkg = rt.TH1F("h_piScPrGr0_NCnue_bkg","Pion Score for Largest e- Shower in NCnue Background",21,-20,1)
 h_piScPrEq0_NCnue_bkg = rt.TH1F("h_piScPrEq0_NCnue_bkg","Pion Score for Largest e- Shower in NCnue Background",21,-20,1)
-h_piScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrGr0_NCnue_bkg.SetLineWidth(2)
 h_piScPrGr0_NCnue_bkg.SetLineColor(8)
-h_piScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_piScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_piScPrEq0_NCnue_bkg.SetLineWidth(2)
 h_piScPrEq0_NCnue_bkg.SetLineColor(8)
 h_piScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
 
 h_phScPrGr0_NCnue_bkg = rt.TH1F("h_phScPrGr0_NCnue_bkg","Photon Score for Largest e- Shower in NCnue Background",21,-20,1)
 h_phScPrEq0_NCnue_bkg = rt.TH1F("h_phScPrEq0_NCnue_bkg","Photon Score for Largest e- Shower in NCnue Background",21,-20,1)
-h_phScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrGr0_NCnue_bkg.SetLineWidth(2)
 h_phScPrGr0_NCnue_bkg.SetLineColor(8)
-h_phScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_phScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_phScPrEq0_NCnue_bkg.SetLineWidth(2)
 h_phScPrEq0_NCnue_bkg.SetLineColor(8)
 h_phScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
 
 h_elScPrGr0_NCnue_bkg = rt.TH1F("h_elScPrGr0_NCnue_bkg","Electron Score for Largest e- Shower in NCnue Background",21,-20,1)
 h_elScPrEq0_NCnue_bkg = rt.TH1F("h_elScPrEq0_NCnue_bkg","Electron Score for Largest e- Shower in NCnue Background",21,-20,1)
-h_elScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrGr0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrGr0_NCnue_bkg.SetLineWidth(2)
 h_elScPrGr0_NCnue_bkg.SetLineColor(8)
-h_elScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per 6.67e+20 POT")
+h_elScPrEq0_NCnue_bkg.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
 h_elScPrEq0_NCnue_bkg.SetLineWidth(2)
 h_elScPrEq0_NCnue_bkg.SetLineColor(8)
 h_elScPrEq0_NCnue_bkg.SetLineStyle(rt.kDashed)
@@ -597,6 +684,11 @@ for i in range(tnu.GetEntries()):
   if isinf(tnu.xsecWeight):
     continue
 
+  if args.smallFV:
+    trueVtxPos = rt.TVector3(tnu.trueVtxX, tnu.trueVtxY, tnu.trueVtxZ)
+    if not isFiducial(trueVtxPos):
+      continue
+
   eventType = -1
 
   if abs(tnu.trueNuPDG) == 14:
@@ -618,14 +710,38 @@ for i in range(tnu.GetEntries()):
     continue
 
   vtxPos = rt.TVector3(tnu.vtxX, tnu.vtxY, tnu.vtxZ)
-  if tnu.nVertices < 1 or not isFiducialWC(vtxPos): #tnu.vtxIsFiducial != 1:
-    continue
+  if args.smallFV:
+    vtxIsFiducial = isFiducial(vtxPos)
+  else:
+    vtxIsFiducial = isFiducialWC(vtxPos)
+  if args.oldVertexVar:
+    if tnu.nVertices < 1 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
+      continue
+  else:
+    if tnu.foundVertex == 0 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
+      continue
 
   h_cosFrac_CCnumu, h_cosFrac_NCnumu, h_cosFrac_NCnue = FillNuHistos(h_cosFrac_CCnumu,
     h_cosFrac_NCnumu, h_cosFrac_NCnue, tnu.vtxFracHitsOnCosmic, tnu.xsecWeight, eventType)
 
-  if tnu.vtxFracHitsOnCosmic >= 1.:
+  if tnu.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.makeKPplots:
+    nearestCosKP = 999.
+    nearestTEndKP = 999.
+    for iKP in range(tnu.nKeypoints):
+      kpPos = rt.TVector3(tnu.kpMaxPosX[iKP], tnu.kpMaxPosY[iKP], tnu.kpMaxPosZ[iKP])
+      distToVtx = getDistance(kpPos, vtxPos)
+      if tnu.kpFilterType[iKP] == 1 and distToVtx < nearestCosKP:
+        nearestCosKP = distToVtx
+      if tnu.kpFilterType[iKP] == 0 and tnu.kpClusterType[iKP] in [2,4,5,7] and distToVtx < nearestTEndKP:
+        nearestTEndKP = distToVtx
+  
+    h_cosKPDist_CCnumu, h_cosKPDist_NCnumu, h_cosKPDist_NCnue = FillNuHistos(h_cosKPDist_CCnumu,
+      h_cosKPDist_NCnumu, h_cosKPDist_NCnue, nearestCosKP, tnu.xsecWeight, eventType)
+    h_tEndKPDist_CCnumu, h_tEndKPDist_NCnumu, h_tEndKPDist_NCnue = FillNuHistos(h_tEndKPDist_CCnumu,
+      h_tEndKPDist_NCnumu, h_tEndKPDist_NCnue, nearestTEndKP, tnu.xsecWeight, eventType)
 
   visE = 0.
   nMuons = 0
@@ -760,11 +876,17 @@ for i in range(tnu.GetEntries()):
         h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
       h_elMaxQ_wConfCut_CCnumu, h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue = FillNuHistos(h_elMaxQ_wConfCut_CCnumu,
         h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+      if args.makeKPplots:
+        h_cosKPDist_wConfCut_CCnumu, h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue = FillNuHistos(h_cosKPDist_wConfCut_CCnumu,
+          h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue, nearestCosKP, tnu.xsecWeight, eventType)
+        h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue = FillNuHistos(h_tEndKPDist_wConfCut_CCnumu,
+          h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue, nearestTEndKP, tnu.xsecWeight, eventType)
 
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
           h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
           if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
             h_visE_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
           else:
@@ -772,6 +894,7 @@ for i in range(tnu.GetEntries()):
         if eventType == 1:
           n_runs1to3_NCnumu_pass += tnu.xsecWeight
           h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_nuEr_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
           if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
             h_visE_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
           else:
@@ -779,6 +902,7 @@ for i in range(tnu.GetEntries()):
         if eventType == 2:
           n_runs1to3_NCnue_pass += tnu.xsecWeight
           h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+          h_nuEr_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
           if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
             h_visE_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
           else:
@@ -883,21 +1007,49 @@ for i in range(tnue.GetEntries()):
   if abs(tnue.trueNuPDG) != 12 or tnue.trueNuCCNC != 0 or isinf(tnue.xsecWeight):
     continue
 
+  if args.smallFV:
+    trueVtxPos = rt.TVector3(tnue.trueVtxX, tnue.trueVtxY, tnue.trueVtxZ)
+    if not isFiducial(trueVtxPos):
+      continue
+
   n_raw_CCnue += 1
   n_runs1to3_CCnue += tnue.xsecWeight
   h_nuE_CCnue_nCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
+  h_nuEr_CCnue_nCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
 
   vtxPos = rt.TVector3(tnue.vtxX, tnue.vtxY, tnue.vtxZ)
-  if tnue.nVertices < 1 or not isFiducialWC(vtxPos): #tnue.vtxIsFiducial != 1:
-    continue
+  if args.smallFV:
+    vtxIsFiducial = isFiducial(vtxPos)
+  else:
+    vtxIsFiducial = isFiducialWC(vtxPos)
+  if args.oldVertexVar:
+    if tnue.nVertices < 1 or not vtxIsFiducial: #tnue.vtxIsFiducial != 1:
+      continue
+  else:
+    if tnue.foundVertex == 0 or not vtxIsFiducial: #tnue.vtxIsFiducial != 1:
+      continue
 
   h_cosFrac_CCnue.Fill(tnue.vtxFracHitsOnCosmic, tnue.xsecWeight)
   #if tnue.vtxFracHitsOnCosmic < 0 or tnue.vtxFracHitsOnCosmic > 1.:
   if tnue.vtxFracHitsOnCosmic > 1.:
     print(tnue.vtxFracHitsOnCosmic)
 
-  if tnue.vtxFracHitsOnCosmic >= 1.:
+  if tnue.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.makeKPplots:
+    nearestCosKP = 999.
+    nearestTEndKP = 999.
+    for iKP in range(tnue.nKeypoints):
+      kpPos = rt.TVector3(tnue.kpMaxPosX[iKP], tnue.kpMaxPosY[iKP], tnue.kpMaxPosZ[iKP])
+      distToVtx = getDistance(kpPos, vtxPos)
+      if tnue.kpFilterType[iKP] == 1 and distToVtx < nearestCosKP:
+        nearestCosKP = distToVtx
+      if tnue.kpFilterType[iKP] == 0 and tnue.kpClusterType[iKP] in [2,4,5,7] and distToVtx < nearestTEndKP:
+        nearestTEndKP = distToVtx
+  
+    h_cosKPDist_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
+    h_tEndKPDist_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
 
   visE = 0.
   nMuons = 0
@@ -994,9 +1146,13 @@ for i in range(tnue.GetEntries()):
       h_elMaxQCosTheta_wConfCut_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
       h_elMaxQF_wConfCut_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
       h_elMaxQ_wConfCut_CCnue.Fill(elMaxQ, tnue.xsecWeight)
+      if args.makeKPplots:
+        h_cosKPDist_wConfCut_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
+        h_tEndKPDist_wConfCut_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
         n_runs1to3_CCnue_pass += tnue.xsecWeight
         h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
+        h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
         if args.recoEOverflow and tnue.recoNuE/1000. > 2.6:
           h_visE_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
         else:
@@ -1020,13 +1176,37 @@ for i in range(text.GetEntries()):
   n_raw_ext += 1
 
   vtxPos = rt.TVector3(text.vtxX, text.vtxY, text.vtxZ)
-  if text.nVertices < 1 or not isFiducialWC(vtxPos): #text.vtxIsFiducial != 1:
-    continue
+  if args.smallFV:
+    vtxIsFiducial = isFiducial(vtxPos)
+  else:
+    vtxIsFiducial = isFiducialWC(vtxPos)
+  if args.oldVertexVar or args.NPMLCosmicConfig:
+    if text.nVertices < 1 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
+      continue
+  else:
+    if text.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
+      continue
+  #if text.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
+  #  continue
 
   h_cosFrac_ext.Fill(text.vtxFracHitsOnCosmic)
 
-  if text.vtxFracHitsOnCosmic >= 1.:
+  if text.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.makeKPplots:
+    nearestCosKP = 999.
+    nearestTEndKP = 999.
+    for iKP in range(text.nKeypoints):
+      kpPos = rt.TVector3(text.kpMaxPosX[iKP], text.kpMaxPosY[iKP], text.kpMaxPosZ[iKP])
+      distToVtx = getDistance(kpPos, vtxPos)
+      if text.kpFilterType[iKP] == 1 and distToVtx < nearestCosKP:
+        nearestCosKP = distToVtx
+      if text.kpFilterType[iKP] == 0 and text.kpClusterType[iKP] in [2,4,5,7] and distToVtx < nearestTEndKP:
+        nearestTEndKP = distToVtx
+  
+    h_cosKPDist_ext.Fill(nearestCosKP)
+    h_tEndKPDist_ext.Fill(nearestTEndKP)
 
   visE = 0.
   nMuons = 0
@@ -1122,9 +1302,15 @@ for i in range(text.GetEntries()):
       h_elMaxQCosTheta_wConfCut_ext.Fill(elMaxQCosTheta)
       h_elMaxQF_wConfCut_ext.Fill(elMaxQFrac)
       h_elMaxQ_wConfCut_ext.Fill(elMaxQ)
+      if args.makeKPplots:
+        h_cosKPDist_wConfCut_ext.Fill(nearestCosKP)
+        h_tEndKPDist_wConfCut_ext.Fill(nearestTEndKP)
       if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+        if args.printEXTinfo:
+          print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
         n_runs1to3_ext_pass += 1.
-        h_nuE_ext_wCuts.Fill(text.trueNuE)
+        #h_nuE_ext_wCuts.Fill(text.trueNuE)
+        h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
         if args.recoEOverflow and text.recoNuE/1000. > 2.6:
           h_visE_ext_wCuts.Fill(2.7)
         else:
@@ -1147,12 +1333,14 @@ for i in range(tdata.GetEntries()):
   n_raw_data += 1
 
   vtxPos = rt.TVector3(tdata.vtxX, tdata.vtxY, tdata.vtxZ)
-  if tdata.nVertices < 1 or not isFiducialWC(vtxPos): #tdata.vtxIsFiducial != 1:
+  if args.smallFV:
+    vtxIsFiducial = isFiducial(vtxPos)
+  else:
+    vtxIsFiducial = isFiducialWC(vtxPos)
+  if tdata.nVertices < 1 or not vtxIsFiducial: #tdata.vtxIsFiducial != 1:
     continue
 
-  h_cosFrac_ext.Fill(tdata.vtxFracHitsOnCosmic)
-
-  if tdata.vtxFracHitsOnCosmic >= 1.:
+  if tdata.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
 
   visE = 0.
@@ -1249,9 +1437,25 @@ h_nuE_all_wCuts.Add(h_nuE_CCnumu_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_NCnumu_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_CCnue_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_NCnue_wCuts)
-h_nuE_all_wCuts.Add(h_nuE_ext_wCuts)
+#h_nuE_all_wCuts.Add(h_nuE_ext_wCuts)
 #h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts,1,1,"B")
 h_nuE_CCnue_pur.Divide(h_nuE_CCnue_wCuts,h_nuE_all_wCuts)
+
+h_nuEr_CCnue_nCuts.Scale(targetPOT/tnuePOTsum)
+h_nuEr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_nuEr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_nuEr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_nuEr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_nuEr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_nuEr_CCnue_eff.Divide(h_nuEr_CCnue_wCuts,h_nuEr_CCnue_nCuts,1,1,"B")
+#h_nuEr_CCnue_eff.Divide(h_nuEr_CCnue_wCuts,h_nuEr_CCnue_nCuts,1,1)
+h_nuEr_all_wCuts.Add(h_nuEr_CCnumu_wCuts)
+h_nuEr_all_wCuts.Add(h_nuEr_NCnumu_wCuts)
+h_nuEr_all_wCuts.Add(h_nuEr_CCnue_wCuts)
+h_nuEr_all_wCuts.Add(h_nuEr_NCnue_wCuts)
+h_nuEr_all_wCuts.Add(h_nuEr_ext_wCuts)
+#h_nuEr_CCnue_pur.Divide(h_nuEr_CCnue_wCuts,h_nuEr_all_wCuts,1,1,"B")
+h_nuEr_CCnue_pur.Divide(h_nuEr_CCnue_wCuts,h_nuEr_all_wCuts)
 
 h_visE_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -1270,6 +1474,31 @@ h_cosFrac_NCnumu.Scale(targetPOT/tnuPOTsum)
 h_cosFrac_CCnue.Scale(targetPOT/tnuePOTsum)
 h_cosFrac_NCnue.Scale(targetPOT/tnuPOTsum)
 h_cosFrac_ext.Scale(targetPOT/textPOTsum)
+
+if args.makeKPplots:
+  h_cosKPDist_CCnumu.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_NCnumu.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_CCnue.Scale(targetPOT/tnuePOTsum)
+  h_cosKPDist_NCnue.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_ext.Scale(targetPOT/textPOTsum)
+  
+  h_tEndKPDist_CCnumu.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_NCnumu.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_CCnue.Scale(targetPOT/tnuePOTsum)
+  h_tEndKPDist_NCnue.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_ext.Scale(targetPOT/textPOTsum)
+  
+  h_cosKPDist_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+  h_cosKPDist_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+  h_cosKPDist_wConfCut_ext.Scale(targetPOT/textPOTsum)
+  
+  h_tEndKPDist_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+  h_tEndKPDist_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+  h_tEndKPDist_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
 h_nEl_CCnumu.Scale(targetPOT/tnuPOTsum)
 h_nEl_NCnumu.Scale(targetPOT/tnuPOTsum)
@@ -1517,6 +1746,31 @@ leg_cosFrac.Draw()
 #cnv_cosFrac.SaveAs("cosFrac.png")
 cnv_cosFrac.Write()
 
+if args.makeKPplots:
+  cnv_cosKPDist = rt.TCanvas("cnv_cosKPDist","cnv_cosKPDist")
+  hists_cosKPDist = sortHists([h_cosKPDist_CCnumu, h_cosKPDist_NCnumu, h_cosKPDist_CCnue, h_cosKPDist_NCnue, h_cosKPDist_ext])
+  hists_cosKPDist[0].Draw("EHIST")
+  for i in range(1,len(hists_cosKPDist)):
+    hists_cosKPDist[i].Draw("EHISTSAME")
+  leg_cosKPDist = rt.TLegend(0.7,0.7,0.9,0.9)
+  leg_cosKPDist = configureLegend(leg_cosKPDist, h_cosKPDist_CCnumu,
+    h_cosKPDist_NCnumu, h_cosKPDist_CCnue, h_cosKPDist_NCnue, h_cosKPDist_ext)
+  leg_cosKPDist.Draw()
+  #cnv_cosKPDist.SaveAs("cosKPDist.png")
+  cnv_cosKPDist.Write()
+  
+  cnv_tEndKPDist = rt.TCanvas("cnv_tEndKPDist","cnv_tEndKPDist")
+  hists_tEndKPDist = sortHists([h_tEndKPDist_CCnumu, h_tEndKPDist_NCnumu, h_tEndKPDist_CCnue, h_tEndKPDist_NCnue, h_tEndKPDist_ext])
+  hists_tEndKPDist[0].Draw("EHIST")
+  for i in range(1,len(hists_tEndKPDist)):
+    hists_tEndKPDist[i].Draw("EHISTSAME")
+  leg_tEndKPDist = rt.TLegend(0.7,0.7,0.9,0.9)
+  leg_tEndKPDist = configureLegend(leg_tEndKPDist, h_tEndKPDist_CCnumu,
+    h_tEndKPDist_NCnumu, h_tEndKPDist_CCnue, h_tEndKPDist_NCnue, h_tEndKPDist_ext)
+  leg_tEndKPDist.Draw()
+  #cnv_tEndKPDist.SaveAs("tEndKPDist.png")
+  cnv_tEndKPDist.Write()
+
 cnv_nEl = rt.TCanvas("cnv_nEl","cnv_nEl")
 hists_nEl = sortHists([h_nEl_CCnumu, h_nEl_NCnumu, h_nEl_CCnue, h_nEl_NCnue, h_nEl_ext])
 hists_nEl[0].Draw("EHIST")
@@ -1732,6 +1986,31 @@ leg_elMaxQCosTheta_wConfCut = configureLegend(leg_elMaxQCosTheta_wConfCut, h_elM
 leg_elMaxQCosTheta_wConfCut.Draw()
 #cnv_elMaxQCosTheta_wConfCut.SaveAs("elMaxQCosTheta_wConfCut.png")
 cnv_elMaxQCosTheta_wConfCut.Write()
+
+if args.makeKPplots:
+  cnv_cosKPDist_wConfCut = rt.TCanvas("cnv_cosKPDist_wConfCut","cnv_cosKPDist_wConfCut")
+  hists_cosKPDist_wConfCut = sortHists([h_cosKPDist_wConfCut_CCnumu, h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_CCnue, h_cosKPDist_wConfCut_NCnue, h_cosKPDist_wConfCut_ext])
+  hists_cosKPDist_wConfCut[0].Draw("EHIST")
+  for i in range(1,len(hists_cosKPDist_wConfCut)):
+    hists_cosKPDist_wConfCut[i].Draw("EHISTSAME")
+  leg_cosKPDist_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+  leg_cosKPDist_wConfCut = configureLegend(leg_cosKPDist_wConfCut, h_cosKPDist_wConfCut_CCnumu,
+    h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_CCnue, h_cosKPDist_wConfCut_NCnue, h_cosKPDist_wConfCut_ext)
+  leg_cosKPDist_wConfCut.Draw()
+  #cnv_cosKPDist_wConfCut.SaveAs("cosKPDist_wConfCut.png")
+  cnv_cosKPDist_wConfCut.Write()
+  
+  cnv_tEndKPDist_wConfCut = rt.TCanvas("cnv_tEndKPDist_wConfCut","cnv_tEndKPDist_wConfCut")
+  hists_tEndKPDist_wConfCut = sortHists([h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_CCnue, h_tEndKPDist_wConfCut_NCnue, h_tEndKPDist_wConfCut_ext])
+  hists_tEndKPDist_wConfCut[0].Draw("EHIST")
+  for i in range(1,len(hists_tEndKPDist_wConfCut)):
+    hists_tEndKPDist_wConfCut[i].Draw("EHISTSAME")
+  leg_tEndKPDist_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+  leg_tEndKPDist_wConfCut = configureLegend(leg_tEndKPDist_wConfCut, h_tEndKPDist_wConfCut_CCnumu,
+    h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_CCnue, h_tEndKPDist_wConfCut_NCnue, h_tEndKPDist_wConfCut_ext)
+  leg_tEndKPDist_wConfCut.Draw()
+  #cnv_tEndKPDist_wConfCut.SaveAs("tEndKPDist_wConfCut.png")
+  cnv_tEndKPDist_wConfCut.Write()
 
 cnv_elMaxQF_wConfCut = rt.TCanvas("cnv_elMaxQF_wConfCut","cnv_elMaxQF_wConfCut")
 hists_elMaxQF_wConfCut = sortHists([h_elMaxQF_wConfCut_CCnumu, h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_CCnue, h_elMaxQF_wConfCut_NCnue, h_elMaxQF_wConfCut_ext])
@@ -2027,17 +2306,30 @@ leg_elSc_NCnue_bkg.AddEntry(h_elScPrGr0_NCnue_bkg, "electron purity > 0", "l")
 leg_elSc_NCnue_bkg.Draw()
 cnv_elSc_NCnue_bkg.Write()
 
-h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
-h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
-cnv_CCnue_sel = rt.TCanvas("cnv_CCnue_sel","cnv_CCnue_sel")
-cnv_CCnue_sel.SetGrid()
+#h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
+#h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnue_eff.GetYaxis().SetTitle("efficiency")
+cnv_CCnue_sel_trueE = rt.TCanvas("cnv_CCnue_sel_trueE","cnv_CCnue_sel_trueE")
+cnv_CCnue_sel_trueE.SetGrid()
 h_nuE_CCnue_eff.Draw("E")
-h_nuE_CCnue_pur.Draw("ESAME")
-leg_CCnue_sel = rt.TLegend(0.7,0.7,0.9,0.9)
-leg_CCnue_sel.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
-leg_CCnue_sel.AddEntry(h_nuE_CCnue_pur, "purity", "l")
-leg_CCnue_sel.Draw()
-cnv_CCnue_sel.Write()
+#h_nuE_CCnue_pur.Draw("ESAME")
+#leg_CCnue_sel_trueE = rt.TLegend(0.7,0.7,0.9,0.9)
+#leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
+#leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_pur, "purity", "l")
+#leg_CCnue_sel_trueE.Draw()
+cnv_CCnue_sel_trueE.Write()
+
+h_nuEr_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
+h_nuEr_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
+cnv_CCnue_sel_recoE = rt.TCanvas("cnv_CCnue_sel_recoE","cnv_CCnue_sel_recoE")
+cnv_CCnue_sel_recoE.SetGrid()
+h_nuEr_CCnue_eff.Draw("E")
+h_nuEr_CCnue_pur.Draw("ESAME")
+leg_CCnue_sel_recoE = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_CCnue_sel_recoE.AddEntry(h_nuEr_CCnue_eff, "efficiency", "l")
+leg_CCnue_sel_recoE.AddEntry(h_nuEr_CCnue_pur, "purity", "l")
+leg_CCnue_sel_recoE.Draw()
+cnv_CCnue_sel_recoE.Write()
 
 cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
 h_visE_data_wCuts.Draw("E")
@@ -2058,6 +2350,12 @@ h_nuE_CCnue_wCuts.Write()
 h_nuE_all_wCuts.Write()
 h_nuE_CCnue_eff.Write()
 h_nuE_CCnue_pur.Write()
+
+h_nuEr_CCnue_nCuts.Write()
+h_nuEr_CCnue_wCuts.Write()
+h_nuEr_all_wCuts.Write()
+h_nuEr_CCnue_eff.Write()
+h_nuEr_CCnue_pur.Write()
 
 h_visE_all_wCuts.Write()
 h_visE_data_wCuts.Write()

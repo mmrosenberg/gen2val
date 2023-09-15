@@ -236,6 +236,7 @@ prongvars = larflow.reco.NuSelProngVars()
 wcoverlapvars = larflow.reco.NuSelWCTaggerOverlap()
 flowTriples = larflow.prep.FlowTriples()
 piKEestimator = pionRange2T()
+clusterFuncs = larflow.reco.ClusterFunctions()
 
 model = ResNet34(2, ResBlock, outputs=5)
 if "cuda" in args.device and args.multiGPU:
@@ -315,6 +316,10 @@ if args.isMC:
   vtxDistToTrue = array('f', [0.])
 vtxScore = array('f', [0.])
 vtxFracHitsOnCosmic = array('f', [0.])
+eventPCAxis0 = array('f', 3*[0.])
+eventPCAxis1 = array('f', 3*[0.])
+eventPCAxis2 = array('f', 3*[0.])
+eventPCEigenVals = array('f', 3*[0.])
 if not args.noKeypoints:
   nKeypoints = array('i', [0])
   kpClusterType = array('i', maxNKpts*[0])
@@ -448,6 +453,10 @@ if args.isMC:
   eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
 eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmic/F')
+eventTree.Branch("eventPCAxis0", eventPCAxis0, 'eventPCAxis0[3]/F')
+eventTree.Branch("eventPCAxis1", eventPCAxis1, 'eventPCAxis1[3]/F')
+eventTree.Branch("eventPCAxis2", eventPCAxis2, 'eventPCAxis2[3]/F')
+eventTree.Branch("eventPCEigenVals", eventPCEigenVals, 'eventPCEigenVals[3]/F')
 if not args.noKeypoints:
   eventTree.Branch("nKeypoints", nKeypoints, 'nKeypoints/I')
   eventTree.Branch("kpClusterType", kpClusterType, 'kpClusterType[nKeypoints]/I')
@@ -750,6 +759,11 @@ for filepair in files:
       vtxFracHitsOnCosmic[0] = -1.
       nTracks[0] = 0
       nShowers[0] = 0
+      for iPCA in range(3):
+        eventPCAxis0[iPCA] = 0.
+        eventPCAxis1[iPCA] = 0.
+        eventPCAxis2[iPCA] = 0.
+        eventPCEigenVals[iPCA] = 0.
       eventTree.Fill()
       continue
 
@@ -786,10 +800,15 @@ for filepair in files:
     vertexCharge = 0.
     vertexNHits = 0
 
+    eventLarflowCluster = larlite.larflowcluster()
+
     recoNuE[0] = 0.
 
 
     for iTrk, trackCls in enumerate(vertex.track_hitcluster_v):
+
+      for hit in trackCls:
+        eventLarflowCluster.push_back(hit)
 
       vertexNHits += trackCls.size()
       trackIsSecondary[iTrk] = vertex.track_isSecondary_v[iTrk]
@@ -896,6 +915,9 @@ for filepair in files:
 
     for iShw, shower in enumerate(vertex.shower_v):
 
+      for hit in shower:
+        eventLarflowCluster.push_back(hit)
+
       vertexNHits += shower.size()
       showerIsSecondary[iShw] = vertex.shower_isSecondary_v[iShw]
       showerNHits[iShw] = shower.size()
@@ -985,6 +1007,14 @@ for filepair in files:
     for i in range(nShowers[0]):
       showerHitFrac[i] = showerNHits[i] / (1.0*vertexNHits)
       showerChargeFrac[i] = showerCharge[i] / vertexCharge
+
+    #Do PCA for all hits attached to vertex
+    eventCluster = larflow.reco.cluster_from_larflowcluster(eventLarflowCluster)
+    for iPCA in range(3):
+      eventPCAxis0[iPCA] = eventCluster.pca_axis_v[0][iPCA]
+      eventPCAxis1[iPCA] = eventCluster.pca_axis_v[1][iPCA]
+      eventPCAxis2[iPCA] = eventCluster.pca_axis_v[2][iPCA]
+      eventPCEigenVals[iPCA] = eventCluster.pca_eigenvalues[iPCA]
 
     eventTree.Fill()
 
