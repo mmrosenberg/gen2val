@@ -320,6 +320,8 @@ eventPCAxis0 = array('f', 3*[0.])
 eventPCAxis1 = array('f', 3*[0.])
 eventPCAxis2 = array('f', 3*[0.])
 eventPCEigenVals = array('f', 3*[0.])
+eventPCProjMaxGap = array('f', 5*[0.])
+eventPCProjMaxDist = array('f', 5*[0.])
 if not args.noKeypoints:
   nKeypoints = array('i', [0])
   kpClusterType = array('i', maxNKpts*[0])
@@ -457,6 +459,8 @@ eventTree.Branch("eventPCAxis0", eventPCAxis0, 'eventPCAxis0[3]/F')
 eventTree.Branch("eventPCAxis1", eventPCAxis1, 'eventPCAxis1[3]/F')
 eventTree.Branch("eventPCAxis2", eventPCAxis2, 'eventPCAxis2[3]/F')
 eventTree.Branch("eventPCEigenVals", eventPCEigenVals, 'eventPCEigenVals[3]/F')
+eventTree.Branch("eventPCProjMaxGap", eventPCProjMaxGap, 'eventPCProjMaxGap[5]/F')
+eventTree.Branch("eventPCProjMaxDist", eventPCProjMaxDist, 'eventPCProjMaxDist[5]/F')
 if not args.noKeypoints:
   eventTree.Branch("nKeypoints", nKeypoints, 'nKeypoints/I')
   eventTree.Branch("kpClusterType", kpClusterType, 'kpClusterType[nKeypoints]/I')
@@ -764,6 +768,9 @@ for filepair in files:
         eventPCAxis1[iPCA] = 0.
         eventPCAxis2[iPCA] = 0.
         eventPCEigenVals[iPCA] = 0.
+      for iPrj in range(5):
+        eventPCProjMaxGap[iPrj] = -9.
+        eventPCProjMaxDist[iPrj] = -9.
       eventTree.Fill()
       continue
 
@@ -1009,12 +1016,121 @@ for filepair in files:
       showerChargeFrac[i] = showerCharge[i] / vertexCharge
 
     #Do PCA for all hits attached to vertex
-    eventCluster = larflow.reco.cluster_from_larflowcluster(eventLarflowCluster)
-    for iPCA in range(3):
-      eventPCAxis0[iPCA] = eventCluster.pca_axis_v[0][iPCA]
-      eventPCAxis1[iPCA] = eventCluster.pca_axis_v[1][iPCA]
-      eventPCAxis2[iPCA] = eventCluster.pca_axis_v[2][iPCA]
-      eventPCEigenVals[iPCA] = eventCluster.pca_eigenvalues[iPCA]
+    try:
+ 
+      eventCluster = larflow.reco.cluster_from_larflowcluster(eventLarflowCluster)
+      for iPCA in range(3):
+        eventPCAxis0[iPCA] = eventCluster.pca_axis_v[0][iPCA]
+        eventPCAxis1[iPCA] = eventCluster.pca_axis_v[1][iPCA]
+        eventPCAxis2[iPCA] = eventCluster.pca_axis_v[2][iPCA]
+        eventPCEigenVals[iPCA] = eventCluster.pca_eigenvalues[iPCA]
+
+      #project event 3D points to first PC axis with 0 at vertex projection
+      vtxProj = [0.,0.,0.]
+      ldist = 0.
+      for c in range(3):
+        ldist += (vertex.pos[c] - eventCluster.pca_center[c])*eventPCAxis0[c]
+      for c in range(3):
+        vtxProj[c] = eventCluster.pca_center[c] + ldist*eventPCAxis0[c]
+
+      projDists = []
+      for hit in eventLarflowCluster:
+        projPt = [0.,0.,0.]
+        ldist = 0.
+        for c in range(3):
+          ldist += (hit[c] - eventCluster.pca_center[c])*eventPCAxis0[c]
+        for c in range(3):
+          projPt[c] = eventCluster.pca_center[c] + ldist*eventPCAxis0[c]
+        projDist = 0.
+        for c in range(3):
+          projDist += (projPt[c] - vtxProj[c])**2
+        projDists.append(sqrt(projDist))
+      projDists.sort()
+
+      #calculate maximum point gap along PCA projection and maximum charge in between gaps
+      maxGapFull = -1.
+      maxGap90 = -1.
+      maxGap80 = -1.
+      maxGap70 = -1.
+      maxGap60 = -1.
+      maxCntD02 = -1.
+      maxCntD04 = -1.
+      maxCntD06 = -1.
+      maxCntD08 = -1.
+      maxCntD10 = -1.
+      currentCntD02 = 0.
+      currentCntD04 = 0.
+      currentCntD06 = 0.
+      currentCntD08 = 0.
+      currentCntD10 = 0.
+
+      for iEP in range(1, len(projDists)):
+
+        gap = projDists[iEP] - projDists[iEP-1]
+
+        if gap > maxGapFull:
+          maxGapFull = gap
+        if iEP < int(0.9*len(projDists)) and gap > maxGap90:
+          maxGap90 = gap
+        if iEP < int(0.8*len(projDists)) and gap > maxGap80:
+          maxGap80 = gap
+        if iEP < int(0.7*len(projDists)) and gap > maxGap70:
+          maxGap70 = gap
+        if iEP < int(0.6*len(projDists)) and gap > maxGap60:
+          maxGap60 = gap
+
+        if gap > 2. or iEP == (len(projDists) - 1):
+          if currentCntD02 > maxCntD02:
+            maxCntD02 = currentCntD02
+          currentCntD02 = 0.
+        else:
+          currentCntD02 += gap
+        if gap > 4. or iEP == (len(projDists) - 1):
+          if currentCntD04 > maxCntD04:
+            maxCntD04 = currentCntD04
+          currentCntD04 = 0.
+        else:
+          currentCntD04 += gap
+        if gap > 6. or iEP == (len(projDists) - 1):
+          if currentCntD06 > maxCntD06:
+            maxCntD06 = currentCntD06
+          currentCntD06 = 0.
+        else:
+          currentCntD06 += gap
+        if gap > 8. or iEP == (len(projDists) - 1):
+          if currentCntD08 > maxCntD08:
+            maxCntD08 = currentCntD08
+          currentCntD08 = 0.
+        else:
+          currentCntD08 += gap
+        if gap > 10. or iEP == (len(projDists) - 1):
+          if currentCntD10 > maxCntD10:
+            maxCntD10 = currentCntD10
+          currentCntD10 = 0.
+        else:
+          currentCntD10 += gap
+
+      eventPCProjMaxGap[0] = maxGapFull
+      eventPCProjMaxGap[1] = maxGap90
+      eventPCProjMaxGap[2] = maxGap80
+      eventPCProjMaxGap[3] = maxGap70
+      eventPCProjMaxGap[4] = maxGap60
+      eventPCProjMaxDist[0] = maxCntD02
+      eventPCProjMaxDist[1] = maxCntD04
+      eventPCProjMaxDist[2] = maxCntD06
+      eventPCProjMaxDist[3] = maxCntD08
+      eventPCProjMaxDist[4] = maxCntD10
+
+    except:
+      print("warning: PCA failed")
+      for iPCA in range(3):
+        eventPCAxis0[iPCA] = 0.
+        eventPCAxis1[iPCA] = 0.
+        eventPCAxis2[iPCA] = 0.
+        eventPCEigenVals[iPCA] = 0.
+      for iPrj in range(5):
+        eventPCProjMaxGap[iPrj] = -9.
+        eventPCProjMaxDist[iPrj] = -9.
 
     eventTree.Fill()
 
