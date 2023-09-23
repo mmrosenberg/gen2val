@@ -9,9 +9,9 @@ from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
 
 
 parser = argparse.ArgumentParser("Test CCnue Inclusive Secondary Shower Cut")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v2_mcc9_v28_wctagger_bnboverlay_trimmed_CCnueInc_passed.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v2_mcc9_v28_wctagger_nueintrinsics_trimmed_CCnueInc_passed.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v2_mcc9_v29e_dl_run3_G1_extbnb_trimmed_CCnueInc_passed.root", help="extbnb input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v3_mcc9_v28_wctagger_bnboverlay_trimmed_CCnueInc_passed.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v3_mcc9_v28_wctagger_nueintrinsics_trimmed_CCnueInc_passed.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v3_mcc9_v29e_dl_run3_G1_extbnb_trimmed_CCnueInc_passed.root", help="extbnb input file")
 parser.add_argument("-o", "--outfile", type=str, default="foo.root", help="output root file name")
 parser.add_argument("--overwritePOT", help="overwrite POT for trimmed files", action="store_true")
 parser.add_argument("-n", "--nShowersCut", type=int, default=0, help="minimum number of secondary showers")
@@ -59,7 +59,7 @@ for i in range(tnuPOT.GetEntries()):
 
 if args.extbnb_file == "selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root":
   textPOTsum = 1.3298521464785359e+19
-elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file or args.extbnb_file == "flat_ntuples/dlgen2_reco_v2me06_ntuple_v2_mcc9_v29e_dl_run3_G1_extbnb_trimmed_CCnueInc_passed.root":
+elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file or args.extbnb_file == "flat_ntuples/dlgen2_reco_v2me06_ntuple_v2_mcc9_v29e_dl_run3_G1_extbnb_trimmed_CCnueInc_passed.root" or args.extbnb_file == "flat_ntuples/dlgen2_reco_v2me06_ntuple_v3_mcc9_v29e_dl_run3_G1_extbnb_trimmed_CCnueInc_passed.root":
   textPOTsum = 2.561872704628622e+19
 else:
   sys.exit("POT for input extBNB file unknown")
@@ -141,13 +141,52 @@ h_pca0y_ext = rt.TH1F("h_pca0y_ext","PC Axis0 y",52,-1.02,1.02)
 h_pca0y_CCnumu, h_pca0y_NCnumu, h_pca0y_CCnue, h_pca0y_NCnue, h_pca0y_ext = configureHists(h_pca0y_CCnumu,
  h_pca0y_NCnumu, h_pca0y_CCnue, h_pca0y_NCnue, h_pca0y_ext)
 
-h_elShwCompSum_CCnumu = rt.TH1F("h_elShwCompSum_CCnumu","Electron Shower Completeness Sum",105,-1,20)
-h_elShwCompSum_NCnumu = rt.TH1F("h_elShwCompSum_NCnumu","Electron Shower Completeness Sum",105,-1,20)
-h_elShwCompSum_CCnue = rt.TH1F("h_elShwCompSum_CCnue","Electron Shower Completeness Sum",105,-1,20)
-h_elShwCompSum_NCnue = rt.TH1F("h_elShwCompSum_NCnue","Electron Shower Completeness Sum",105,-1,20)
-h_elShwCompSum_ext = rt.TH1F("h_elShwCompSum_ext","Electron Shower Completeness Sum",105,-1,20)
+h_elShwCompSum_CCnumu = rt.TH1F("h_elShwCompSum_CCnumu","Electron Shower Completeness Sum",60,-1,6)
+h_elShwCompSum_NCnumu = rt.TH1F("h_elShwCompSum_NCnumu","Electron Shower Completeness Sum",60,-1,6)
+h_elShwCompSum_CCnue = rt.TH1F("h_elShwCompSum_CCnue","Electron Shower Completeness Sum",60,-1,6)
+h_elShwCompSum_NCnue = rt.TH1F("h_elShwCompSum_NCnue","Electron Shower Completeness Sum",60,-1,6)
+h_elShwCompSum_ext = rt.TH1F("h_elShwCompSum_ext","Electron Shower Completeness Sum",60,-1,6)
 h_elShwCompSum_CCnumu, h_elShwCompSum_NCnumu, h_elShwCompSum_CCnue, h_elShwCompSum_NCnue, h_elShwCompSum_ext = configureHists(h_elShwCompSum_CCnumu,
  h_elShwCompSum_NCnumu, h_elShwCompSum_CCnue, h_elShwCompSum_NCnue, h_elShwCompSum_ext)
+
+h_avgShwComp_CCnumu = rt.TH1F("h_avgShwComp_CCnumu","Average Shower Completeness",40,-1,1)
+h_avgShwComp_NCnumu = rt.TH1F("h_avgShwComp_NCnumu","Average Shower Completeness",40,-1,1)
+h_avgShwComp_CCnue = rt.TH1F("h_avgShwComp_CCnue","Average Shower Completeness",40,-1,1)
+h_avgShwComp_NCnue = rt.TH1F("h_avgShwComp_NCnue","Average Shower Completeness",40,-1,1)
+h_avgShwComp_ext = rt.TH1F("h_avgShwComp_ext","Average Shower Completeness",40,-1,1)
+h_avgShwComp_CCnumu, h_avgShwComp_NCnumu, h_avgShwComp_CCnue, h_avgShwComp_NCnue, h_avgShwComp_ext = configureHists(h_avgShwComp_CCnumu,
+ h_avgShwComp_NCnumu, h_avgShwComp_CCnue, h_avgShwComp_NCnue, h_avgShwComp_ext)
+
+h_avgNonPrimShwComp_CCnumu = rt.TH1F("h_avgNonPrimShwComp_CCnumu","Average Shower Completeness Excluding Primary e-",40,-1,1)
+h_avgNonPrimShwComp_NCnumu = rt.TH1F("h_avgNonPrimShwComp_NCnumu","Average Shower Completeness Excluding Primary e-",40,-1,1)
+h_avgNonPrimShwComp_CCnue = rt.TH1F("h_avgNonPrimShwComp_CCnue","Average Shower Completeness Excluding Primary e-",40,-1,1)
+h_avgNonPrimShwComp_NCnue = rt.TH1F("h_avgNonPrimShwComp_NCnue","Average Shower Completeness Excluding Primary e-",40,-1,1)
+h_avgNonPrimShwComp_ext = rt.TH1F("h_avgNonPrimShwComp_ext","Average Shower Completeness Excluding Primary e-",40,-1,1)
+h_avgNonPrimShwComp_CCnumu, h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_CCnue, h_avgNonPrimShwComp_NCnue, h_avgNonPrimShwComp_ext = configureHists(h_avgNonPrimShwComp_CCnumu,
+ h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_CCnue, h_avgNonPrimShwComp_NCnue, h_avgNonPrimShwComp_ext)
+
+h_maxEventGap_CCnumu = rt.TH1F("h_maxEventGap_CCnumu","Largest PCA Projection Gap (cm)",55,-10,100)
+h_maxEventGap_NCnumu = rt.TH1F("h_maxEventGap_NCnumu","Largest PCA Projection Gap (cm)",55,-10,100)
+h_maxEventGap_CCnue = rt.TH1F("h_maxEventGap_CCnue","Largest PCA Projection Gap (cm)",55,-10,100)
+h_maxEventGap_NCnue = rt.TH1F("h_maxEventGap_NCnue","Largest PCA Projection Gap (cm)",55,-10,100)
+h_maxEventGap_ext = rt.TH1F("h_maxEventGap_ext","Largest PCA Projection Gap (cm)",55,-10,100)
+h_maxEventGap_CCnumu, h_maxEventGap_NCnumu, h_maxEventGap_CCnue, h_maxEventGap_NCnue, h_maxEventGap_ext = configureHists(h_maxEventGap_CCnumu,
+ h_maxEventGap_NCnumu, h_maxEventGap_CCnue, h_maxEventGap_NCnue, h_maxEventGap_ext)
+
+h_maxEventDist_CCnumu = rt.TH1F("h_maxEventDist_CCnumu","Largest Continuous PCA Projection Distance (cm)",92,-20,350)
+h_maxEventDist_NCnumu = rt.TH1F("h_maxEventDist_NCnumu","Largest Continuous PCA Projection Distance (cm)",92,-20,350)
+h_maxEventDist_CCnue = rt.TH1F("h_maxEventDist_CCnue","Largest Continuous PCA Projection Distance (cm)",92,-20,350)
+h_maxEventDist_NCnue = rt.TH1F("h_maxEventDist_NCnue","Largest Continuous PCA Projection Distance (cm)",92,-20,350)
+h_maxEventDist_ext = rt.TH1F("h_maxEventDist_ext","Largest Continuous PCA Projection Distance (cm)",92,-20,350)
+h_maxEventDist_CCnumu, h_maxEventDist_NCnumu, h_maxEventDist_CCnue, h_maxEventDist_NCnue, h_maxEventDist_ext = configureHists(h_maxEventDist_CCnumu,
+ h_maxEventDist_NCnumu, h_maxEventDist_CCnue, h_maxEventDist_NCnue, h_maxEventDist_ext)
+
+h2d_gapVScomp_CCnue = rt.TH2F("h_gapVScomp_CCnue","PCA Projection Gap vs. Average Completeness",21,0,1.05,20,0,20)
+h2d_gapVScomp_ext = rt.TH2F("h_gapVScomp_ext","PCA Projection Gap vs. Average Completeness",21,0,1.05,20,0,20)
+h2d_gapVScomp_CCnue.GetXaxis().SetTitle("average shower completeness")
+h2d_gapVScomp_CCnue.GetYaxis().SetTitle("largest PCA projection gap (cm)")
+h2d_gapVScomp_ext.GetXaxis().SetTitle("average shower completeness")
+h2d_gapVScomp_ext.GetYaxis().SetTitle("largest PCA projection gap (cm)")
 
 maxPCAratio = -1.
 
@@ -180,6 +219,7 @@ for i in range(tnu.GetEntries()):
   if abs(tnu.trueNuPDG) == 12 and tnu.trueNuCCNC == 1:
     eventType = 2
 
+  nClassShowers = 0
   nShowers = 0
   nSecShowers = 0
   showerChargeSum = 0.
@@ -188,12 +228,18 @@ for i in range(tnu.GetEntries()):
   nonPrimShwCharge = 0.
   nElShowers = 0
   elShwCompSum = 0.
+  avgShwComp = 0.
+  recoElComp = 0.
 
   for iS in range(tnu.nShowers):
     nonPrimShwCharge += tnu.showerCharge[iS]
+    if tnu.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += tnu.showerComp[iS]
     if tnu.showerClassified[iS] == 1 and tnu.showerIsSecondary[iS] != 1 and tnu.showerPID[iS] == 11:
       if tnu.showerCharge[iS] > recoElCharge:
         recoElCharge = tnu.showerCharge[iS]
+        recoElComp = tnu.showerComp[iS]
     if tnu.showerClassified[iS] == 1 and tnu.showerPID[iS] == 11:
       nElShowers += 1
       elShwCompSum += tnu.showerComp[iS]
@@ -207,15 +253,28 @@ for i in range(tnu.GetEntries()):
       nSecShowers += 1
       secShowerChargeSum += tnu.showerCharge[iS]
 
+  avgNonPrimShwComp = (avgShwComp - recoElComp)/(nClassShowers - 1) if (nClassShowers > 1) else 0.
+  avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -0.5
   nonPrimShwCharge -= recoElCharge
+  if tnu.eventPCAxis0[1] >= 0.:
+    nonPrimShwCharge = 0.
+    showerChargeSum = 0.
+    secShowerChargeSum = 0.
 
   pcaEVsum = tnu.eventPCEigenVals[0] + tnu.eventPCEigenVals[1] + tnu.eventPCEigenVals[2]
   pcaEVratio = tnu.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0. and nShowers >= args.nShowersCut and tnu.eventPCAxis0[1] < 0. and nonPrimShwCharge > args.secondaryChargeCut) else 0.
   if pcaEVratio > maxPCAratio:
     maxPCAratio = pcaEVratio
 
-  if nElShowers < 2 or tnu.eventPCAxis0[1] > 0. or pcaEVratio < 0.5:
+  maxEventGap = tnu.eventPCProjMaxGap[1]
+  maxEventDist = tnu.eventPCProjMaxDist[1]
+  if nElShowers < 2 or nonPrimShwCharge < args.secondaryChargeCut or tnu.eventPCAxis0[1] > 0. or pcaEVratio < 0.9:
     elShwCompSum = -1.
+  if tnu.eventPCAxis0[1] >= 0. or nonPrimShwCharge < args.secondaryChargeCut or pcaEVratio < 0.9:
+    maxEventGap = -9.
+    maxEventDist = -19.
+    avgShwComp = -1.
+    avgNonPrimShwComp = -1.
 
   h_nSS_CCnumu, h_nSS_NCnumu, h_nSS_NCnue = FillNuHistos(h_nSS_CCnumu,
     h_nSS_NCnumu, h_nSS_NCnue, nSecShowers, tnu.xsecWeight, eventType)
@@ -233,13 +292,24 @@ for i in range(tnu.GetEntries()):
     h_pca0y_NCnumu, h_pca0y_NCnue, tnu.eventPCAxis0[1], tnu.xsecWeight, eventType)
   h_elShwCompSum_CCnumu, h_elShwCompSum_NCnumu, h_elShwCompSum_NCnue = FillNuHistos(h_elShwCompSum_CCnumu,
     h_elShwCompSum_NCnumu, h_elShwCompSum_NCnue, elShwCompSum, tnu.xsecWeight, eventType)
+  h_avgShwComp_CCnumu, h_avgShwComp_NCnumu, h_avgShwComp_NCnue = FillNuHistos(h_avgShwComp_CCnumu,
+    h_avgShwComp_NCnumu, h_avgShwComp_NCnue, avgShwComp, tnu.xsecWeight, eventType)
+  h_avgNonPrimShwComp_CCnumu, h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_NCnue = FillNuHistos(h_avgNonPrimShwComp_CCnumu,
+    h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_NCnue, avgNonPrimShwComp, tnu.xsecWeight, eventType)
+  h_maxEventGap_CCnumu, h_maxEventGap_NCnumu, h_maxEventGap_NCnue = FillNuHistos(h_maxEventGap_CCnumu,
+    h_maxEventGap_NCnumu, h_maxEventGap_NCnue, maxEventGap, tnu.xsecWeight, eventType)
+  h_maxEventDist_CCnumu, h_maxEventDist_NCnumu, h_maxEventDist_NCnue = FillNuHistos(h_maxEventDist_CCnumu,
+    h_maxEventDist_NCnumu, h_maxEventDist_NCnue, maxEventDist, tnu.xsecWeight, eventType)
 
 
+
+nSignalCut = 0.
 
 for i in range(tnue.GetEntries()):
 
   tnue.GetEntry(i)
 
+  nClassShowers = 0
   nShowers = 0
   nSecShowers = 0
   showerChargeSum = 0.
@@ -248,12 +318,18 @@ for i in range(tnue.GetEntries()):
   nonPrimShwCharge = 0.
   nElShowers = 0
   elShwCompSum = 0.
+  avgShwComp = 0.
+  recoElComp = 0.
 
   for iS in range(tnue.nShowers):
     nonPrimShwCharge += tnue.showerCharge[iS]
+    if tnue.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += tnue.showerComp[iS]
     if tnue.showerClassified[iS] == 1 and tnue.showerIsSecondary[iS] != 1 and tnue.showerPID[iS] == 11:
       if tnue.showerCharge[iS] > recoElCharge:
         recoElCharge = tnue.showerCharge[iS]
+        recoElComp = tnue.showerComp[iS]
     if tnue.showerClassified[iS] == 1 and tnue.showerPID[iS] == 11:
       nElShowers += 1
       elShwCompSum += tnue.showerComp[iS]
@@ -267,15 +343,33 @@ for i in range(tnue.GetEntries()):
       nSecShowers += 1
       secShowerChargeSum += tnue.showerCharge[iS]
 
+  avgNonPrimShwComp = (avgShwComp - recoElComp)/(nClassShowers - 1) if (nClassShowers > 1) else 0.
+  avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -0.5
   nonPrimShwCharge -= recoElCharge
+  if tnue.eventPCAxis0[1] >= 0.:
+    nonPrimShwCharge = 0.
+    showerChargeSum = 0.
+    secShowerChargeSum = 0.
 
   pcaEVsum = tnue.eventPCEigenVals[0] + tnue.eventPCEigenVals[1] + tnue.eventPCEigenVals[2]
   pcaEVratio = tnue.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0. and nShowers >= args.nShowersCut and tnue.eventPCAxis0[1] < 0. and nonPrimShwCharge > args.secondaryChargeCut) else 0.
   if pcaEVratio > maxPCAratio:
     maxPCAratio = pcaEVratio
 
-  if nElShowers < 2 or tnue.eventPCAxis0[1] > 0. or pcaEVratio < 0.5:
+  maxEventGap = tnue.eventPCProjMaxGap[1]
+  maxEventDist = tnue.eventPCProjMaxDist[1]
+  if nElShowers < 2 or nonPrimShwCharge < args.secondaryChargeCut or tnue.eventPCAxis0[1] > 0. or pcaEVratio < 0.9:
     elShwCompSum = -1.
+  if tnue.eventPCAxis0[1] >= 0. or nonPrimShwCharge < args.secondaryChargeCut or pcaEVratio < 0.9:
+    maxEventGap = -9.
+    maxEventDist = -19.
+    avgShwComp = -1.
+    avgNonPrimShwComp = -1.
+  else:
+    h2d_gapVScomp_CCnue.Fill(avgShwComp, maxEventGap, tnue.xsecWeight)
+
+  if tnue.eventPCAxis0[1] < 0. and nonPrimShwCharge > args.secondaryChargeCut and pcaEVratio > 0.9 and avgShwComp < 0.5:
+    nSignalCut += tnue.xsecWeight
 
   #if pcaEVratio > 0.98:
   #  print("example signal event removed by current cosmic cut: (fileid, run, subrun, event) = (%i, %i, %i, %i)"%(tnue.fileid, tnue.run, tnue.subrun, tnue.event))
@@ -287,7 +381,11 @@ for i in range(tnue.GetEntries()):
   h_nonPrimShwChg_CCnue.Fill(nonPrimShwCharge, tnue.xsecWeight)
   h_pcaRatio_CCnue.Fill(pcaEVratio, tnue.xsecWeight)
   h_elShwCompSum_CCnue.Fill(elShwCompSum, tnue.xsecWeight)
+  h_avgShwComp_CCnue.Fill(avgShwComp, tnue.xsecWeight)
+  h_avgNonPrimShwComp_CCnue.Fill(avgNonPrimShwComp, tnue.xsecWeight)
   h_pca0y_CCnue.Fill(tnue.eventPCAxis0[1], tnue.xsecWeight)
+  h_maxEventGap_CCnue.Fill(maxEventGap, tnue.xsecWeight)
+  h_maxEventDist_CCnue.Fill(maxEventDist, tnue.xsecWeight)
 
 
 
@@ -295,6 +393,7 @@ for i in range(text.GetEntries()):
 
   text.GetEntry(i)
 
+  nClassShowers = 0
   nShowers = 0
   nSecShowers = 0
   showerChargeSum = 0.
@@ -303,12 +402,18 @@ for i in range(text.GetEntries()):
   nonPrimShwCharge = 0.
   nElShowers = 0
   elShwCompSum = 0.
+  avgShwComp = 0.
+  recoElComp = 0.
 
   for iS in range(text.nShowers):
     nonPrimShwCharge += text.showerCharge[iS]
+    if text.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += text.showerComp[iS]
     if text.showerClassified[iS] == 1 and text.showerIsSecondary[iS] != 1 and text.showerPID[iS] == 11:
       if text.showerCharge[iS] > recoElCharge:
         recoElCharge = text.showerCharge[iS]
+        recoElComp = text.showerComp[iS]
     if text.showerClassified[iS] == 1 and text.showerPID[iS] == 11:
       nElShowers += 1
       elShwCompSum += text.showerComp[iS]
@@ -322,17 +427,39 @@ for i in range(text.GetEntries()):
       nSecShowers += 1
       secShowerChargeSum += text.showerCharge[iS]
 
+  avgNonPrimShwComp = (avgShwComp - recoElComp)/(nClassShowers - 1) if (nClassShowers > 1) else 0.
+  avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -0.5
   nonPrimShwCharge -= recoElCharge
+  if text.eventPCAxis0[1] >= 0.:
+    nonPrimShwCharge = 0.
+    showerChargeSum = 0.
+    secShowerChargeSum = 0.
 
   pcaEVsum = text.eventPCEigenVals[0] + text.eventPCEigenVals[1] + text.eventPCEigenVals[2]
   pcaEVratio = text.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0. and nShowers >= args.nShowersCut and text.eventPCAxis0[1] < 0. and nonPrimShwCharge > args.secondaryChargeCut) else 0.
   if pcaEVratio > maxPCAratio:
     maxPCAratio = pcaEVratio
 
-  if nElShowers < 2 or text.eventPCAxis0[1] > 0. or pcaEVratio < 0.5:
+  maxEventGap = text.eventPCProjMaxGap[1]
+  maxEventDist = text.eventPCProjMaxDist[1]
+  if nElShowers < 2 or nonPrimShwCharge < args.secondaryChargeCut or text.eventPCAxis0[1] > 0. or pcaEVratio < 0.9:
     elShwCompSum = -1.
+  if text.eventPCAxis0[1] >= 0. or nonPrimShwCharge < args.secondaryChargeCut or pcaEVratio < 0.9:
+    maxEventGap = -9.
+    maxEventDist = -19.
+    avgShwComp = -1.
+    avgNonPrimShwComp = -1.
+  else:
+    h2d_gapVScomp_ext.Fill(avgShwComp, maxEventGap)
 
-  print("cosmic background event (%i, %i, %i): nShowers = %i, nSecShowers = %i, showerCharge = %f, secShowerCharge = %f, nonPrimShowerCharge = %f"%(text.run, text.subrun, text.event, nShowers, nSecShowers, showerChargeSum, secShowerChargeSum, nonPrimShwCharge))
+  eventRemoved = False
+  if text.eventPCAxis0[1] < 0. and nonPrimShwCharge > args.secondaryChargeCut and pcaEVratio > 0.9 and avgShwComp < 0.5:
+    eventRemoved = True
+
+  if eventRemoved:
+    print("cosmic background event REMOVED (%i, %i, %i): nShowers = %i, nSecShowers = %i, showerCharge = %f, secShowerCharge = %f, nonPrimShowerCharge = %f"%(text.run, text.subrun, text.event, nShowers, nSecShowers, showerChargeSum, secShowerChargeSum, nonPrimShwCharge))
+  else:
+    print("cosmic background event RETAINED (%i, %i, %i): nShowers = %i, nSecShowers = %i, showerCharge = %f, secShowerCharge = %f, nonPrimShowerCharge = %f"%(text.run, text.subrun, text.event, nShowers, nSecShowers, showerChargeSum, secShowerChargeSum, nonPrimShwCharge))
 
   h_nSS_ext.Fill(nSecShowers)
   h_nS_ext.Fill(nShowers)
@@ -341,10 +468,17 @@ for i in range(text.GetEntries()):
   h_nonPrimShwChg_ext.Fill(nonPrimShwCharge)
   h_pcaRatio_ext.Fill(pcaEVratio)
   h_elShwCompSum_ext.Fill(elShwCompSum)
+  h_avgShwComp_ext.Fill(avgShwComp)
+  h_avgNonPrimShwComp_ext.Fill(avgNonPrimShwComp)
   h_pca0y_ext.Fill(text.eventPCAxis0[1])
+  h_maxEventGap_ext.Fill(maxEventGap)
+  h_maxEventDist_ext.Fill(maxEventDist)
 
 
 
+nSignalCut *= targetPOT/tnuePOTsum
+
+print("number of signal events that will be removed by cosmic cuts: ", nSignalCut)
 print("max PCEigenVal ratio:", maxPCAratio)
 print("extBNB scaling ratio:", targetPOT/textPOTsum)
 
@@ -396,6 +530,33 @@ h_elShwCompSum_NCnumu.Scale(targetPOT/tnuPOTsum)
 h_elShwCompSum_CCnue.Scale(targetPOT/tnuePOTsum)
 h_elShwCompSum_NCnue.Scale(targetPOT/tnuPOTsum)
 h_elShwCompSum_ext.Scale(targetPOT/textPOTsum)
+
+h_avgShwComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_avgShwComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_ext.Scale(targetPOT/textPOTsum)
+
+h_avgNonPrimShwComp_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgNonPrimShwComp_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgNonPrimShwComp_CCnue.Scale(targetPOT/tnuePOTsum)
+h_avgNonPrimShwComp_NCnue.Scale(targetPOT/tnuPOTsum)
+h_avgNonPrimShwComp_ext.Scale(targetPOT/textPOTsum)
+
+h_maxEventGap_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxEventGap_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxEventGap_CCnue.Scale(targetPOT/tnuePOTsum)
+h_maxEventGap_NCnue.Scale(targetPOT/tnuPOTsum)
+h_maxEventGap_ext.Scale(targetPOT/textPOTsum)
+
+h_maxEventDist_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxEventDist_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxEventDist_CCnue.Scale(targetPOT/tnuePOTsum)
+h_maxEventDist_NCnue.Scale(targetPOT/tnuPOTsum)
+h_maxEventDist_ext.Scale(targetPOT/textPOTsum)
+
+h2d_gapVScomp_CCnue.Scale(targetPOT/tnuePOTsum)
+h2d_gapVScomp_ext.Scale(targetPOT/textPOTsum)
 
 
 def configureLegend(leg, h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext):
@@ -496,5 +657,56 @@ leg_elShwCompSum = configureLegend(leg_elShwCompSum, h_elShwCompSum_CCnumu,
 leg_elShwCompSum.Draw()
 cnv_elShwCompSum.Write()
 
+cnv_avgShwComp = rt.TCanvas("cnv_avgShwComp","cnv_avgShwComp")
+hists_avgShwComp = sortHists([h_avgShwComp_CCnumu, h_avgShwComp_NCnumu, h_avgShwComp_CCnue, h_avgShwComp_NCnue, h_avgShwComp_ext])
+hists_avgShwComp[0].Draw("EHIST")
+for i in range(1,len(hists_avgShwComp)):
+  hists_avgShwComp[i].Draw("EHISTSAME")
+leg_avgShwComp = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_avgShwComp = configureLegend(leg_avgShwComp, h_avgShwComp_CCnumu,
+  h_avgShwComp_NCnumu, h_avgShwComp_CCnue, h_avgShwComp_NCnue, h_avgShwComp_ext)
+leg_avgShwComp.Draw()
+cnv_avgShwComp.Write()
+
+cnv_avgNonPrimShwComp = rt.TCanvas("cnv_avgNonPrimShwComp","cnv_avgNonPrimShwComp")
+hists_avgNonPrimShwComp = sortHists([h_avgNonPrimShwComp_CCnumu, h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_CCnue, h_avgNonPrimShwComp_NCnue, h_avgNonPrimShwComp_ext])
+hists_avgNonPrimShwComp[0].Draw("EHIST")
+for i in range(1,len(hists_avgNonPrimShwComp)):
+  hists_avgNonPrimShwComp[i].Draw("EHISTSAME")
+leg_avgNonPrimShwComp = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_avgNonPrimShwComp = configureLegend(leg_avgNonPrimShwComp, h_avgNonPrimShwComp_CCnumu,
+  h_avgNonPrimShwComp_NCnumu, h_avgNonPrimShwComp_CCnue, h_avgNonPrimShwComp_NCnue, h_avgNonPrimShwComp_ext)
+leg_avgNonPrimShwComp.Draw()
+cnv_avgNonPrimShwComp.Write()
+
+cnv_maxEventGap = rt.TCanvas("cnv_maxEventGap","cnv_maxEventGap")
+hists_maxEventGap = sortHists([h_maxEventGap_CCnumu, h_maxEventGap_NCnumu, h_maxEventGap_CCnue, h_maxEventGap_NCnue, h_maxEventGap_ext])
+hists_maxEventGap[0].Draw("EHIST")
+for i in range(1,len(hists_maxEventGap)):
+  hists_maxEventGap[i].Draw("EHISTSAME")
+leg_maxEventGap = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_maxEventGap = configureLegend(leg_maxEventGap, h_maxEventGap_CCnumu,
+  h_maxEventGap_NCnumu, h_maxEventGap_CCnue, h_maxEventGap_NCnue, h_maxEventGap_ext)
+leg_maxEventGap.Draw()
+cnv_maxEventGap.Write()
+
+cnv_maxEventDist = rt.TCanvas("cnv_maxEventDist","cnv_maxEventDist")
+hists_maxEventDist = sortHists([h_maxEventDist_CCnumu, h_maxEventDist_NCnumu, h_maxEventDist_CCnue, h_maxEventDist_NCnue, h_maxEventDist_ext])
+hists_maxEventDist[0].Draw("EHIST")
+for i in range(1,len(hists_maxEventDist)):
+  hists_maxEventDist[i].Draw("EHISTSAME")
+leg_maxEventDist = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_maxEventDist = configureLegend(leg_maxEventDist, h_maxEventDist_CCnumu,
+  h_maxEventDist_NCnumu, h_maxEventDist_CCnue, h_maxEventDist_NCnue, h_maxEventDist_ext)
+leg_maxEventDist.Draw()
+cnv_maxEventDist.Write()
+
+cnv_gapVScomp_CCnue = rt.TCanvas("cnv_gapVScomp_CCnue","cnv_gapVScomp_CCnue")
+h2d_gapVScomp_CCnue.Draw("COLZ")
+cnv_gapVScomp_CCnue.Write()
+
+cnv_gapVScomp_ext = rt.TCanvas("cnv_gapVScomp_ext","cnv_gapVScomp_ext")
+h2d_gapVScomp_ext.Draw("COLZ")
+cnv_gapVScomp_ext.Write()
 
 

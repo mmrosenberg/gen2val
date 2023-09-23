@@ -305,6 +305,9 @@ if args.isMC:
   trueSimPartPy = array('f', maxNParts*[0.])
   trueSimPartPz = array('f', maxNParts*[0.])
   trueSimPartE = array('f', maxNParts*[0.])
+  trueSimPartEndX = array('f', maxNParts*[0.])
+  trueSimPartEndY = array('f', maxNParts*[0.])
+  trueSimPartEndZ = array('f', maxNParts*[0.])
   trueSimPartContained = array('i', maxNParts*[0])
 recoNuE = array('f', [0.])
 foundVertex = array('i', [0])
@@ -319,6 +322,7 @@ vtxFracHitsOnCosmic = array('f', [0.])
 eventPCAxis0 = array('f', 3*[0.])
 eventPCAxis1 = array('f', 3*[0.])
 eventPCAxis2 = array('f', 3*[0.])
+eventPCAxis0TSlope = array('i', [0])
 eventPCEigenVals = array('f', 3*[0.])
 eventPCProjMaxGap = array('f', 5*[0.])
 eventPCProjMaxDist = array('f', 5*[0.])
@@ -444,6 +448,9 @@ if args.isMC:
   eventTree.Branch("trueSimPartPy", trueSimPartPy, 'trueSimPartPy[nTrueSimParts]/F')
   eventTree.Branch("trueSimPartPz", trueSimPartPz, 'trueSimPartPz[nTrueSimParts]/F')
   eventTree.Branch("trueSimPartE", trueSimPartE, 'trueSimPartE[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEndX", trueSimPartEndX, 'trueSimPartEndX[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEndY", trueSimPartEndY, 'trueSimPartEndY[nTrueSimParts]/F')
+  eventTree.Branch("trueSimPartEndZ", trueSimPartEndZ, 'trueSimPartEndZ[nTrueSimParts]/F')
   eventTree.Branch("trueSimPartContained", trueSimPartContained, 'trueSimPartContained[nTrueSimParts]/I')
 eventTree.Branch("recoNuE", recoNuE, 'recoNuE/F')
 eventTree.Branch("foundVertex", foundVertex, 'foundVertex/I')
@@ -458,6 +465,7 @@ eventTree.Branch("vtxFracHitsOnCosmic", vtxFracHitsOnCosmic, 'vtxFracHitsOnCosmi
 eventTree.Branch("eventPCAxis0", eventPCAxis0, 'eventPCAxis0[3]/F')
 eventTree.Branch("eventPCAxis1", eventPCAxis1, 'eventPCAxis1[3]/F')
 eventTree.Branch("eventPCAxis2", eventPCAxis2, 'eventPCAxis2[3]/F')
+eventTree.Branch("eventPCAxis0TSlope", eventPCAxis0TSlope, 'eventPCAxis0TSlope/I')
 eventTree.Branch("eventPCEigenVals", eventPCEigenVals, 'eventPCEigenVals[3]/F')
 eventTree.Branch("eventPCProjMaxGap", eventPCProjMaxGap, 'eventPCProjMaxGap[5]/F')
 eventTree.Branch("eventPCProjMaxDist", eventPCProjMaxDist, 'eventPCProjMaxDist[5]/F')
@@ -682,6 +690,9 @@ for filepair in files:
           trueSimPartPy[iDS] = mcpart.Start().Py()
           trueSimPartPz[iDS] = mcpart.Start().Pz()
           trueSimPartE[iDS] = mcpart.Start().E()
+          trueSimPartEndX[iDS] = sceCorrectedEndPos.X()
+          trueSimPartEndY[iDS] = sceCorrectedEndPos.Y()
+          trueSimPartEndZ[iDS] = sceCorrectedEndPos.Z()
           trueSimPartContained[iDS] = isFiducialWC(sceCorrectedEndPos)
           iDS += 1
 
@@ -767,6 +778,7 @@ for filepair in files:
         eventPCAxis0[iPCA] = 0.
         eventPCAxis1[iPCA] = 0.
         eventPCAxis2[iPCA] = 0.
+        eventPCAxis0TSlope[0] = 0
         eventPCEigenVals[iPCA] = 0.
       for iPrj in range(5):
         eventPCProjMaxGap[iPrj] = -9.
@@ -1034,11 +1046,21 @@ for filepair in files:
         vtxProj[c] = eventCluster.pca_center[c] + ldist*eventPCAxis0[c]
 
       projDists = []
+      avgPosPDistTimes = 0
+      avgNegPDistTimes = 0
+      nPosPDists = 0
+      nNegPDists = 0
       for hit in eventLarflowCluster:
         projPt = [0.,0.,0.]
         ldist = 0.
         for c in range(3):
           ldist += (hit[c] - eventCluster.pca_center[c])*eventPCAxis0[c]
+        if ldist > 0.:
+          avgPosPDistTimes += hit.tick
+          nPosPDists += 1
+        else:
+          avgNegPDistTimes += hit.tick
+          nNegPDists += 1
         for c in range(3):
           projPt[c] = eventCluster.pca_center[c] + ldist*eventPCAxis0[c]
         projDist = 0.
@@ -1046,6 +1068,14 @@ for filepair in files:
           projDist += (projPt[c] - vtxProj[c])**2
         projDists.append(sqrt(projDist))
       projDists.sort()
+
+      #check if PCA axis is pointing in direction of increaasing hit times
+      avgPosPDistTimes /= (1.0*nPosPDists)
+      avgNegPDistTimes /= (1.0*nNegPDists)
+      if avgPosPDistTimes > 0.:
+        eventPCAxis0TSlope[0] = 1
+      else:
+        eventPCAxis0TSlope[0] = -1
 
       #calculate maximum point gap along PCA projection and maximum charge in between gaps
       maxGapFull = -1.
@@ -1128,6 +1158,7 @@ for filepair in files:
         eventPCAxis1[iPCA] = 0.
         eventPCAxis2[iPCA] = 0.
         eventPCEigenVals[iPCA] = 0.
+        eventPCAxis0TSlope[0] = 0
       for iPrj in range(5):
         eventPCProjMaxGap[iPrj] = -9.
         eventPCProjMaxDist[iPrj] = -9.
