@@ -9,10 +9,10 @@ from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nu_file.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v23_nue_file.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial.root", help="extbnb input file")
-parser.add_argument("-fdata", "--data_file", type=str, default="selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_bnb5e19_file.root", help="bnb data input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v28_wctagger_bnboverlay.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v28_wctagger_nueintrinsics.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v29e_dl_run3_G1_extbnb.root", help="extbnb input file")
+parser.add_argument("-fdata", "--data_file", type=str, default="flat_ntuples/dlgen2_reco_v2me05_ntuple_v4_mcc9_v28_wctagger_bnb5e19.root", help="bnb data input file")
 parser.add_argument("-vfc", "--vertexFracOnCosCut", type=float, default=1., help="vtxFracHitsOnCosmic cut")
 parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
@@ -21,7 +21,9 @@ parser.add_argument("-s", "--confCut", type=float, default=7.3, help="electron c
 parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron charge fraction cut value")
 parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="electron charge fraction cut value")
 parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
+parser.add_argument("--applyCosmicDeltaCut", help="apply cut to remove delta shower cosmic background", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output.root", help="output root file name")
+parser.add_argument("-os", "--out5e19EvtFile", type=str, default="selection_output/selected_bnb5e19_events.txt", help="output text file with list of selected 5e19 events")
 parser.add_argument("--recoEOverflow", help="plot overflow bin for final recoE selection plot", action="store_true")
 parser.add_argument("--oldVertexVar", help="use old nVertices variable for vertex found cut", action="store_true")
 parser.add_argument("--makeKPplots", help="make keypoint plots", action="store_true")
@@ -51,7 +53,7 @@ text = fext.Get("EventTree")
 fdata = rt.TFile(args.data_file)
 tdata = fdata.Get("EventTree")
 
-out_data_sel_evts = open("selection_output/selected_bnb5e19_events.txt","w")
+out_data_sel_evts = open(args.out5e19EvtFile,"w")
 out_data_sel_evts.write("fileid run subrun event recoNuE\n")
 
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
@@ -84,7 +86,7 @@ if args.NPMLCosmicConfig:
 else:
   if args.extbnb_file == "selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root":
     textPOTsum = 1.3298521464785359e+19
-  elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file:
+  elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file or "dlgen2_reco_v2me06_ntuple_v4_mcc9_v29e_dl_run3_G1_extbnb" in args.extbnb_file:
     textPOTsum = 2.561872704628622e+19
   else:
     sys.exit("POT for input extBNB file unknown")
@@ -770,6 +772,9 @@ for i in range(tnu.GetEntries()):
   muMaxQComp = -1.
   muMaxQCosTheta = -1.
   muMaxQFrac = -1.
+  nonPrimShwCharge = 0.
+  avgShwComp = 0.
+  nClassShowers = 0
 
   for iT in range(tnu.nTracks):
     visE += tnu.trackCharge[iT]
@@ -789,6 +794,10 @@ for i in range(tnu.GetEntries()):
         muMaxComp = tnu.trackComp[iT]
   for iS in range(tnu.nShowers):
     visE += tnu.showerCharge[iS]
+    nonPrimShwCharge += tnu.showerCharge[iS]
+    if tnu.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += tnu.showerComp[iS]
     if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0 or tnu.showerDistToVtx[iS] > args.distCut or tnu.showerComp[iS] < args.compCut or tnu.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnu.showerPID[iS] == 11:
@@ -827,6 +836,15 @@ for i in range(tnu.GetEntries()):
     h_nCompMu_NCnumu, h_nCompMu_NCnue, nCompMuons, tnu.xsecWeight, eventType)
 
   if nElectrons >= 1:
+
+    nonPrimShwCharge -= elMaxQ
+    pcaEVsum = tnu.eventPCEigenVals[0] + tnu.eventPCEigenVals[1] + tnu.eventPCEigenVals[2]
+    pcaEVratio = tnu.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0.) else 0.
+    avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -1.
+    deltaCosmic = (tnu.eventPCAxis0[1] < 0. and nonPrimShwCharge > 10000 and pcaEVratio > 0.9 and avgShwComp < 0.5)
+    if not args.applyCosmicDeltaCut:
+      deltaCosmic = False
+
     h_maxElConf_CCnumu, h_maxElConf_NCnumu, h_maxElConf_NCnue = FillNuHistos(h_maxElConf_CCnumu,
       h_maxElConf_NCnumu, h_maxElConf_NCnue, maxElConf, tnu.xsecWeight, eventType)
     h_elMaxComp_CCnumu, h_elMaxComp_NCnumu, h_elMaxComp_NCnue = FillNuHistos(h_elMaxComp_CCnumu,
@@ -882,7 +900,7 @@ for i in range(tnu.GetEntries()):
         h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue = FillNuHistos(h_tEndKPDist_wConfCut_CCnumu,
           h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue, nearestTEndKP, tnu.xsecWeight, eventType)
 
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
         if eventType == 0:
           n_runs1to3_CCnumu_pass += tnu.xsecWeight
           h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
@@ -1073,6 +1091,9 @@ for i in range(tnue.GetEntries()):
   muMaxQComp = -1.
   muMaxQCosTheta = -1.
   muMaxQFrac = -1.
+  nonPrimShwCharge = 0.
+  avgShwComp = 0.
+  nClassShowers = 0
 
   for iT in range(tnue.nTracks):
     visE += tnue.trackCharge[iT]
@@ -1092,6 +1113,10 @@ for i in range(tnue.GetEntries()):
         muMaxComp = tnue.trackComp[iT]
   for iS in range(tnue.nShowers):
     visE += tnue.showerCharge[iS]
+    nonPrimShwCharge += tnue.showerCharge[iS]
+    if tnue.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += tnue.showerComp[iS]
     if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0 or tnue.showerDistToVtx[iS] > args.distCut or tnue.showerComp[iS] < args.compCut or tnue.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tnue.showerPID[iS] == 11:
@@ -1122,6 +1147,15 @@ for i in range(tnue.GetEntries()):
   h_nCompMu_CCnue.Fill(nCompMuons, tnue.xsecWeight)
 
   if nElectrons >= 1:
+
+    nonPrimShwCharge -= elMaxQ
+    pcaEVsum = tnue.eventPCEigenVals[0] + tnue.eventPCEigenVals[1] + tnue.eventPCEigenVals[2]
+    pcaEVratio = tnue.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0.) else 0.
+    avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -1.
+    deltaCosmic = (tnue.eventPCAxis0[1] < 0. and nonPrimShwCharge > 10000 and pcaEVratio > 0.9 and avgShwComp < 0.5)
+    if not args.applyCosmicDeltaCut:
+      deltaCosmic = False
+
     h_maxElConf_CCnue.Fill(maxElConf, tnue.xsecWeight)
     h_elMaxComp_CCnue.Fill(elMaxComp, tnue.xsecWeight)
     h_elMaxPur_CCnue.Fill(elMaxPur, tnue.xsecWeight)
@@ -1149,7 +1183,7 @@ for i in range(tnue.GetEntries()):
       if args.makeKPplots:
         h_cosKPDist_wConfCut_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
         h_tEndKPDist_wConfCut_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
         n_runs1to3_CCnue_pass += tnue.xsecWeight
         h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
         h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
@@ -1230,6 +1264,10 @@ for i in range(text.GetEntries()):
   muMaxQComp = -1.
   muMaxQCosTheta = -1.
   muMaxQFrac = -1.
+  nonPrimShwCharge = 0.
+  avgShwComp = 0.
+  nClassShowers = 0
+
   for iT in range(text.nTracks):
     visE += text.trackCharge[iT]
     if text.trackIsSecondary[iT] == 1:
@@ -1248,6 +1286,10 @@ for i in range(text.GetEntries()):
         muMaxComp = text.trackComp[iT]
   for iS in range(text.nShowers):
     visE += text.showerCharge[iS]
+    nonPrimShwCharge += text.showerCharge[iS]
+    if text.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += text.showerComp[iS]
     if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0 or text.showerDistToVtx[iS] > args.distCut or text.showerComp[iS] < args.compCut or text.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and text.showerPID[iS] == 11:
@@ -1278,6 +1320,15 @@ for i in range(text.GetEntries()):
   h_nCompMu_ext.Fill(nCompMuons)
 
   if nElectrons >= 1:
+
+    nonPrimShwCharge -= elMaxQ
+    pcaEVsum = text.eventPCEigenVals[0] + text.eventPCEigenVals[1] + text.eventPCEigenVals[2]
+    pcaEVratio = text.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0.) else 0.
+    avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -1.
+    deltaCosmic = (text.eventPCAxis0[1] < 0. and nonPrimShwCharge > 10000 and pcaEVratio > 0.9 and avgShwComp < 0.5)
+    if not args.applyCosmicDeltaCut:
+      deltaCosmic = False
+
     h_maxElConf_ext.Fill(maxElConf)
     h_elMaxComp_ext.Fill(elMaxComp)
     h_elMaxPur_ext.Fill(elMaxPur)
@@ -1305,7 +1356,7 @@ for i in range(text.GetEntries()):
       if args.makeKPplots:
         h_cosKPDist_wConfCut_ext.Fill(nearestCosKP)
         h_tEndKPDist_wConfCut_ext.Fill(nearestTEndKP)
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
         if args.printEXTinfo:
           print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
         n_runs1to3_ext_pass += 1.
@@ -1337,8 +1388,12 @@ for i in range(tdata.GetEntries()):
     vtxIsFiducial = isFiducial(vtxPos)
   else:
     vtxIsFiducial = isFiducialWC(vtxPos)
-  if tdata.nVertices < 1 or not vtxIsFiducial: #tdata.vtxIsFiducial != 1:
-    continue
+  if args.oldVertexVar:
+    if tdata.nVertices < 1 or not vtxIsFiducial: #tdata.vtxIsFiducial != 1:
+      continue
+  else:
+    if tdata.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
+      continue
 
   if tdata.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
@@ -1350,6 +1405,10 @@ for i in range(tdata.GetEntries()):
   elMaxQConf = -1.
   elMaxQFrac = -1.
   elMaxQ = -1.
+  nonPrimShwCharge = 0.
+  avgShwComp = 0.
+  nClassShowers = 0
+
   for iT in range(tdata.nTracks):
     visE += tdata.trackCharge[iT]
     if tdata.trackIsSecondary[iT] == 1:
@@ -1358,6 +1417,10 @@ for i in range(tdata.GetEntries()):
       nMuons += 1
   for iS in range(tdata.nShowers):
     visE += tdata.showerCharge[iS]
+    nonPrimShwCharge += tdata.showerCharge[iS]
+    if tdata.showerClassified[iS] == 1:
+      nClassShowers += 1
+      avgShwComp += tdata.showerComp[iS]
     if tdata.showerIsSecondary[iS] == 1 or tdata.showerClassified[iS] == 0 or tdata.showerDistToVtx[iS] > args.distCut or tdata.showerComp[iS] < args.compCut or tdata.showerPurity[iS] < args.purityCut:
       continue
     if nMuons == 0 and tdata.showerPID[iS] == 11:
@@ -1371,8 +1434,15 @@ for i in range(tdata.GetEntries()):
         elMaxQFrac = tdata.showerChargeFrac[iS]
 
   if nElectrons >= 1:
+    nonPrimShwCharge -= elMaxQ
+    pcaEVsum = tdata.eventPCEigenVals[0] + tdata.eventPCEigenVals[1] + tdata.eventPCEigenVals[2]
+    pcaEVratio = tdata.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0.) else 0.
+    avgShwComp = avgShwComp/nClassShowers if (nClassShowers > 0) else -1.
+    deltaCosmic = (tdata.eventPCAxis0[1] < 0. and nonPrimShwCharge > 10000 and pcaEVratio > 0.9 and avgShwComp < 0.5)
+    if not args.applyCosmicDeltaCut:
+      deltaCosmic = False
     if elMaxQConf > args.confCut:
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut:
+      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
         n_runs1to3_data_pass += 1.
         if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
           h_visE_data_wCuts.Fill(2.7)
