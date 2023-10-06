@@ -43,8 +43,8 @@ parser.add_argument("--multiGPU", action="store_true", help="use multiple GPUs")
 args = parser.parse_args()
 
 sys.path.append(args.model_path[:args.model_path.find("/checkpoints")])
-from models_instanceNorm_reco_2chan_tripleTask import ResBlock, ResNet34
-from datasets_reco_5ClassHardLabel_tripleTask import mean, std
+from models_instanceNorm_reco_2chan_quadTask import ResBlock, ResNet34
+from datasets_reco_5ClassHardLabel_quadTask import mean, std
 
 if args.isMC and args.weightfile=="none":
   sys.exit("Must supply weight file for MC input. Exiting...")
@@ -315,6 +315,7 @@ vtxX = array('f', [0.])
 vtxY = array('f', [0.])
 vtxZ = array('f', [0.])
 vtxIsFiducial = array('i', [0])
+vtxContainment = array('i', [0])
 if args.isMC:
   vtxDistToTrue = array('f', [0.])
 vtxScore = array('f', [0.])
@@ -361,6 +362,11 @@ trackPiScore = array('f', maxNTrks*[0.])
 trackPrScore = array('f', maxNTrks*[0.])
 trackComp = array('f', maxNTrks*[0.])
 trackPurity = array('f', maxNTrks*[0.])
+trackProcess = array('i', maxNTrks*[0])
+trackPrimaryScore = array('f', maxNTrks*[0.])
+trackFromNeutralScore = array('f', maxNTrks*[0.])
+trackFromChargedScore = array('f', maxNTrks*[0.])
+trackPrimScore = array('f', maxNTrks*[0.])
 trackRecoE = array('f', maxNTrks*[0.])
 if args.isMC:
   trackTruePID = array('i', maxNTrks*[0])
@@ -397,6 +403,10 @@ showerPiScore = array('f', maxNShwrs*[0.])
 showerPrScore = array('f', maxNShwrs*[0.])
 showerComp = array('f', maxNShwrs*[0])
 showerPurity = array('f', maxNShwrs*[0])
+showerProcess = array('i', maxNShwrs*[0])
+showerPrimaryScore = array('f', maxNShwrs*[0.])
+showerFromNeutralScore = array('f', maxNShwrs*[0.])
+showerFromChargedScore = array('f', maxNShwrs*[0.])
 showerRecoE = array('f', maxNShwrs*[0])
 if args.isMC:
   showerTruePID = array('i', maxNShwrs*[0])
@@ -458,6 +468,7 @@ eventTree.Branch("vtxX", vtxX, 'vtxX/F')
 eventTree.Branch("vtxY", vtxY, 'vtxY/F')
 eventTree.Branch("vtxZ", vtxZ, 'vtxZ/F')
 eventTree.Branch("vtxIsFiducial", vtxIsFiducial, 'vtxIsFiducial/I')
+eventTree.Branch("vtxContainment", vtxContainment, 'vtxContainment/I')
 if args.isMC:
   eventTree.Branch("vtxDistToTrue", vtxDistToTrue, 'vtxDistToTrue/F')
 eventTree.Branch("vtxScore", vtxScore, 'vtxScore/F')
@@ -504,6 +515,10 @@ eventTree.Branch("trackPiScore", trackPiScore, 'trackPiScore[nTracks]/F')
 eventTree.Branch("trackPrScore", trackPrScore, 'trackPrScore[nTracks]/F')
 eventTree.Branch("trackComp", trackComp, 'trackComp[nTracks]/F')
 eventTree.Branch("trackPurity", trackPurity, 'trackPurity[nTracks]/F')
+eventTree.Branch("trackProcess", trackProcess, 'trackProcess[nTracks]/I')
+eventTree.Branch("trackPrimaryScore", trackPrimaryScore, 'trackPrimaryScore[nTracks]/F')
+eventTree.Branch("trackFromNeutralScore", trackFromNeutralScore, 'trackFromNeutralScore[nTracks]/F')
+eventTree.Branch("trackFromChargedScore", trackFromChargedScore, 'trackFromChargedScore[nTracks]/F')
 eventTree.Branch("trackRecoE", trackRecoE, 'trackRecoE[nTracks]/F')
 if args.isMC:
   eventTree.Branch("trackTruePID", trackTruePID, 'trackTruePID[nTracks]/I')
@@ -540,6 +555,10 @@ eventTree.Branch("showerPiScore", showerPiScore, 'showerPiScore[nShowers]/F')
 eventTree.Branch("showerPrScore", showerPrScore, 'showerPrScore[nShowers]/F')
 eventTree.Branch("showerComp", showerComp, 'showerComp[nShowers]/F')
 eventTree.Branch("showerPurity", showerPurity, 'showerPurity[nShowers]/F')
+eventTree.Branch("showerProcess", showerProcess, 'showerProcess[nShowers]/I')
+eventTree.Branch("showerPrimaryScore", showerPrimaryScore, 'showerPrimaryScore[nShowers]/F')
+eventTree.Branch("showerFromNeutralScore", showerFromNeutralScore, 'showerFromNeutralScore[nShowers]/F')
+eventTree.Branch("showerFromChargedScore", showerFromChargedScore, 'showerFromChargedScore[nShowers]/F')
 eventTree.Branch("showerRecoE", showerRecoE, 'showerRecoE[nShowers]/F')
 if args.isMC:
   eventTree.Branch("showerTruePID", showerTruePID, 'showerTruePID[nShowers]/I')
@@ -613,7 +632,7 @@ for filepair in files:
       mcNuVertex = mcNuVertexer.getPos3DwSCE(ioll, sce)
       trueVtxPos = rt.TVector3(mcNuVertex[0], mcNuVertex[1], mcNuVertex[2])
 
-      if not isFiducialWC(trueVtxPos):
+      if not isFiducialWCSCE(trueVtxPos):
         continue
 
       try:
@@ -653,7 +672,7 @@ for filepair in files:
           truePrimPartPy[iPP] = mcpart.Momentum(0).Py()
           truePrimPartPz[iPP] = mcpart.Momentum(0).Pz()
           truePrimPartE[iPP] = mcpart.Momentum(0).E()
-          truePrimPartContained[iPP] = isFiducialWC(sceCorrectedEndPos)
+          truePrimPartContained[iPP] = isFiducialWCSCE(sceCorrectedEndPos)
           iPP += 1
 
       mctracks = ioll.get_data(larlite.data.kMCTrack, "mcreco")
@@ -693,7 +712,7 @@ for filepair in files:
           trueSimPartEndX[iDS] = sceCorrectedEndPos.X()
           trueSimPartEndY[iDS] = sceCorrectedEndPos.Y()
           trueSimPartEndZ[iDS] = sceCorrectedEndPos.Z()
-          trueSimPartContained[iDS] = isFiducialWC(sceCorrectedEndPos)
+          trueSimPartContained[iDS] = isFiducialWCSCE(sceCorrectedEndPos)
           iDS += 1
 
     #else: #from "if args.isMC"
@@ -769,6 +788,7 @@ for filepair in files:
       vtxY[0] = -999.
       vtxZ[0] = -999.
       vtxIsFiducial[0] = -1
+      vtxContainment[0] = -1
       if args.isMC:
         vtxDistToTrue[0] = -99.
       vtxFracHitsOnCosmic[0] = -1.
@@ -801,7 +821,12 @@ for filepair in files:
     vtxY[0] = vertex.pos[1]
     vtxZ[0] = vertex.pos[2]
     vtxTVec3 = rt.TVector3(vertex.pos[0], vertex.pos[1], vertex.pos[2])
-    vtxIsFiducial[0] = int(isFiducialWC(vtxTVec3))
+    vtxIsFiducial[0] = int(isFiducialWCSCE(vtxTVec3))
+    if vtxIsFiducial[0] == 0:
+      vtxContainment[0] = 0
+      prongsAreContained = False
+    else:
+      prongsAreContained = True
 
     nusel = larflow.reco.NuSelectionVariables()
     wcoverlapvars.analyze(vertex, nusel, iolcv)
@@ -824,10 +849,14 @@ for filepair in files:
     recoNuE[0] = 0.
 
 
+    #++++++ begin track loop ++++++++++++++++++++++++++++++++++++++++++++++++++=
     for iTrk, trackCls in enumerate(vertex.track_hitcluster_v):
 
       for hit in trackCls:
         eventLarflowCluster.push_back(hit)
+        if prongsAreContained:
+          hitPt = rt.TVector3(hit[0], hit[1], hit[2])
+          prongsAreContained = isFiducialWCSCE(hitPt)
 
       vertexNHits += trackCls.size()
       trackIsSecondary[iTrk] = vertex.track_isSecondary_v[iTrk]
@@ -874,11 +903,16 @@ for filepair in files:
         trackPrScore[iTrk] = -99.
         trackComp[iTrk] = -1.
         trackPurity[iTrk] = -1.
+        trackProcess[iTrk] = -1
+        trackPrimaryScore[iTrk] = -99.
+        trackFromNeutralScore[iTrk] = -99.
+        trackFromChargedScore[iTrk] = -99.
         trackRecoE[iTrk] = -1.
         continue
 
-      prongImage = makeImage(prong_vv).to(args.device)
-      prongCNN_out = model(prongImage)
+      with torch.no_grad():
+        prongImage = makeImage(prong_vv).to(args.device)
+        prongCNN_out = model(prongImage)
       trackClassified[iTrk] = 1
       trackPID[iTrk] = getPID(prongCNN_out[0].argmax(1).item())
       trackElScore[iTrk] = prongCNN_out[0][0][0].item()
@@ -888,6 +922,10 @@ for filepair in files:
       trackPrScore[iTrk] = prongCNN_out[0][0][4].item()
       trackComp[iTrk] = prongCNN_out[1].item()
       trackPurity[iTrk] = prongCNN_out[2].item()
+      trackProcess[iTrk] = prongCNN_out[3].argmax(1).item()
+      trackPrimaryScore[iTrk] = prongCNN_out[3][0][0].item()
+      trackFromNeutralScore[iTrk] = prongCNN_out[3][0][1].item()
+      trackFromChargedScore[iTrk] = prongCNN_out[3][0][2].item()
       if trackMuScore[iTrk] >= trackPiScore[iTrk] and trackMuScore[iTrk] >= trackPrScore[iTrk]:
         trackRecoE[iTrk] = vertex.track_kemu_v[iTrk]
       elif trackPrScore[iTrk] >= trackMuScore[iTrk] and trackPrScore[iTrk] >= trackPiScore[iTrk]:
@@ -930,12 +968,17 @@ for filepair in files:
       #  trackTrueMuPurity[iTrk] = -1.
       #  trackTruePiPurity[iTrk] = -1.
       #  trackTruePrPurity[iTrk] = -1.
+    #++++++ end track loop ++++++++++++++++++++++++++++++++++++++++++++++++++=
 
 
+    #++++++ begin shower loop ++++++++++++++++++++++++++++++++++++++++++++++++++=
     for iShw, shower in enumerate(vertex.shower_v):
 
       for hit in shower:
         eventLarflowCluster.push_back(hit)
+        if prongsAreContained:
+          hitPt = rt.TVector3(hit[0], hit[1], hit[2])
+          prongsAreContained = isFiducialWCSCE(hitPt)
 
       vertexNHits += shower.size()
       showerIsSecondary[iShw] = vertex.shower_isSecondary_v[iShw]
@@ -969,10 +1012,15 @@ for filepair in files:
         showerPrScore[iShw] = -99.
         showerComp[iShw] = -1.
         showerPurity[iShw] = -1.
+        showerProcess[iShw] = -1
+        showerPrimaryScore[iShw] = -99.
+        showerFromNeutralScore[iShw] = -99.
+        showerFromChargedScore[iShw] = -99.
         continue
 
-      prongImage = makeImage(prong_vv).to(args.device)
-      prongCNN_out = model(prongImage)
+      with torch.no_grad():
+        prongImage = makeImage(prong_vv).to(args.device)
+        prongCNN_out = model(prongImage)
       showerClassified[iShw] = 1
       showerPID[iShw] = getPID(prongCNN_out[0].argmax(1).item())
       showerElScore[iShw] = prongCNN_out[0][0][0].item()
@@ -982,6 +1030,10 @@ for filepair in files:
       showerPrScore[iShw] = prongCNN_out[0][0][4].item()
       showerComp[iShw] = prongCNN_out[1].item()
       showerPurity[iShw] = prongCNN_out[2].item()
+      showerProcess[iShw] = prongCNN_out[3].argmax(1).item()
+      showerPrimaryScore[iShw] = prongCNN_out[3][0][0].item()
+      showerFromNeutralScore[iShw] = prongCNN_out[3][0][1].item()
+      showerFromChargedScore[iShw] = prongCNN_out[3][0][2].item()
 
       if args.isMC:
         pdg, trackid, trueE, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v, ioll)
@@ -1017,7 +1069,13 @@ for filepair in files:
       #  showerTrueMuPurity[iShw] = -1.
       #  showerTruePiPurity[iShw] = -1.
       #  showerTruePrPurity[iShw] = -1.
+    #++++++ end shower loop ++++++++++++++++++++++++++++++++++++++++++++++++++=
 
+    if vtxIsFiducial[0] == 1:
+      if prongsAreContained:
+        vtxContainment[0] = 2
+      else:
+        vtxContainment[0] = 1
 
     for i in range(nTracks[0]):
       trackHitFrac[i] = trackNHits[i] / (1.0*vertexNHits)

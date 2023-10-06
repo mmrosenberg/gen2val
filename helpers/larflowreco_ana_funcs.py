@@ -8,6 +8,8 @@ from larflow import larflow
 from math import sqrt as sqrt
 from math import acos as acos
 from math import pi
+import ctypes
+import os
 
 
 def getFiles(mdlTag, kpsfiles, mdlfiles):
@@ -60,6 +62,20 @@ def isFiducialWC(p):
 
 def isInDetector(p):
   return (inRange(p.X(),detCrds[0]) and inRange(p.Y(),detCrds[1]) and inRange(p.Z(),detCrds[2]))
+
+class WCFiducial(ctypes.Structure):
+  pass
+libpath = os.path.dirname(os.path.realpath(__file__))
+libwc = ctypes.cdll.LoadLibrary("%s/lib_wirecell_fiducial_volume.so"%libpath)
+libwc.WCFiducial_new.argtypes = ()
+libwc.WCFiducial_new.restype = ctypes.POINTER(WCFiducial)
+libwc.WCFiducial_insideFV.argtypes = ctypes.POINTER(WCFiducial), ctypes.c_double, ctypes.c_double, ctypes.c_double
+libwc.WCFiducial_insideFV.restype = ctypes.c_bool
+WCFiducialClass = libwc.WCFiducial_new()
+
+def isFiducialWCSCE(p):
+  return libwc.WCFiducial_insideFV(WCFiducialClass, p.X(), p.Y(), p.Z())
+
 
 def getVertexDistance(pos3v, recoVtx):
   xdiffSq = (pos3v.X() - recoVtx.pos[0])**2
