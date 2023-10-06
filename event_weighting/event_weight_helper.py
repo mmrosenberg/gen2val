@@ -21,15 +21,18 @@ class Weights:
 
 
 def SumPOT(infile):
-  mdlfile = rt.TFile(infile)
-  pottree = mdlfile.Get("potsummary_generator_tree")
   totPOT = 0.
   totGoodPOT = 0.
-  for entry in range(pottree.GetEntries()):
-    pottree.GetEntry(entry)
-    totPOT = totPOT + pottree.potsummary_generator_branch.totpot
-    totGoodPOT = totGoodPOT + pottree.potsummary_generator_branch.totgoodpot
-  mdlfile.Close()
+  try:
+    mdlfile = rt.TFile(infile)
+    pottree = mdlfile.Get("potsummary_generator_tree")
+    for entry in range(pottree.GetEntries()):
+      pottree.GetEntry(entry)
+      totPOT = totPOT + pottree.potsummary_generator_branch.totpot
+      totGoodPOT = totGoodPOT + pottree.potsummary_generator_branch.totgoodpot
+    mdlfile.Close()
+  except:
+    return -1., -1.
   return totPOT, totGoodPOT
 
 

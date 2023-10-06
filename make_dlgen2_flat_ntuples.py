@@ -597,7 +597,7 @@ for filepair in files:
   try:
     nKPSTEntries = kpst.GetEntries()
   except:
-    print("%s is empty. skipping..."%(filepair[0]))
+    print("WARNING: %s is empty. skipping..."%(filepair[0]))
     ioll.close()
     iolcv.finalize()
     kpsfile.Close()
@@ -605,6 +605,9 @@ for filepair in files:
 
   if args.isMC:
     potInFile, goodPotInFile = SumPOT(filepair[1])
+    if potInFile < 0. and goodPotInFile < 0.:
+      print("WARNING: merged dlreco/dlana file does not have POT info. Skipping this input")
+      continue
     totPOT_ = totPOT_ + potInFile
     totGoodPOT_ = totGoodPOT_ + goodPotInFile
 
@@ -618,7 +621,7 @@ for filepair in files:
     kpst.GetEntry(ientry)
   
     if kpst.run != ioll.run_id() or kpst.subrun != ioll.subrun_id() or kpst.event != ioll.event_id():
-      print("EVENTS DON'T MATCH!!!")
+      print("WARNING: EVENTS DON'T MATCH!!!")
       print("truth run/subrun/event: %i/%i/%i"%(ioll.run_id(),ioll.subrun_id(),ioll.event_id()))
       print("reco run/subrun/event: %i/%i/%i"%(kpst.run,kpst.subrun,kpst.event))
       continue
@@ -640,7 +643,7 @@ for filepair in files:
         if isinf(xsecWeight[0]):
           continue
       except:
-        print("Couldn't find weight for run %i, subrun %i, event %i in %s!!!"%(kpst.run, kpst.subrun, kpst.event, args.weightfile))
+        print("WARNING: Couldn't find weight for run %i, subrun %i, event %i in %s!!!"%(kpst.run, kpst.subrun, kpst.event, args.weightfile))
         continue
 
       if nuInt.CCNC() == 0:
@@ -926,13 +929,19 @@ for filepair in files:
       trackPrimaryScore[iTrk] = prongCNN_out[3][0][0].item()
       trackFromNeutralScore[iTrk] = prongCNN_out[3][0][1].item()
       trackFromChargedScore[iTrk] = prongCNN_out[3][0][2].item()
+      foundEnergy = True
       if trackMuScore[iTrk] >= trackPiScore[iTrk] and trackMuScore[iTrk] >= trackPrScore[iTrk]:
         trackRecoE[iTrk] = vertex.track_kemu_v[iTrk]
       elif trackPrScore[iTrk] >= trackMuScore[iTrk] and trackPrScore[iTrk] >= trackPiScore[iTrk]:
         trackRecoE[iTrk] = vertex.track_keproton_v[iTrk]
       else:
-        trackRecoE[iTrk] = piKEestimator.Eval(getTrackLength(vertex.track_v[iTrk]))
-      recoNuE[0] += trackRecoE[iTrk]
+        try:
+          trackRecoE[iTrk] = piKEestimator.Eval(getTrackLength(vertex.track_v[iTrk]))
+        except:
+          trackRecoE[iTrk] = -1.
+          foundEnergy = False
+      if foundEnergy:
+        recoNuE[0] += trackRecoE[iTrk]
 
       if args.isMC:
         pdg, trackid, trueE, purity, completeness, allPdgs, allPurities = getMCProngParticle(prong_vv, mcpg, mcpm, adc_v, ioll)
