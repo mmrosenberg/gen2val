@@ -15,7 +15,8 @@
 #include <cmath>
 
 
-std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut){
+std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut,
+                                float procCut, float chgdCut, float ntrlCut, float maxMuCut){
 
   float n_runs1to3_CCnue = 0.;
   float n_runs1to3_CCnumu_pass = 0.;
@@ -25,22 +26,22 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   float n_runs1to3_ext_pass = 0.;
 
 
-  std::string infiledir = "selection_output/prepare_selection_test_output/";
+  std::string infiledir = "flat_ntuples/";
 
-  TFile fnu((infiledir+"prepare_selection_test_reco_v2me05_gen2val_v19_nu_file.root").c_str());
+  TFile fnu((infiledir+"dlgen2_reco_v2me06_ntuple_v5_mcc9_v28_wctagger_bnboverlay.root").c_str());
   TTree* tnu = (TTree*)fnu.Get("EventTree");
   TTree* tnuPOT = (TTree*)fnu.Get("potTree");
 
-  TFile fnue((infiledir+"prepare_selection_test_reco_v2me05_gen2val_v19_nue_file.root").c_str());
+  TFile fnue((infiledir+"dlgen2_reco_v2me06_ntuple_v5_mcc9_v28_wctagger_nueintrinsics.root").c_str());
   TTree* tnue = (TTree*)fnue.Get("EventTree");
   TTree* tnuePOT = (TTree*)fnue.Get("potTree");
 
-  TFile fext((infiledir+"prepare_selection_test_reco_v2me05_gen2val_v19_extbnb_file.root").c_str());
+  TFile fext((infiledir+"dlgen2_reco_v2me06_ntuple_v5_mcc9_v29e_dl_runs1to3_extbnb.root").c_str());
   TTree* text = (TTree*)fext.Get("EventTree");
 
 
-  float run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17;
-  float runs1to3POT = 6.67e+20;
+  float targetPOT = 4.4e+19;
+  float BNBspills = 9764047.0;
   float tnuPOTsum = 0.;
   float tnuePOTsum = 0.;
   float totGoodPOT;
@@ -57,22 +58,20 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
     tnuePOTsum += totGoodPOT;
   }
 
-  //970: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v16_extbnb_file.root
-  //17661: number of run3 extbnb merged_dlana files in prepare_selection_test_reco_v2me05_gen2val_v17+_extbnb_file.root
-  //89559: number of run3 extbnb files (# in def: prod_extunbiased_swizzle_crt_inclusive_v6_v6a_goodruns_mcc9_run3)
-  float textPOTsum = (17661./89559.)*run3POT;
+  float nEXTtrigs = 34202767.0+38971237.0+465951.0+59572045.0+22166992.0+36721376.0+14817082.0+39195178.0+58677653.0+19214565.0+18619185.0;
 
 
   float xsecWeight;
   int trueNuPDG;
   int trueNuCCNC;
-  int nVertices;
+  int foundVertex;
   int vtxIsFiducial;
   float vtxFracHitsOnCosmic;
   int nTracks;
   int trackIsSecondary[100];
   int trackClassified[100];
   int trackPID[100];
+  float trackMuScore[100];
   int nShowers;
   int showerIsSecondary[100];
   int showerClassified[100];
@@ -83,18 +82,23 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   float showerElScore[100];
   float showerPiScore[100];
   float showerPhScore[100];
+  int showerProcess[100];
+  float showerPrimaryScore[100];
+  float showerFromNeutralScore[100];
+  float showerFromChargedScore[100];
 
 
   tnu -> SetBranchAddress("xsecWeight", &xsecWeight);
   tnu -> SetBranchAddress("trueNuPDG", &trueNuPDG);
   tnu -> SetBranchAddress("trueNuCCNC", &trueNuCCNC);
-  tnu -> SetBranchAddress("nVertices", &nVertices);
+  tnu -> SetBranchAddress("foundVertex", &foundVertex);
   tnu -> SetBranchAddress("vtxIsFiducial", &vtxIsFiducial);
   tnu -> SetBranchAddress("vtxFracHitsOnCosmic", &vtxFracHitsOnCosmic);
   tnu -> SetBranchAddress("nTracks", &nTracks);
   tnu -> SetBranchAddress("trackIsSecondary", trackIsSecondary);
   tnu -> SetBranchAddress("trackClassified", trackClassified);
   tnu -> SetBranchAddress("trackPID", trackPID);
+  tnu -> SetBranchAddress("trackMuScore", trackMuScore);
   tnu -> SetBranchAddress("nShowers", &nShowers);
   tnu -> SetBranchAddress("showerIsSecondary", showerIsSecondary);
   tnu -> SetBranchAddress("showerClassified", showerClassified);
@@ -105,6 +109,10 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   tnu -> SetBranchAddress("showerElScore", showerElScore);
   tnu -> SetBranchAddress("showerPiScore", showerPiScore);
   tnu -> SetBranchAddress("showerPhScore", showerPhScore);
+  tnu -> SetBranchAddress("showerProcess", showerProcess);
+  tnu -> SetBranchAddress("showerPrimaryScore", showerPrimaryScore);
+  tnu -> SetBranchAddress("showerFromNeutralScore", showerFromNeutralScore);
+  tnu -> SetBranchAddress("showerFromChargedScore", showerFromChargedScore);
 
   for(int i = 0; i < tnu->GetEntries(); ++i){
 
@@ -119,11 +127,14 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
     }
     if(std::abs(trueNuPDG) == 12 && trueNuCCNC == 1) eventType = 2; //NC nue
 
-    if(eventType < 0 || nVertices < 1 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
+    if(eventType < 0 || foundVertex == 0 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
 
     int nMuons = 0;
+    float maxMuScore = -20.;
     for(int iT = 0; iT < nTracks; ++iT){
-      if(trackIsSecondary[iT] != 1 && trackClassified[iT] == 1 && trackPID[iT] == 13) ++nMuons;
+      if(trackIsSecondary[iT] == 1 || trackClassified[iT] != 1) continue;
+      if(trackPID[iT] == 13) ++nMuons;
+      if(trackMuScore[iT] > maxMuScore) maxMuScore = trackMuScore[iT];
     }
     if(nMuons > 0) continue;
 
@@ -134,6 +145,10 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
     float elMaxQConf = -1.;
     float elMaxQPiDiff = -1.;
     float elMaxQPhDiff = -1.;
+    float elMaxQProc = -1.;
+    float elMaxQProcConf = -1.;
+    float elMaxQNtrlDiff = -1.;
+    float elMaxQChgdDiff = -1.;
  
     for(int iS = 0; iS < nShowers; ++iS){
       if(showerIsSecondary[iS] == 1 || showerClassified[iS] == 0 || showerPID[iS] != 11) continue;
@@ -145,11 +160,16 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
         elMaxQConf = showerElScore[iS] - (showerPhScore[iS] + showerPiScore[iS])/2.;
         elMaxQPiDiff = showerElScore[iS] - showerPiScore[iS];
         elMaxQPhDiff = showerElScore[iS] - showerPhScore[iS];
+        elMaxQProc = showerProcess[iS];
+        elMaxQProcConf = showerPrimaryScore[iS] - (showerFromNeutralScore[iS] + showerFromChargedScore[iS])/2.;
+        elMaxQNtrlDiff = showerPrimaryScore[iS] - showerFromNeutralScore[iS];
+        elMaxQChgdDiff = showerPrimaryScore[iS] - showerFromChargedScore[iS];
       }
     }
 
-    if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
-     elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    //if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
+    // elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    if(nElectrons > 0 && elMaxQProc == 0 && maxMuScore < maxMuCut && elMaxQPur > pCut && elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut && elMaxQProcConf > procCut && elMaxQNtrlDiff > ntrlCut && elMaxQChgdDiff > chgdCut){
       if(eventType == 0) n_runs1to3_CCnumu_pass += xsecWeight;
       if(eventType == 1) n_runs1to3_NCnumu_pass += xsecWeight;
       if(eventType == 2) n_runs1to3_NCnue_pass += xsecWeight;
@@ -161,13 +181,14 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   tnue -> SetBranchAddress("xsecWeight", &xsecWeight);
   tnue -> SetBranchAddress("trueNuPDG", &trueNuPDG);
   tnue -> SetBranchAddress("trueNuCCNC", &trueNuCCNC);
-  tnue -> SetBranchAddress("nVertices", &nVertices);
+  tnue -> SetBranchAddress("foundVertex", &foundVertex);
   tnue -> SetBranchAddress("vtxIsFiducial", &vtxIsFiducial);
   tnue -> SetBranchAddress("vtxFracHitsOnCosmic", &vtxFracHitsOnCosmic);
   tnue -> SetBranchAddress("nTracks", &nTracks);
   tnue -> SetBranchAddress("trackIsSecondary", trackIsSecondary);
   tnue -> SetBranchAddress("trackClassified", trackClassified);
   tnue -> SetBranchAddress("trackPID", trackPID);
+  tnue -> SetBranchAddress("trackMuScore", trackMuScore);
   tnue -> SetBranchAddress("nShowers", &nShowers);
   tnue -> SetBranchAddress("showerIsSecondary", showerIsSecondary);
   tnue -> SetBranchAddress("showerClassified", showerClassified);
@@ -178,6 +199,10 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   tnue -> SetBranchAddress("showerElScore", showerElScore);
   tnue -> SetBranchAddress("showerPiScore", showerPiScore);
   tnue -> SetBranchAddress("showerPhScore", showerPhScore);
+  tnue -> SetBranchAddress("showerProcess", showerProcess);
+  tnue -> SetBranchAddress("showerPrimaryScore", showerPrimaryScore);
+  tnue -> SetBranchAddress("showerFromNeutralScore", showerFromNeutralScore);
+  tnue -> SetBranchAddress("showerFromChargedScore", showerFromChargedScore);
 
   for(int i = 0; i < tnue->GetEntries(); ++i){
 
@@ -185,11 +210,14 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
 
     if(std::isinf(xsecWeight) || std::abs(trueNuPDG) != 12 or trueNuCCNC != 0) continue;
     n_runs1to3_CCnue += xsecWeight;
-    if(nVertices < 1 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
+    if(foundVertex == 0 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
 
     int nMuons = 0;
+    float maxMuScore = -20.;
     for(int iT = 0; iT < nTracks; ++iT){
-      if(trackIsSecondary[iT] != 1 && trackClassified[iT] == 1 && trackPID[iT] == 13) ++nMuons;
+      if(trackIsSecondary[iT] == 1 || trackClassified[iT] != 1) continue;
+      if(trackPID[iT] == 13) ++nMuons;
+      if(trackMuScore[iT] > maxMuScore) maxMuScore = trackMuScore[iT];
     }
     if(nMuons > 0) continue;
 
@@ -200,6 +228,10 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
     float elMaxQConf = -1.;
     float elMaxQPiDiff = -1.;
     float elMaxQPhDiff = -1.;
+    float elMaxQProc = -1.;
+    float elMaxQProcConf = -1.;
+    float elMaxQNtrlDiff = -1.;
+    float elMaxQChgdDiff = -1.;
  
     for(int iS = 0; iS < nShowers; ++iS){
       if(showerIsSecondary[iS] == 1 || showerClassified[iS] == 0 || showerPID[iS] != 11) continue;
@@ -211,27 +243,30 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
         elMaxQConf = showerElScore[iS] - (showerPhScore[iS] + showerPiScore[iS])/2.;
         elMaxQPiDiff = showerElScore[iS] - showerPiScore[iS];
         elMaxQPhDiff = showerElScore[iS] - showerPhScore[iS];
+        elMaxQProc = showerProcess[iS];
+        elMaxQProcConf = showerPrimaryScore[iS] - (showerFromNeutralScore[iS] + showerFromChargedScore[iS])/2.;
+        elMaxQNtrlDiff = showerPrimaryScore[iS] - showerFromNeutralScore[iS];
+        elMaxQChgdDiff = showerPrimaryScore[iS] - showerFromChargedScore[iS];
       }
     }
 
-    if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
-     elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    //if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
+    // elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    if(nElectrons > 0 && elMaxQProc == 0 && maxMuScore < maxMuCut && elMaxQPur > pCut && elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut && elMaxQProcConf > procCut && elMaxQNtrlDiff > ntrlCut && elMaxQChgdDiff > chgdCut){
       n_runs1to3_CCnue_pass += xsecWeight;
     }
 
   }
 
 
-  text -> SetBranchAddress("xsecWeight", &xsecWeight);
-  text -> SetBranchAddress("trueNuPDG", &trueNuPDG);
-  text -> SetBranchAddress("trueNuCCNC", &trueNuCCNC);
-  text -> SetBranchAddress("nVertices", &nVertices);
+  text -> SetBranchAddress("foundVertex", &foundVertex);
   text -> SetBranchAddress("vtxIsFiducial", &vtxIsFiducial);
   text -> SetBranchAddress("vtxFracHitsOnCosmic", &vtxFracHitsOnCosmic);
   text -> SetBranchAddress("nTracks", &nTracks);
   text -> SetBranchAddress("trackIsSecondary", trackIsSecondary);
   text -> SetBranchAddress("trackClassified", trackClassified);
   text -> SetBranchAddress("trackPID", trackPID);
+  text -> SetBranchAddress("trackMuScore", trackMuScore);
   text -> SetBranchAddress("nShowers", &nShowers);
   text -> SetBranchAddress("showerIsSecondary", showerIsSecondary);
   text -> SetBranchAddress("showerClassified", showerClassified);
@@ -242,16 +277,23 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
   text -> SetBranchAddress("showerElScore", showerElScore);
   text -> SetBranchAddress("showerPiScore", showerPiScore);
   text -> SetBranchAddress("showerPhScore", showerPhScore);
+  text -> SetBranchAddress("showerProcess", showerProcess);
+  text -> SetBranchAddress("showerPrimaryScore", showerPrimaryScore);
+  text -> SetBranchAddress("showerFromNeutralScore", showerFromNeutralScore);
+  text -> SetBranchAddress("showerFromChargedScore", showerFromChargedScore);
 
   for(int i = 0; i < text->GetEntries(); ++i){
 
     text -> GetEntry(i);
 
-    if(nVertices < 1 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
+    if(foundVertex == 0 || vtxIsFiducial != 1 || vtxFracHitsOnCosmic >= 1.) continue;
 
     int nMuons = 0;
+    float maxMuScore = -20.;
     for(int iT = 0; iT < nTracks; ++iT){
-      if(trackIsSecondary[iT] != 1 && trackClassified[iT] == 1 && trackPID[iT] == 13) ++nMuons;
+      if(trackIsSecondary[iT] == 1 || trackClassified[iT] != 1) continue;
+      if(trackPID[iT] == 13) ++nMuons;
+      if(trackMuScore[iT] > maxMuScore) maxMuScore = trackMuScore[iT];
     }
     if(nMuons > 0) continue;
 
@@ -262,6 +304,10 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
     float elMaxQConf = -1.;
     float elMaxQPiDiff = -1.;
     float elMaxQPhDiff = -1.;
+    float elMaxQProc = -1.;
+    float elMaxQProcConf = -1.;
+    float elMaxQNtrlDiff = -1.;
+    float elMaxQChgdDiff = -1.;
  
     for(int iS = 0; iS < nShowers; ++iS){
       if(showerIsSecondary[iS] == 1 || showerClassified[iS] == 0 || showerPID[iS] != 11) continue;
@@ -273,23 +319,28 @@ std::vector<float> runSelection(float pCut, float sCut, float piCut, float phCut
         elMaxQConf = showerElScore[iS] - (showerPhScore[iS] + showerPiScore[iS])/2.;
         elMaxQPiDiff = showerElScore[iS] - showerPiScore[iS];
         elMaxQPhDiff = showerElScore[iS] - showerPhScore[iS];
+        elMaxQProc = showerProcess[iS];
+        elMaxQProcConf = showerPrimaryScore[iS] - (showerFromNeutralScore[iS] + showerFromChargedScore[iS])/2.;
+        elMaxQNtrlDiff = showerPrimaryScore[iS] - showerFromNeutralScore[iS];
+        elMaxQChgdDiff = showerPrimaryScore[iS] - showerFromChargedScore[iS];
       }
     }
 
-    if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
-     elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    //if(nElectrons > 0 && elMaxQCosTheta > 0. && elMaxQPur > pCut &&
+    // elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut){
+    if(nElectrons > 0 && elMaxQProc == 0 && maxMuScore < maxMuCut && elMaxQPur > pCut && elMaxQConf > sCut && elMaxQPiDiff > piCut && elMaxQPhDiff > phCut && elMaxQProcConf > procCut && elMaxQNtrlDiff > ntrlCut && elMaxQChgdDiff > chgdCut){
       n_runs1to3_ext_pass += 1.;
     }
 
   }
 
 
-  n_runs1to3_CCnue *= (runs1to3POT/tnuePOTsum);
-  n_runs1to3_CCnumu_pass *= runs1to3POT/tnuPOTsum;
-  n_runs1to3_NCnumu_pass *= runs1to3POT/tnuPOTsum;
-  n_runs1to3_CCnue_pass *= runs1to3POT/tnuePOTsum;
-  n_runs1to3_NCnue_pass *= runs1to3POT/tnuPOTsum;
-  n_runs1to3_ext_pass *= runs1to3POT/textPOTsum;
+  n_runs1to3_CCnue *= (targetPOT/tnuePOTsum);
+  n_runs1to3_CCnumu_pass *= targetPOT/tnuPOTsum;
+  n_runs1to3_NCnumu_pass *= targetPOT/tnuPOTsum;
+  n_runs1to3_CCnue_pass *= targetPOT/tnuePOTsum;
+  n_runs1to3_NCnue_pass *= targetPOT/tnuPOTsum;
+  n_runs1to3_ext_pass *= BNBspills/nEXTtrigs;
 
   float total_passed = n_runs1to3_CCnue_pass + n_runs1to3_NCnue_pass + n_runs1to3_CCnumu_pass +
    n_runs1to3_NCnumu_pass + n_runs1to3_ext_pass;
@@ -309,7 +360,13 @@ int main(int argc, char** argv){
 
   bool combineScores = false;
   bool run2dScoreCuts = false;
-  bool run3dScorePurityOpt = true;
+  bool run3dScorePurityOpt = false;
+  bool singlePIDScore = false;
+  bool singleProcScore = false;
+  bool run2dProcScoreCuts = false;
+  bool run2dConfScoreCuts = false;
+  bool run2dConfMaxMuCuts = true;
+  bool run4dScoreCuts = false;
 
   if(combineScores){
 
@@ -332,7 +389,7 @@ int main(int argc, char** argv){
         pCuts.push_back(pCut);
         sCuts.push_back(sCut);
 
-        std::vector<float> selectionResults = runSelection(pCut, sCut, 0., 0.);
+        std::vector<float> selectionResults = runSelection(pCut, sCut, 0., 0., 0., 0., 0., -3.5);
         purity.push_back(selectionResults[0]);
         efficiency.push_back(selectionResults[1]);
         purXeff.push_back(selectionResults[2]);
@@ -410,11 +467,11 @@ int main(int argc, char** argv){
     std::vector<float> efficiency; efficiency.reserve(100);
     std::vector<float> purXeff; purXeff.reserve(100);
 
-    float piCut_i = 5.;
-    float piCut_f = 12.;
+    float piCut_i = 8.4;
+    float piCut_f = 9.2;
     float piCut_delta = 0.1;
-    float phCut_i = 0.;
-    float phCut_f = 6.;
+    float phCut_i = 3.2;
+    float phCut_f = 4.0;
     float phCut_delta = 0.1;
 
     for(float piCut = piCut_i; piCut < (piCut_f + 0.1*piCut_delta); piCut += piCut_delta){
@@ -423,7 +480,7 @@ int main(int argc, char** argv){
         piCuts.push_back(piCut);
         phCuts.push_back(phCut);
 
-        std::vector<float> selectionResults = runSelection(0., 0., piCut, phCut);
+        std::vector<float> selectionResults = runSelection(0., 0., piCut, phCut, 0., 0., 0., -3.5);
         purity.push_back(selectionResults[0]);
         efficiency.push_back(selectionResults[1]);
         purXeff.push_back(selectionResults[2]);
@@ -448,7 +505,7 @@ int main(int argc, char** argv){
     std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
     std::cout << "pion, photon score cuts at max = " << piCuts[iMax] << ", " << phCuts[iMax] << std::endl;
 
-    TFile f_out("optimize_selection_cuts_output_piPhCuts.root","RECREATE");
+    TFile f_out("optimize_selection_cuts_output_piPhCuts_fine.root","RECREATE");
 
     float purXeff_arr[purXeff.size()];
     float piCuts_arr[piCuts.size()];
@@ -462,7 +519,7 @@ int main(int argc, char** argv){
     cnv_opt.Write();
 
     std::ofstream arrayFile;
-    arrayFile.open("optimize_selection_cuts_output_arrays_piPhCuts.py");
+    arrayFile.open("optimize_selection_cuts_output_arrays_piPhCuts_fine.py");
     arrayFile << "piCuts = [";
     for(unsigned int i = 0; i < piCuts.size(); ++i){
       if(i == piCuts.size()-1) arrayFile << piCuts[i] << "]\n";
@@ -520,7 +577,7 @@ int main(int argc, char** argv){
           piCuts.push_back(piCut);
           phCuts.push_back(phCut);
 
-          std::vector<float> selectionResults = runSelection(pCut, 0., piCut, phCut);
+          std::vector<float> selectionResults = runSelection(pCut, 0., piCut, phCut, 0., 0., 0., -3.5);
           purity.push_back(selectionResults[0]);
           efficiency.push_back(selectionResults[1]);
           purXeff.push_back(selectionResults[2]);
@@ -554,6 +611,525 @@ int main(int argc, char** argv){
     for(unsigned int i = 0; i < pCuts.size(); ++i){
       if(i == pCuts.size()-1) arrayFile << pCuts[i] << "]\n";
       else arrayFile << pCuts[i] << ", "; 
+    }
+    arrayFile << "piCuts = [";
+    for(unsigned int i = 0; i < piCuts.size(); ++i){
+      if(i == piCuts.size()-1) arrayFile << piCuts[i] << "]\n";
+      else arrayFile << piCuts[i] << ", "; 
+    }
+    arrayFile << "phCuts = [";
+    for(unsigned int i = 0; i < phCuts.size(); ++i){
+      if(i == phCuts.size()-1) arrayFile << phCuts[i] << "]\n";
+      else arrayFile << phCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(singlePIDScore){
+
+    std::vector<float> sCuts; sCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float sCut_i = 4.;
+    float sCut_f = 9.;
+    if(argc == 4){
+      sCut_i = std::atof(argv[1]);
+      sCut_f = std::atof(argv[2]);
+    }
+    float sCut_delta = 0.1;
+
+    for(float sCut = sCut_i; sCut < (sCut_f + 0.1*sCut_delta); sCut += sCut_delta){
+
+      sCuts.push_back(sCut);
+
+      std::vector<float> selectionResults = runSelection(0., sCut, 0., 0., 0., 0., 0., -3.5);
+      purity.push_back(selectionResults[0]);
+      efficiency.push_back(selectionResults[1]);
+      purXeff.push_back(selectionResults[2]);
+
+      std::cout << "for sCut = " << sCut << ",  purity = "<<selectionResults[0]
+       << ", efficiency = " << selectionResults[1] << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "score confidence cut at max = " << sCuts[iMax] << std::endl;
+
+    std::ofstream arrayFile;
+    std::string filename = "optimize_selection_cuts_output_arrays_1dPIDConfCut.py";
+    if(argc == 4){
+      std::string filetag(argv[3]);
+      filename = "optimize_selection_cuts_output_arrays_1dPIDConfCut_"+filetag+".py";
+    }
+    arrayFile.open(filename.c_str());
+    arrayFile << "sCuts = [";
+    for(unsigned int i = 0; i < sCuts.size(); ++i){
+      if(i == sCuts.size()-1) arrayFile << sCuts[i] << "]\n";
+      else arrayFile << sCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(singleProcScore){
+
+    std::vector<float> sCuts; sCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float sCut_i = 2.;
+    float sCut_f = 8.;
+    float sCut_delta = 0.1;
+
+    for(float sCut = sCut_i; sCut < (sCut_f + 0.1*sCut_delta); sCut += sCut_delta){
+
+      sCuts.push_back(sCut);
+
+      std::vector<float> selectionResults = runSelection(0., 0., 0., 0., sCut, 0., 0., -3.5);
+      purity.push_back(selectionResults[0]);
+      efficiency.push_back(selectionResults[1]);
+      purXeff.push_back(selectionResults[2]);
+
+      std::cout << "for sCut = " << sCut << ",  purity = "<<selectionResults[0]
+       << ", efficiency = " << selectionResults[1] << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "score confidence cut at max = " << sCuts[iMax] << std::endl;
+
+    std::ofstream arrayFile;
+    arrayFile.open("optimize_selection_cuts_output_arrays_1dProcConfCut.py");
+    arrayFile << "sCuts = [";
+    for(unsigned int i = 0; i < sCuts.size(); ++i){
+      if(i == sCuts.size()-1) arrayFile << sCuts[i] << "]\n";
+      else arrayFile << sCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(run2dConfScoreCuts){
+
+    std::vector<float> pCuts; pCuts.reserve(100);
+    std::vector<float> sCuts; sCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float pCut_i = 4.4;
+    float pCut_f = 6.4;
+    float pCut_delta = 0.1;
+    float sCut_i = 6.1;
+    float sCut_f = 8.1;
+    float sCut_delta = 0.1;
+
+    for(float pCut = pCut_i; pCut < (pCut_f + 0.1*pCut_delta); pCut += pCut_delta){
+      for(float sCut = sCut_i; sCut < (sCut_f + 0.1*sCut_delta); sCut += sCut_delta){
+
+        pCuts.push_back(pCut);
+        sCuts.push_back(sCut);
+
+        std::vector<float> selectionResults = runSelection(0., sCut, 0., 0., pCut, 0., 0., -3.5);
+        purity.push_back(selectionResults[0]);
+        efficiency.push_back(selectionResults[1]);
+        purXeff.push_back(selectionResults[2]);
+
+        std::cout << "for pCut = " << pCut << " and sCut = " << sCut << ",  purity = "<<selectionResults[0]
+         << ", efficiency = " << selectionResults[1] << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+      }
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "process, PID score confidence cuts at max = " << pCuts[iMax] << ", " << sCuts[iMax] << std::endl;
+
+    TFile f_out("optimize_selection_cuts_output_2dConfScoreCuts.root","RECREATE");
+
+    float purXeff_arr[purXeff.size()];
+    float pCuts_arr[pCuts.size()];
+    float sCuts_arr[sCuts.size()];
+    std::copy(purXeff.begin(), purXeff.end(), purXeff_arr);
+    std::copy(pCuts.begin(), pCuts.end(), pCuts_arr);
+    std::copy(sCuts.begin(), sCuts.end(), sCuts_arr);
+    TGraph2D g_opt(purXeff.size(), pCuts_arr, sCuts_arr, purXeff_arr);
+    TCanvas cnv_opt("cnv_opt","cnv_opt");
+    g_opt.Draw("surf1");
+    cnv_opt.Write();
+
+    std::ofstream arrayFile;
+    arrayFile.open("optimize_selection_cuts_output_arrays_2dConfScoreCuts.py");
+    arrayFile << "pCuts = [";
+    for(unsigned int i = 0; i < pCuts.size(); ++i){
+      if(i == pCuts.size()-1) arrayFile << pCuts[i] << "]\n";
+      else arrayFile << pCuts[i] << ", "; 
+    }
+    arrayFile << "sCuts = [";
+    for(unsigned int i = 0; i < sCuts.size(); ++i){
+      if(i == sCuts.size()-1) arrayFile << sCuts[i] << "]\n";
+      else arrayFile << sCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(run2dProcScoreCuts){
+
+    std::vector<float> chgdCuts; chgdCuts.reserve(100);
+    std::vector<float> ntrlCuts; ntrlCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float chgdCut_i = 5.4;
+    float chgdCut_f = 6.2;
+    float chgdCut_delta = 0.1;
+    float ntrlCut_i = 2.8;
+    float ntrlCut_f = 3.6;
+    float ntrlCut_delta = 0.1;
+
+    for(float chgdCut = chgdCut_i; chgdCut < (chgdCut_f + 0.1*chgdCut_delta); chgdCut += chgdCut_delta){
+      for(float ntrlCut = ntrlCut_i; ntrlCut < (ntrlCut_f + 0.1*ntrlCut_delta); ntrlCut += ntrlCut_delta){
+
+        chgdCuts.push_back(chgdCut);
+        ntrlCuts.push_back(ntrlCut);
+
+        std::vector<float> selectionResults = runSelection(0., 0., 0., 0., 0., chgdCut, ntrlCut, -3.5);
+        purity.push_back(selectionResults[0]);
+        efficiency.push_back(selectionResults[1]);
+        purXeff.push_back(selectionResults[2]);
+
+        std::cout << "for chgdCut = " << chgdCut << " and ntrlCut = " << ntrlCut << ",  purity = "<<selectionResults[0]
+         << ", efficiency = " << selectionResults[1] << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+      }
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "charged, neutral parent process score cuts at max = " << chgdCuts[iMax] << ", " << ntrlCuts[iMax] << std::endl;
+
+    TFile f_out("optimize_selection_cuts_output_2dProcScoreCuts_fine.root","RECREATE");
+
+    float purXeff_arr[purXeff.size()];
+    float chgdCuts_arr[chgdCuts.size()];
+    float ntrlCuts_arr[ntrlCuts.size()];
+    std::copy(purXeff.begin(), purXeff.end(), purXeff_arr);
+    std::copy(chgdCuts.begin(), chgdCuts.end(), chgdCuts_arr);
+    std::copy(ntrlCuts.begin(), ntrlCuts.end(), ntrlCuts_arr);
+    TGraph2D g_opt(purXeff.size(), chgdCuts_arr, ntrlCuts_arr, purXeff_arr);
+    TCanvas cnv_opt("cnv_opt","cnv_opt");
+    g_opt.Draw("surf1");
+    cnv_opt.Write();
+
+    std::ofstream arrayFile;
+    arrayFile.open("optimize_selection_cuts_output_arrays_2dProcScoreCuts_fine.py");
+    arrayFile << "chgdCuts = [";
+    for(unsigned int i = 0; i < chgdCuts.size(); ++i){
+      if(i == chgdCuts.size()-1) arrayFile << chgdCuts[i] << "]\n";
+      else arrayFile << chgdCuts[i] << ", "; 
+    }
+    arrayFile << "ntrlCuts = [";
+    for(unsigned int i = 0; i < ntrlCuts.size(); ++i){
+      if(i == ntrlCuts.size()-1) arrayFile << ntrlCuts[i] << "]\n";
+      else arrayFile << ntrlCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(run2dConfMaxMuCuts){
+
+    std::vector<float> mCuts; mCuts.reserve(100);
+    std::vector<float> sCuts; sCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float mCut_i = -6.5;
+    float mCut_f = -0.5;
+    float mCut_delta = 0.1;
+    float sCut_i = 3.0;
+    float sCut_f = 9.0;
+    float sCut_delta = 0.1;
+
+    for(float mCut = mCut_i; mCut < (mCut_f + 0.1*mCut_delta); mCut += mCut_delta){
+      for(float sCut = sCut_i; sCut < (sCut_f + 0.1*sCut_delta); sCut += sCut_delta){
+
+        mCuts.push_back(mCut);
+        sCuts.push_back(sCut);
+
+        std::vector<float> selectionResults = runSelection(0., sCut, 0., 0., 0., 0., 0., mCut);
+        purity.push_back(selectionResults[0]);
+        efficiency.push_back(selectionResults[1]);
+        purXeff.push_back(selectionResults[2]);
+
+        std::cout << "for mCut = " << mCut << " and sCut = " << sCut << ",  purity = "<<selectionResults[0]
+         << ", efficiency = " << selectionResults[1] << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+      }
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "max muon, PID score confidence cuts at max = " << mCuts[iMax] << ", " << sCuts[iMax] << std::endl;
+
+    TFile f_out("optimize_selection_cuts_output_2dConfMaxMuCuts.root","RECREATE");
+
+    float purXeff_arr[purXeff.size()];
+    float mCuts_arr[mCuts.size()];
+    float sCuts_arr[sCuts.size()];
+    std::copy(purXeff.begin(), purXeff.end(), purXeff_arr);
+    std::copy(mCuts.begin(), mCuts.end(), mCuts_arr);
+    std::copy(sCuts.begin(), sCuts.end(), sCuts_arr);
+    TGraph2D g_opt(purXeff.size(), mCuts_arr, sCuts_arr, purXeff_arr);
+    TCanvas cnv_opt("cnv_opt","cnv_opt");
+    g_opt.Draw("surf1");
+    cnv_opt.Write();
+
+    std::ofstream arrayFile;
+    arrayFile.open("optimize_selection_cuts_output_arrays_2dConfMaxMuCuts.py");
+    arrayFile << "mCuts = [";
+    for(unsigned int i = 0; i < mCuts.size(); ++i){
+      if(i == mCuts.size()-1) arrayFile << mCuts[i] << "]\n";
+      else arrayFile << mCuts[i] << ", "; 
+    }
+    arrayFile << "sCuts = [";
+    for(unsigned int i = 0; i < sCuts.size(); ++i){
+      if(i == sCuts.size()-1) arrayFile << sCuts[i] << "]\n";
+      else arrayFile << sCuts[i] << ", "; 
+    }
+    arrayFile << "purity = [";
+    for(unsigned int i = 0; i < purity.size(); ++i){
+      if(i == purity.size()-1) arrayFile << purity[i] << "]\n";
+      else arrayFile << purity[i] << ", "; 
+    }
+    arrayFile << "efficiency = [";
+    for(unsigned int i = 0; i < efficiency.size(); ++i){
+      if(i == efficiency.size()-1) arrayFile << efficiency[i] << "]\n";
+      else arrayFile << efficiency[i] << ", "; 
+    }
+    arrayFile << "purXeff = [";
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(i == purXeff.size()-1) arrayFile << purXeff[i] << "]\n";
+      else arrayFile << purXeff[i] << ", "; 
+    }
+    arrayFile.close();
+
+  }
+
+
+  if(run4dScoreCuts){
+
+    std::vector<float> chgdCuts; chgdCuts.reserve(100);
+    std::vector<float> ntrlCuts; ntrlCuts.reserve(100);
+    std::vector<float> piCuts; piCuts.reserve(100);
+    std::vector<float> phCuts; phCuts.reserve(100);
+    std::vector<float> purity; purity.reserve(100);
+    std::vector<float> efficiency; efficiency.reserve(100);
+    std::vector<float> purXeff; purXeff.reserve(100);
+
+    float chgdCut_i = 1.;
+    float chgdCut_f = 6.;
+    float chgdCut_delta = 0.2;
+    float ntrlCut_i = 1.;
+    float ntrlCut_f = 5.;
+    float ntrlCut_delta = 0.2;
+    float piCut_i = 7.;
+    float piCut_f = 11.;
+    float piCut_delta = 0.2;
+    float phCut_i = 1.;
+    float phCut_f = 5.;
+    float phCut_delta = 0.2;
+
+    for(float chgdCut = chgdCut_i; chgdCut < (chgdCut_f + 0.1*chgdCut_delta); chgdCut += chgdCut_delta){
+      for(float ntrlCut = ntrlCut_i; ntrlCut < (ntrlCut_f + 0.1*ntrlCut_delta); ntrlCut += ntrlCut_delta){
+        for(float piCut = piCut_i; piCut < (piCut_f + 0.1*piCut_delta); piCut += piCut_delta){
+          for(float phCut = phCut_i; phCut < (phCut_f + 0.1*phCut_delta); phCut += phCut_delta){
+
+            chgdCuts.push_back(chgdCut);
+            ntrlCuts.push_back(ntrlCut);
+            piCuts.push_back(piCut);
+            phCuts.push_back(phCut);
+
+            std::vector<float> selectionResults = runSelection(0., 0., piCut, phCut, 0., chgdCut, ntrlCut, -3.5);
+            purity.push_back(selectionResults[0]);
+            efficiency.push_back(selectionResults[1]);
+            purXeff.push_back(selectionResults[2]);
+
+            std::cout << "for chgdCut = " << chgdCut << ", ntrlCut = " << ntrlCut
+             << ", piCut = " << piCut << ", and phCut = " << phCut
+             << ",  purity = "<<selectionResults[0] << ", efficiency = " << selectionResults[1]
+             << ", purity*efficiency = " << selectionResults[2] << std::endl;
+
+          }
+        }
+      }
+    }
+
+    float max_pXe = -1.;
+    unsigned int iMax = 0;
+    for(unsigned int i = 0; i < purXeff.size(); ++i){
+      if(purXeff[i] > max_pXe){
+        max_pXe = purXeff[i];
+        iMax = i;
+      }
+    }
+
+    std::cout << std::endl << std::endl;
+    std::cout << "maximum purity*efficiency = " << max_pXe << std::endl;
+    std::cout << "purity, effciency at max = " << purity[iMax] << ", " << efficiency[iMax] << std::endl;
+    std::cout << "charged parent, neutral parent, pion, photon score cuts at max = "
+     << chgdCuts[iMax] << ", " << ntrlCuts[iMax] << ", " << piCuts[iMax] << ", " << phCuts[iMax] << std::endl;
+
+    std::ofstream arrayFile;
+    arrayFile.open("optimize_selection_cuts_output_arrays_4dScoreCuts.py");
+    arrayFile << "chgdCuts = [";
+    for(unsigned int i = 0; i < chgdCuts.size(); ++i){
+      if(i == chgdCuts.size()-1) arrayFile << chgdCuts[i] << "]\n";
+      else arrayFile << chgdCuts[i] << ", "; 
+    }
+    arrayFile << "ntrlCuts = [";
+    for(unsigned int i = 0; i < ntrlCuts.size(); ++i){
+      if(i == ntrlCuts.size()-1) arrayFile << ntrlCuts[i] << "]\n";
+      else arrayFile << ntrlCuts[i] << ", "; 
     }
     arrayFile << "piCuts = [";
     for(unsigned int i = 0; i < piCuts.size(); ++i){

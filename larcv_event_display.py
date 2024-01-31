@@ -45,9 +45,12 @@ outfile = rt.TFile("event_display_hists.root","RECREATE")
 rt.gStyle.SetOptStat(0)
 rt.gROOT.SetBatch(rt.kTRUE)
 
-def getBNB5e19EventString_newEvents(lineBreaks=True):
+def getBNB5e19EventString_withWCEnergy(lineBreaks=True):
   selDir="/home/matthew/microboone/tufts/gen2val/selection_output"
-  with open("%s/selected_bnb5e19_events_expandedGen2FV_and_WCFCPC_all.txt"%selDir,"r") as evtFile:
+  #selFile="selected_bnb5e19_events_expandedGen2FV_and_WCFCPC_all.txt"
+  #selFile="selected_bnb5e19_events/selected_bnb5e19_events_WireCellFV_withProdProcessAndMuCuts_sorted_withWConly.txt"
+  selFile="selected_bnb5e19_events/selected_bnb5e19_events_WireCellFV_withProdProcessAndMuCuts_noCosThetaOrVtxDistCuts_sorted_withWConly.txt"
+  with open("%s/%s"%(selDir,selFile),"r") as evtFile:
     for line in evtFile:
       if "fileid" in line:
         continue
@@ -164,7 +167,7 @@ def plotImage(adc_v):
     plt.yticks(fontsize=ticksize)
   if zoom:
     if args.look_up_event:
-      plt.suptitle(getBNB5e19EventString_newEvents())
+      plt.suptitle(getBNB5e19EventString_withWCEnergy())
     else:
       plt.suptitle("run %i subrun %i event %i"%(args.run,args.subrun,args.event))
   if args.output_dir != "":
@@ -249,9 +252,9 @@ def plotImageRoot(adc_v):
   lat = rt.TLatex()
   if args.look_up_event:
     if zoom:
-      lat.DrawLatexNDC(.05,.95,getBNB5e19EventString_newEvents(False))
+      lat.DrawLatexNDC(.05,.95,getBNB5e19EventString_withWCEnergy(False))
     else:
-      lat.DrawLatexNDC(.4,.95,getBNB5e19EventString_newEvents(False))
+      lat.DrawLatexNDC(.4,.95,getBNB5e19EventString_withWCEnergy(False))
   else:
     lat.DrawLatexNDC(.4,.95,"run %i subrun %i event %i"%(args.run,args.subrun,args.event))
   outfile.cd()

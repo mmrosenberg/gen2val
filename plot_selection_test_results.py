@@ -3,24 +3,29 @@ import sys, argparse
 import numpy as np
 import ROOT as rt
 
-from math import isinf
+from math import isinf, sqrt
 from helpers.plotting_functions import sortHists
 from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
-parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v28_wctagger_bnboverlay.root", help="bnb nu input file")
-parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v28_wctagger_nueintrinsics.root", help="bnb nu input file")
-parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v4_mcc9_v29e_dl_run3_G1_extbnb.root", help="extbnb input file")
-parser.add_argument("-fdata", "--data_file", type=str, default="flat_ntuples/dlgen2_reco_v2me05_ntuple_v4_mcc9_v28_wctagger_bnb5e19.root", help="bnb data input file")
+parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v5_mcc9_v28_wctagger_bnboverlay.root", help="bnb nu input file")
+parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v5_mcc9_v28_wctagger_nueintrinsics.root", help="bnb nu input file")
+parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v5_mcc9_v29e_dl_runs1to3_extbnb.root", help="extbnb input file")
+parser.add_argument("-fdata", "--data_file", type=str, default="flat_ntuples/dlgen2_reco_v2me05_ntuple_v5_mcc9_v28_wctagger_bnb5e19.root", help="bnb data input file")
 parser.add_argument("-vfc", "--vertexFracOnCosCut", type=float, default=1., help="vtxFracHitsOnCosmic cut")
-parser.add_argument("-d", "--distCut", type=float, default=9999., help="distance to vertex cut value")
+parser.add_argument("-d", "--distCut", type=float, default=99999., help="distance to vertex cut value")
 parser.add_argument("-c", "--compCut", type=float, default=0., help="completeness cut value")
 parser.add_argument("-p", "--purityCut", type=float, default=0., help="purity cut value")
-parser.add_argument("-s", "--confCut", type=float, default=7.3, help="electron class confidence cut value")
+parser.add_argument("-s", "--confCut", type=float, default=7.1, help="electron class confidence cut value")
+parser.add_argument("--useProcScoreCuts", help="use process score cuts instead of pid confidence", action="store_true")
+parser.add_argument("-sC", "--chgdScoreCut", type=float, default=5.7, help="primary - charged parent score cut value")
+parser.add_argument("-sN", "--ntrlScoreCut", type=float, default=3.1, help="primary - neutral parent score cut value")
 parser.add_argument("-q", "--chargeCut", type=float, default=0, help="electron charge fraction cut value")
 parser.add_argument("-qf", "--chargeFracCut", type=float, default=0., help="electron charge fraction cut value")
-parser.add_argument("-t", "--cosThetaCut", type=float, default=0., help="cos(angle to beam) cut value")
+parser.add_argument("-t", "--cosThetaCut", type=float, default=-9., help="cos(angle to beam) cut value")
+parser.add_argument("-mm", "--maxMuScoreCut", type=float, default=-3.7, help="max muon track score cut value")
+parser.add_argument("-sV", "--vtxScoreCut", type=float, default=0., help="neutrino keypoint score cut")
 parser.add_argument("--applyCosmicDeltaCut", help="apply cut to remove delta shower cosmic background", action="store_true")
 parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output.root", help="output root file name")
 parser.add_argument("-os", "--out5e19EvtFile", type=str, default="selection_output/selected_bnb5e19_events.txt", help="output text file with list of selected 5e19 events")
@@ -30,6 +35,7 @@ parser.add_argument("--makeKPplots", help="make keypoint plots", action="store_t
 parser.add_argument("--smallFV", help="use 20cm fiducial volume", action="store_true")
 parser.add_argument("--NPMLCosmicConfig", help="used extBNB file and incorrect scaling from NPML plots", action="store_true")
 parser.add_argument("--printEXTinfo", help="print event info for selected cosmic background", action="store_true")
+parser.add_argument("--plotPurityVsTrueE", help="plot purity vs. true E (cosmic bkg excluded if present)", action="store_true")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -61,6 +67,7 @@ runs1to3POT = 6.67e+20
 #targetPOT = 4.43e19
 targetPOT = 4.4e+19
 targetPOTstring = "4.4e+19"
+BNBspills = 9764047.0
 
 tnuePOTsum = 0.
 for i in range(tnuePOT.GetEntries()):
@@ -81,13 +88,18 @@ for i in range(tnuPOT.GetEntries()):
 #from Zarko's POT counting for flat_ntuples/dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial.root
 #textPOTsum = 2.561872704628622e+19
 
-if args.NPMLCosmicConfig:
+if "runs1to3" in args.extbnb_file:
+  EXT = 34202767.0+38971237.0+465951.0+59572045.0+22166992.0+36721376.0+14817082.0+39195178.0+58677653.0+19214565.0+18619185.0
+  textPOTsum = (EXT/BNBspills)*targetPOT
+elif args.NPMLCosmicConfig:
   textPOTsum = (17661./89559.)*run3POT
 else:
   if args.extbnb_file == "selection_output/prepare_selection_test_output/prepare_selection_test_reco_v2me05_gen2val_v22_extbnb_file.root":
     textPOTsum = 1.3298521464785359e+19
   elif "dlgen2_reco_v2me06_ntuple_v1_mcc9_v29e_dl_run3_G1_extbnb_partial" in args.extbnb_file or "dlgen2_reco_v2me06_ntuple_v4_mcc9_v29e_dl_run3_G1_extbnb" in args.extbnb_file:
     textPOTsum = 2.561872704628622e+19
+  elif "dlgen2_reco_v2me06_ntuple_v5_mcc9_v29e_dl_run3_G1_extbnb" in args.extbnb_file:
+    textPOTsum = 2.5631019528728764e+19
   else:
     sys.exit("POT for input extBNB file unknown")
 
@@ -127,6 +139,14 @@ h_nEl_ext = rt.TH1F("h_nEl_ext","Number of Reco Electrons",10,0,10)
 h_nEl_CCnumu, h_nEl_NCnumu, h_nEl_CCnue, h_nEl_NCnue, h_nEl_ext = configureHists(h_nEl_CCnumu,
  h_nEl_NCnumu, h_nEl_CCnue, h_nEl_NCnue, h_nEl_ext)
 
+h_nPrimEl_CCnumu = rt.TH1F("h_nPrimEl_CCnumu","Number of Reco Primary Electrons",10,0,10)
+h_nPrimEl_NCnumu = rt.TH1F("h_nPrimEl_NCnumu","Number of Reco Primary Electrons",10,0,10)
+h_nPrimEl_CCnue = rt.TH1F("h_nPrimEl_CCnue","Number of Reco Primary Electrons",10,0,10)
+h_nPrimEl_NCnue = rt.TH1F("h_nPrimEl_NCnue","Number of Reco Primary Electrons",10,0,10)
+h_nPrimEl_ext = rt.TH1F("h_nPrimEl_ext","Number of Reco Primary Electrons",10,0,10)
+h_nPrimEl_CCnumu, h_nPrimEl_NCnumu, h_nPrimEl_CCnue, h_nPrimEl_NCnue, h_nPrimEl_ext = configureHists(h_nPrimEl_CCnumu,
+ h_nPrimEl_NCnumu, h_nPrimEl_CCnue, h_nPrimEl_NCnue, h_nPrimEl_ext)
+
 h_nMu_CCnumu = rt.TH1F("h_nMu_CCnumu","Number of Reco Muons",10,0,10)
 h_nMu_NCnumu = rt.TH1F("h_nMu_NCnumu","Number of Reco Muons",10,0,10)
 h_nMu_CCnue = rt.TH1F("h_nMu_CCnue","Number of Reco Muons",10,0,10)
@@ -134,6 +154,30 @@ h_nMu_NCnue = rt.TH1F("h_nMu_NCnue","Number of Reco Muons",10,0,10)
 h_nMu_ext = rt.TH1F("h_nMu_ext","Number of Reco Muons",10,0,10)
 h_nMu_CCnumu, h_nMu_NCnumu, h_nMu_CCnue, h_nMu_NCnue, h_nMu_ext = configureHists(h_nMu_CCnumu,
  h_nMu_NCnumu, h_nMu_CCnue, h_nMu_NCnue, h_nMu_ext)
+
+h_maxMuScore_CCnumu = rt.TH1F("h_maxMuScore_CCnumu","Maximum Muon Score",41,-20,0.5)
+h_maxMuScore_NCnumu = rt.TH1F("h_maxMuScore_NCnumu","Maximum Muon Score",41,-20,0.5)
+h_maxMuScore_CCnue = rt.TH1F("h_maxMuScore_CCnue","Maximum Muon Score",41,-20,0.5)
+h_maxMuScore_NCnue = rt.TH1F("h_maxMuScore_NCnue","Maximum Muon Score",41,-20,0.5)
+h_maxMuScore_ext = rt.TH1F("h_maxMuScore_ext","Maximum Muon Score",41,-20,0.5)
+h_maxMuScore_CCnumu, h_maxMuScore_NCnumu, h_maxMuScore_CCnue, h_maxMuScore_NCnue, h_maxMuScore_ext = configureHists(h_maxMuScore_CCnumu,
+ h_maxMuScore_NCnumu, h_maxMuScore_CCnue, h_maxMuScore_NCnue, h_maxMuScore_ext)
+
+h_vtxScore_CCnumu = rt.TH1F("h_vtxScore_CCnumu","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_NCnumu = rt.TH1F("h_vtxScore_NCnumu","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_CCnue = rt.TH1F("h_vtxScore_CCnue","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_NCnue = rt.TH1F("h_vtxScore_NCnue","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_ext = rt.TH1F("h_vtxScore_ext","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_CCnumu, h_vtxScore_NCnumu, h_vtxScore_CCnue, h_vtxScore_NCnue, h_vtxScore_ext = configureHists(h_vtxScore_CCnumu,
+ h_vtxScore_NCnumu, h_vtxScore_CCnue, h_vtxScore_NCnue, h_vtxScore_ext)
+
+h_vtxScore_wConfCut_CCnumu = rt.TH1F("h_vtxScore_wConfCut_CCnumu","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_wConfCut_NCnumu = rt.TH1F("h_vtxScore_wConfCut_NCnumu","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_wConfCut_CCnue = rt.TH1F("h_vtxScore_wConfCut_CCnue","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_wConfCut_NCnue = rt.TH1F("h_vtxScore_wConfCut_NCnue","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_wConfCut_ext = rt.TH1F("h_vtxScore_wConfCut_ext","Vertex Keypoint Score",51,0,1.02)
+h_vtxScore_wConfCut_CCnumu, h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_CCnue, h_vtxScore_wConfCut_NCnue, h_vtxScore_wConfCut_ext = configureHists(h_vtxScore_wConfCut_CCnumu,
+ h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_CCnue, h_vtxScore_wConfCut_NCnue, h_vtxScore_wConfCut_ext)
 
 if args.makeKPplots:
   h_cosKPDist_CCnumu = rt.TH1F("h_cosKPDist_CCnumu","Distance to Nearest Cosmic KP (cm)",500,0,1000)
@@ -296,6 +340,145 @@ h_elMaxQConf_ext = rt.TH1F("h_elMaxQConf_ext","\"Electron Class Confidence\" for
 h_elMaxQConf_CCnumu, h_elMaxQConf_NCnumu, h_elMaxQConf_CCnue, h_elMaxQConf_NCnue, h_elMaxQConf_ext = configureHists(h_elMaxQConf_CCnumu,
  h_elMaxQConf_NCnumu, h_elMaxQConf_CCnue, h_elMaxQConf_NCnue, h_elMaxQConf_ext)
 
+h_elMaxQConf2_CCnumu = rt.TH1F("h_elMaxQConf2_CCnumu","\"Electron Class Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQConf2_NCnumu = rt.TH1F("h_elMaxQConf2_NCnumu","\"Electron Class Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQConf2_CCnue = rt.TH1F("h_elMaxQConf2_CCnue","\"Electron Class Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQConf2_NCnue = rt.TH1F("h_elMaxQConf2_NCnue","\"Electron Class Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQConf2_ext = rt.TH1F("h_elMaxQConf2_ext","\"Electron Class Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQConf2_CCnumu, h_elMaxQConf2_NCnumu, h_elMaxQConf2_CCnue, h_elMaxQConf2_NCnue, h_elMaxQConf2_ext = configureHists(h_elMaxQConf2_CCnumu,
+ h_elMaxQConf2_NCnumu, h_elMaxQConf2_CCnue, h_elMaxQConf2_NCnue, h_elMaxQConf2_ext)
+
+h_elMaxQProc_CCnumu = rt.TH1F("h_elMaxQProc_CCnumu","Production Process Class for Largest Electron Shower",3,0,3)
+h_elMaxQProc_NCnumu = rt.TH1F("h_elMaxQProc_NCnumu","Production Process Class for Largest Electron Shower",3,0,3)
+h_elMaxQProc_CCnue = rt.TH1F("h_elMaxQProc_CCnue","Production Process Class for Largest Electron Shower",3,0,3)
+h_elMaxQProc_NCnue = rt.TH1F("h_elMaxQProc_NCnue","Production Process Class for Largest Electron Shower",3,0,3)
+h_elMaxQProc_ext = rt.TH1F("h_elMaxQProc_ext","Production Process Class for Largest Electron Shower",3,0,3)
+h_elMaxQProc_CCnumu, h_elMaxQProc_NCnumu, h_elMaxQProc_CCnue, h_elMaxQProc_NCnue, h_elMaxQProc_ext = configureHists(h_elMaxQProc_CCnumu,
+ h_elMaxQProc_NCnumu, h_elMaxQProc_CCnue, h_elMaxQProc_NCnue, h_elMaxQProc_ext)
+
+h_elMaxQPrimScore_CCnumu = rt.TH1F("h_elMaxQPrimScore_CCnumu","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_NCnumu = rt.TH1F("h_elMaxQPrimScore_NCnumu","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_CCnue = rt.TH1F("h_elMaxQPrimScore_CCnue","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_NCnue = rt.TH1F("h_elMaxQPrimScore_NCnue","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_ext = rt.TH1F("h_elMaxQPrimScore_ext","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_CCnumu, h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_CCnue, h_elMaxQPrimScore_NCnue, h_elMaxQPrimScore_ext = configureHists(h_elMaxQPrimScore_CCnumu,
+ h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_CCnue, h_elMaxQPrimScore_NCnue, h_elMaxQPrimScore_ext)
+
+h_elMaxQNtrlScore_CCnumu = rt.TH1F("h_elMaxQNtrlScore_CCnumu","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_NCnumu = rt.TH1F("h_elMaxQNtrlScore_NCnumu","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_CCnue = rt.TH1F("h_elMaxQNtrlScore_CCnue","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_NCnue = rt.TH1F("h_elMaxQNtrlScore_NCnue","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_ext = rt.TH1F("h_elMaxQNtrlScore_ext","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_CCnumu, h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_CCnue, h_elMaxQNtrlScore_NCnue, h_elMaxQNtrlScore_ext = configureHists(h_elMaxQNtrlScore_CCnumu,
+ h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_CCnue, h_elMaxQNtrlScore_NCnue, h_elMaxQNtrlScore_ext)
+
+h_elMaxQChgdScore_CCnumu = rt.TH1F("h_elMaxQChgdScore_CCnumu","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_NCnumu = rt.TH1F("h_elMaxQChgdScore_NCnumu","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_CCnue = rt.TH1F("h_elMaxQChgdScore_CCnue","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_NCnue = rt.TH1F("h_elMaxQChgdScore_NCnue","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_ext = rt.TH1F("h_elMaxQChgdScore_ext","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_CCnumu, h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_CCnue, h_elMaxQChgdScore_NCnue, h_elMaxQChgdScore_ext = configureHists(h_elMaxQChgdScore_CCnumu,
+ h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_CCnue, h_elMaxQChgdScore_NCnue, h_elMaxQChgdScore_ext)
+
+h_elMaxQPrimConf_CCnumu = rt.TH1F("h_elMaxQPrimConf_CCnumu","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_NCnumu = rt.TH1F("h_elMaxQPrimConf_NCnumu","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_CCnue = rt.TH1F("h_elMaxQPrimConf_CCnue","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_NCnue = rt.TH1F("h_elMaxQPrimConf_NCnue","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_ext = rt.TH1F("h_elMaxQPrimConf_ext","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_CCnumu, h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_CCnue, h_elMaxQPrimConf_NCnue, h_elMaxQPrimConf_ext = configureHists(h_elMaxQPrimConf_CCnumu,
+ h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_CCnue, h_elMaxQPrimConf_NCnue, h_elMaxQPrimConf_ext)
+
+h_elMaxQPrimConf2_CCnumu = rt.TH1F("h_elMaxQPrimConf2_CCnumu","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_NCnumu = rt.TH1F("h_elMaxQPrimConf2_NCnumu","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_CCnue = rt.TH1F("h_elMaxQPrimConf2_CCnue","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_NCnue = rt.TH1F("h_elMaxQPrimConf2_NCnue","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_ext = rt.TH1F("h_elMaxQPrimConf2_ext","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_CCnumu, h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_CCnue, h_elMaxQPrimConf2_NCnue, h_elMaxQPrimConf2_ext = configureHists(h_elMaxQPrimConf2_CCnumu,
+ h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_CCnue, h_elMaxQPrimConf2_NCnue, h_elMaxQPrimConf2_ext)
+
+
+h_elMaxQPrimScore_wConfCut_CCnumu = rt.TH1F("h_elMaxQPrimScore_wConfCut_CCnumu","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_wConfCut_NCnumu = rt.TH1F("h_elMaxQPrimScore_wConfCut_NCnumu","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_wConfCut_CCnue = rt.TH1F("h_elMaxQPrimScore_wConfCut_CCnue","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_wConfCut_NCnue = rt.TH1F("h_elMaxQPrimScore_wConfCut_NCnue","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_wConfCut_ext = rt.TH1F("h_elMaxQPrimScore_wConfCut_ext","Primary Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQPrimScore_wConfCut_CCnumu, h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_CCnue, h_elMaxQPrimScore_wConfCut_NCnue, h_elMaxQPrimScore_wConfCut_ext = configureHists(h_elMaxQPrimScore_wConfCut_CCnumu,
+ h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_CCnue, h_elMaxQPrimScore_wConfCut_NCnue, h_elMaxQPrimScore_wConfCut_ext)
+
+h_elMaxQNtrlScore_wConfCut_CCnumu = rt.TH1F("h_elMaxQNtrlScore_wConfCut_CCnumu","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_wConfCut_NCnumu = rt.TH1F("h_elMaxQNtrlScore_wConfCut_NCnumu","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_wConfCut_CCnue = rt.TH1F("h_elMaxQNtrlScore_wConfCut_CCnue","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_wConfCut_NCnue = rt.TH1F("h_elMaxQNtrlScore_wConfCut_NCnue","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_wConfCut_ext = rt.TH1F("h_elMaxQNtrlScore_wConfCut_ext","Neutral Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQNtrlScore_wConfCut_CCnumu, h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_CCnue, h_elMaxQNtrlScore_wConfCut_NCnue, h_elMaxQNtrlScore_wConfCut_ext = configureHists(h_elMaxQNtrlScore_wConfCut_CCnumu,
+ h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_CCnue, h_elMaxQNtrlScore_wConfCut_NCnue, h_elMaxQNtrlScore_wConfCut_ext)
+
+h_elMaxQChgdScore_wConfCut_CCnumu = rt.TH1F("h_elMaxQChgdScore_wConfCut_CCnumu","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_wConfCut_NCnumu = rt.TH1F("h_elMaxQChgdScore_wConfCut_NCnumu","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_wConfCut_CCnue = rt.TH1F("h_elMaxQChgdScore_wConfCut_CCnue","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_wConfCut_NCnue = rt.TH1F("h_elMaxQChgdScore_wConfCut_NCnue","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_wConfCut_ext = rt.TH1F("h_elMaxQChgdScore_wConfCut_ext","Charged Parent Process Score for Largest Electron Shower",21,-20,1)
+h_elMaxQChgdScore_wConfCut_CCnumu, h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_CCnue, h_elMaxQChgdScore_wConfCut_NCnue, h_elMaxQChgdScore_wConfCut_ext = configureHists(h_elMaxQChgdScore_wConfCut_CCnumu,
+ h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_CCnue, h_elMaxQChgdScore_wConfCut_NCnue, h_elMaxQChgdScore_wConfCut_ext)
+
+h_elMaxQPrimConf_wConfCut_CCnumu = rt.TH1F("h_elMaxQPrimConf_wConfCut_CCnumu","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_wConfCut_NCnumu = rt.TH1F("h_elMaxQPrimConf_wConfCut_NCnumu","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_wConfCut_CCnue = rt.TH1F("h_elMaxQPrimConf_wConfCut_CCnue","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_wConfCut_NCnue = rt.TH1F("h_elMaxQPrimConf_wConfCut_NCnue","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_wConfCut_ext = rt.TH1F("h_elMaxQPrimConf_wConfCut_ext","\"Primary Process Confidence\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf_wConfCut_CCnumu, h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_CCnue, h_elMaxQPrimConf_wConfCut_NCnue, h_elMaxQPrimConf_wConfCut_ext = configureHists(h_elMaxQPrimConf_wConfCut_CCnumu,
+ h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_CCnue, h_elMaxQPrimConf_wConfCut_NCnue, h_elMaxQPrimConf_wConfCut_ext)
+
+h_elMaxQPrimConf2_wConfCut_CCnumu = rt.TH1F("h_elMaxQPrimConf2_wConfCut_CCnumu","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_wConfCut_NCnumu = rt.TH1F("h_elMaxQPrimConf2_wConfCut_NCnumu","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_wConfCut_CCnue = rt.TH1F("h_elMaxQPrimConf2_wConfCut_CCnue","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_wConfCut_NCnue = rt.TH1F("h_elMaxQPrimConf2_wConfCut_NCnue","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_wConfCut_ext = rt.TH1F("h_elMaxQPrimConf2_wConfCut_ext","\"Primary Process Confidence (Max)\" for Largest Electron Shower",21,-1,20)
+h_elMaxQPrimConf2_wConfCut_CCnumu, h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_CCnue, h_elMaxQPrimConf2_wConfCut_NCnue, h_elMaxQPrimConf2_wConfCut_ext = configureHists(h_elMaxQPrimConf2_wConfCut_CCnumu,
+ h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_CCnue, h_elMaxQPrimConf2_wConfCut_NCnue, h_elMaxQPrimConf2_wConfCut_ext)
+
+
+h_nonPrimShwChg_wConfCut_CCnumu = rt.TH1F("h_nonPrimShwChg_wConfCut_CCnumu","Total Charge of Non-Primary Showers",800,0,800000)
+h_nonPrimShwChg_wConfCut_NCnumu = rt.TH1F("h_nonPrimShwChg_wConfCut_NCnumu","Total Charge of Non-Primary Showers",800,0,800000)
+h_nonPrimShwChg_wConfCut_CCnue = rt.TH1F("h_nonPrimShwChg_wConfCut_CCnue","Total Charge of Non-Primary Showers",800,0,800000)
+h_nonPrimShwChg_wConfCut_NCnue = rt.TH1F("h_nonPrimShwChg_wConfCut_NCnue","Total Charge of Non-Primary Showers",800,0,800000)
+h_nonPrimShwChg_wConfCut_ext = rt.TH1F("h_nonPrimShwChg_wConfCut_ext","Total Charge of Non-Primary Showers",800,0,800000)
+h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_CCnue, h_nonPrimShwChg_wConfCut_NCnue, h_nonPrimShwChg_wConfCut_ext = configureHists(h_nonPrimShwChg_wConfCut_CCnumu,
+ h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_CCnue, h_nonPrimShwChg_wConfCut_NCnue, h_nonPrimShwChg_wConfCut_ext)
+
+h_pcaRatio_wConfCut_CCnumu = rt.TH1F("h_pcaRatio_wConfCut_CCnumu","PCA Eigenvalue Ratio",50,0,1)
+h_pcaRatio_wConfCut_NCnumu = rt.TH1F("h_pcaRatio_wConfCut_NCnumu","PCA Eigenvalue Ratio",50,0,1)
+h_pcaRatio_wConfCut_CCnue = rt.TH1F("h_pcaRatio_wConfCut_CCnue","PCA Eigenvalue Ratio",50,0,1)
+h_pcaRatio_wConfCut_NCnue = rt.TH1F("h_pcaRatio_wConfCut_NCnue","PCA Eigenvalue Ratio",50,0,1)
+h_pcaRatio_wConfCut_ext = rt.TH1F("h_pcaRatio_wConfCut_ext","PCA Eigenvalue Ratio",50,0,1)
+h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_CCnue, h_pcaRatio_wConfCut_NCnue, h_pcaRatio_wConfCut_ext = configureHists(h_pcaRatio_wConfCut_CCnumu,
+ h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_CCnue, h_pcaRatio_wConfCut_NCnue, h_pcaRatio_wConfCut_ext)
+
+h_pca0y_wConfCut_CCnumu = rt.TH1F("h_pca0y_wConfCut_CCnumu","PC Axis0 y",52,-1.02,1.02)
+h_pca0y_wConfCut_NCnumu = rt.TH1F("h_pca0y_wConfCut_NCnumu","PC Axis0 y",52,-1.02,1.02)
+h_pca0y_wConfCut_CCnue = rt.TH1F("h_pca0y_wConfCut_CCnue","PC Axis0 y",52,-1.02,1.02)
+h_pca0y_wConfCut_NCnue = rt.TH1F("h_pca0y_wConfCut_NCnue","PC Axis0 y",52,-1.02,1.02)
+h_pca0y_wConfCut_ext = rt.TH1F("h_pca0y_wConfCut_ext","PC Axis0 y",52,-1.02,1.02)
+h_pca0y_wConfCut_CCnumu, h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_CCnue, h_pca0y_wConfCut_NCnue, h_pca0y_wConfCut_ext = configureHists(h_pca0y_wConfCut_CCnumu,
+ h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_CCnue, h_pca0y_wConfCut_NCnue, h_pca0y_wConfCut_ext)
+
+h_pca0z_wConfCut_CCnumu = rt.TH1F("h_pca0z_wConfCut_CCnumu","PC Axis0 z",52,-1.02,1.02)
+h_pca0z_wConfCut_NCnumu = rt.TH1F("h_pca0z_wConfCut_NCnumu","PC Axis0 z",52,-1.02,1.02)
+h_pca0z_wConfCut_CCnue = rt.TH1F("h_pca0z_wConfCut_CCnue","PC Axis0 z",52,-1.02,1.02)
+h_pca0z_wConfCut_NCnue = rt.TH1F("h_pca0z_wConfCut_NCnue","PC Axis0 z",52,-1.02,1.02)
+h_pca0z_wConfCut_ext = rt.TH1F("h_pca0z_wConfCut_ext","PC Axis0 z",52,-1.02,1.02)
+h_pca0z_wConfCut_CCnumu, h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_CCnue, h_pca0z_wConfCut_NCnue, h_pca0z_wConfCut_ext = configureHists(h_pca0z_wConfCut_CCnumu,
+ h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_CCnue, h_pca0z_wConfCut_NCnue, h_pca0z_wConfCut_ext)
+
+h_avgShwComp_wConfCut_CCnumu = rt.TH1F("h_avgShwComp_wConfCut_CCnumu","Average Shower Completeness",40,-1,1)
+h_avgShwComp_wConfCut_NCnumu = rt.TH1F("h_avgShwComp_wConfCut_NCnumu","Average Shower Completeness",40,-1,1)
+h_avgShwComp_wConfCut_CCnue = rt.TH1F("h_avgShwComp_wConfCut_CCnue","Average Shower Completeness",40,-1,1)
+h_avgShwComp_wConfCut_NCnue = rt.TH1F("h_avgShwComp_wConfCut_NCnue","Average Shower Completeness",40,-1,1)
+h_avgShwComp_wConfCut_ext = rt.TH1F("h_avgShwComp_wConfCut_ext","Average Shower Completeness",40,-1,1)
+h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_CCnue, h_avgShwComp_wConfCut_NCnue, h_avgShwComp_wConfCut_ext = configureHists(h_avgShwComp_wConfCut_CCnumu,
+ h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_CCnue, h_avgShwComp_wConfCut_NCnue, h_avgShwComp_wConfCut_ext)
+
+
 h_elMaxQ_CCnumu = rt.TH1F("h_elMaxQ_CCnumu","Max Electron Charge",34,0,450000)
 h_elMaxQ_NCnumu = rt.TH1F("h_elMaxQ_NCnumu","Max Electron Charge",34,0,450000)
 h_elMaxQ_CCnue = rt.TH1F("h_elMaxQ_CCnue","Max Electron Charge",34,0,450000)
@@ -440,31 +623,219 @@ h_nuEr_CCnue_pur.GetXaxis().SetTitle("reco neutrino energy (GeV)")
 h_nuEr_CCnue_pur.SetLineColor(8)
 h_nuEr_CCnue_pur.SetLineWidth(2)
 
+
+def configure_stacked_hists(h_CCnue, h_NCnue, h_CCnumu, h_NCnumu, h_ext, h_data, title, xtitle):
+  h_CCnue.SetFillColor(rt.kRed)
+  h_NCnue.SetFillColor(8)
+  h_CCnumu.SetFillColor(rt.kBlue)
+  h_NCnumu.SetFillColor(40)
+  h_ext.SetFillColor(12)
+  h_data.SetLineColor(rt.kBlack)
+  h_data.SetLineWidth(2)
+  h_data.SetTitle(title)
+  h_data.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
+  h_data.GetXaxis().SetTitle(xtitle)
+  return h_CCnue, h_NCnue, h_CCnumu, h_NCnumu, h_ext, h_data
+
+visE_n = 30
+visE_l = 0.
+visE_h = 6.
 if args.recoEOverflow:
-  h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",14,0,2.8)
-  h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",14,0,2.8)
-  h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",14,0,2.8)
-  h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",14,0,2.8)
-  h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",14,0,2.8)
-  h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",14,0,2.8)
-else:
-  h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",30,0,6)
-  h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",30,0,6)
-  h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",30,0,6)
-  h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",30,0,6)
-  h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",30,0,6)
-  h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",30,0,6)
-h_visE_CCnue_wCuts.SetFillColor(rt.kRed)
-h_visE_NCnue_wCuts.SetFillColor(8)
-h_visE_CCnumu_wCuts.SetFillColor(rt.kBlue)
-h_visE_NCnumu_wCuts.SetFillColor(40)
-h_visE_ext_wCuts.SetFillColor(12)
-h_visE_data_wCuts.SetLineColor(rt.kBlack)
-h_visE_data_wCuts.SetLineWidth(2)
-h_visE_data_wCuts.SetTitle("Inclusive CCnue Selected Events")
-h_visE_data_wCuts.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
-h_visE_data_wCuts.GetXaxis().SetTitle("reconstructed neutrino energy (GeV)")
+  visE_n = 14
+  visE_l = 0.
+  visE_h = 2.8
+
+h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCnumu Events",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",visE_n,visE_l,visE_h)
+h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",visE_n,visE_l,visE_h)
+h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",visE_n,visE_l,visE_h)
 h_visE_all_wCuts = rt.THStack("h_visE_all_wCuts", "Inclusive CCnue Selected Events")
+h_visE_CCnue_wCuts, h_visE_NCnue_wCuts, h_visE_CCnumu_wCuts, h_visE_NCnumu_wCuts, h_visE_ext_wCuts, h_visE_data_wCuts = configure_stacked_hists(h_visE_CCnue_wCuts, h_visE_NCnue_wCuts, h_visE_CCnumu_wCuts, h_visE_NCnumu_wCuts, h_visE_ext_wCuts, h_visE_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet1 = rt.TH1F("h_visE_CCnue_wCutSet1","Reco Nu Energy for True CCnue Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet1 = rt.TH1F("h_visE_CCnumu_wCutSet1","Reco Nu Energy for True CCnumu Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet1 = rt.TH1F("h_visE_NCnumu_wCutSet1","Reco Nu Energy for True NCnumu Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet1 = rt.TH1F("h_visE_NCnue_wCutSet1","Reco Nu Energy for True NCnue Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet1 = rt.TH1F("h_visE_ext_wCutSet1","Reco Nu Energy for ExtBNB Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet1 = rt.TH1F("h_visE_data_wCutSet1","Reco Nu Energy for BNB Data Events (Cut Set 1)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet1 = rt.THStack("h_visE_all_wCutSet1", "Inclusive CCnue Selected Events (Cut Set 1)")
+h_visE_CCnue_wCutSet1, h_visE_NCnue_wCutSet1, h_visE_CCnumu_wCutSet1, h_visE_NCnumu_wCutSet1, h_visE_ext_wCutSet1, h_visE_data_wCutSet1 = configure_stacked_hists(h_visE_CCnue_wCutSet1, h_visE_NCnue_wCutSet1, h_visE_CCnumu_wCutSet1, h_visE_NCnumu_wCutSet1, h_visE_ext_wCutSet1, h_visE_data_wCutSet1, "Inclusive CCnue Selected Events (Cut Set 1)", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet2 = rt.TH1F("h_visE_CCnue_wCutSet2","Reco Nu Energy for True CCnue Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet2 = rt.TH1F("h_visE_CCnumu_wCutSet2","Reco Nu Energy for True CCnumu Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet2 = rt.TH1F("h_visE_NCnumu_wCutSet2","Reco Nu Energy for True NCnumu Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet2 = rt.TH1F("h_visE_NCnue_wCutSet2","Reco Nu Energy for True NCnue Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet2 = rt.TH1F("h_visE_ext_wCutSet2","Reco Nu Energy for ExtBNB Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet2 = rt.TH1F("h_visE_data_wCutSet2","Reco Nu Energy for BNB Data Events (Cut  Set 2)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet2 = rt.THStack("h_visE_all_wCutSet2", "Inclusive CCnue Selected Events (Cut  Set 2)")
+h_visE_CCnue_wCutSet2, h_visE_NCnue_wCutSet2, h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_ext_wCutSet2, h_visE_data_wCutSet2 = configure_stacked_hists(h_visE_CCnue_wCutSet2, h_visE_NCnue_wCutSet2, h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_ext_wCutSet2, h_visE_data_wCutSet2, "Inclusive CCnue Selected Events (Cut  Set 2)", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet3 = rt.TH1F("h_visE_CCnue_wCutSet3","Reco Nu Energy for True CCnue Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet3 = rt.TH1F("h_visE_CCnumu_wCutSet3","Reco Nu Energy for True CCnumu Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet3 = rt.TH1F("h_visE_NCnumu_wCutSet3","Reco Nu Energy for True NCnumu Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet3 = rt.TH1F("h_visE_NCnue_wCutSet3","Reco Nu Energy for True NCnue Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet3 = rt.TH1F("h_visE_ext_wCutSet3","Reco Nu Energy for ExtBNB Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet3 = rt.TH1F("h_visE_data_wCutSet3","Reco Nu Energy for BNB Data Events (Cut  Set 3)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet3 = rt.THStack("h_visE_all_wCutSet3", "Inclusive CCnue Selected Events (Cut  Set 3)")
+h_visE_CCnue_wCutSet3, h_visE_NCnue_wCutSet3, h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_ext_wCutSet3, h_visE_data_wCutSet3 = configure_stacked_hists(h_visE_CCnue_wCutSet3, h_visE_NCnue_wCutSet3, h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_ext_wCutSet3, h_visE_data_wCutSet3, "Inclusive CCnue Selected Events (Cut  Set 3)", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet4 = rt.TH1F("h_visE_CCnue_wCutSet4","Reco Nu Energy for True CCnue Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet4 = rt.TH1F("h_visE_CCnumu_wCutSet4","Reco Nu Energy for True CCnumu Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet4 = rt.TH1F("h_visE_NCnumu_wCutSet4","Reco Nu Energy for True NCnumu Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet4 = rt.TH1F("h_visE_NCnue_wCutSet4","Reco Nu Energy for True NCnue Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet4 = rt.TH1F("h_visE_ext_wCutSet4","Reco Nu Energy for ExtBNB Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet4 = rt.TH1F("h_visE_data_wCutSet4","Reco Nu Energy for BNB Data Events (Cut  Set 4)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet4 = rt.THStack("h_visE_all_wCutSet4", "Inclusive CCnue Selected Events (Cut  Set 4)")
+h_visE_CCnue_wCutSet4, h_visE_NCnue_wCutSet4, h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_ext_wCutSet4, h_visE_data_wCutSet4 = configure_stacked_hists(h_visE_CCnue_wCutSet4, h_visE_NCnue_wCutSet4, h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_ext_wCutSet4, h_visE_data_wCutSet4, "Inclusive CCnue Selected Events (Cut  Set 4)", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet5 = rt.TH1F("h_visE_CCnue_wCutSet5","Reco Nu Energy for True CCnue Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet5 = rt.TH1F("h_visE_CCnumu_wCutSet5","Reco Nu Energy for True CCnumu Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet5 = rt.TH1F("h_visE_NCnumu_wCutSet5","Reco Nu Energy for True NCnumu Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet5 = rt.TH1F("h_visE_NCnue_wCutSet5","Reco Nu Energy for True NCnue Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet5 = rt.TH1F("h_visE_ext_wCutSet5","Reco Nu Energy for ExtBNB Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet5 = rt.TH1F("h_visE_data_wCutSet5","Reco Nu Energy for BNB Data Events (Cut  Set 5)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet5 = rt.THStack("h_visE_all_wCutSet5", "Inclusive CCnue Selected Events (Cut  Set 5)")
+h_visE_CCnue_wCutSet5, h_visE_NCnue_wCutSet5, h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_ext_wCutSet5, h_visE_data_wCutSet5 = configure_stacked_hists(h_visE_CCnue_wCutSet5, h_visE_NCnue_wCutSet5, h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_ext_wCutSet5, h_visE_data_wCutSet5, "Inclusive CCnue Selected Events (Cut  Set 5)", "reconstructed neutrino energy (GeV)")
+
+h_visE_CCnue_wCutSet6 = rt.TH1F("h_visE_CCnue_wCutSet6","Reco Nu Energy for True CCnue Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_CCnumu_wCutSet6 = rt.TH1F("h_visE_CCnumu_wCutSet6","Reco Nu Energy for True CCnumu Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_NCnumu_wCutSet6 = rt.TH1F("h_visE_NCnumu_wCutSet6","Reco Nu Energy for True NCnumu Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_NCnue_wCutSet6 = rt.TH1F("h_visE_NCnue_wCutSet6","Reco Nu Energy for True NCnue Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_ext_wCutSet6 = rt.TH1F("h_visE_ext_wCutSet6","Reco Nu Energy for ExtBNB Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_data_wCutSet6 = rt.TH1F("h_visE_data_wCutSet6","Reco Nu Energy for BNB Data Events (Cut  Set 6)",visE_n,visE_l,visE_h)
+h_visE_all_wCutSet6 = rt.THStack("h_visE_all_wCutSet6", "Inclusive CCnue Selected Events (Cut  Set 6)")
+h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6 = configure_stacked_hists(h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6, "Inclusive CCnue Selected Events (Cut  Set 6)", "reconstructed neutrino energy (GeV)")
+
+
+cosTheta_n = 18
+cosTheta_l = -1.125
+cosTheta_h = 1.125
+h_cosTheta_CCnue_wCuts = rt.TH1F("h_cosTheta_CCnue_wCuts","Reco e- cos(theta) for True CCnue Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_CCnumu_wCuts = rt.TH1F("h_cosTheta_CCnumu_wCuts","Reco e- cos(theta) for True CCnumu Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_NCnumu_wCuts = rt.TH1F("h_cosTheta_NCnumu_wCuts","Reco e- cos(theta) for True NCnumu Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_NCnue_wCuts = rt.TH1F("h_cosTheta_NCnue_wCuts","Reco e- cos(theta) for True NCnue Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_ext_wCuts = rt.TH1F("h_cosTheta_ext_wCuts","Reco e- cos(theta) for ExtBNB Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_data_wCuts = rt.TH1F("h_cosTheta_data_wCuts","Reco e- cos(theta) for BNB Data Events",cosTheta_n,cosTheta_l,cosTheta_h)
+h_cosTheta_all_wCuts = rt.THStack("h_cosTheta_all_wCuts", "Inclusive CCnue Selected Events")
+h_cosTheta_CCnue_wCuts, h_cosTheta_NCnue_wCuts, h_cosTheta_CCnumu_wCuts, h_cosTheta_NCnumu_wCuts, h_cosTheta_ext_wCuts, h_cosTheta_data_wCuts = configure_stacked_hists(h_cosTheta_CCnue_wCuts, h_cosTheta_NCnue_wCuts, h_cosTheta_CCnumu_wCuts, h_cosTheta_NCnumu_wCuts, h_cosTheta_ext_wCuts, h_cosTheta_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron cos(theta)")
+
+lepP_n = 30
+lepP_l = 0.
+lepP_h = 6.
+if args.recoEOverflow:
+  lepP_n = 14
+  lepP_l = 0.
+  lepP_h = 2.8
+h_lepP_CCnue_wCuts = rt.TH1F("h_lepP_CCnue_wCuts","Reco e- Momentum for True CCnue Events",lepP_n,lepP_l,lepP_h)
+h_lepP_CCnumu_wCuts = rt.TH1F("h_lepP_CCnumu_wCuts","Reco e- Momentum for True CCnumu Events",lepP_n,lepP_l,lepP_h)
+h_lepP_NCnumu_wCuts = rt.TH1F("h_lepP_NCnumu_wCuts","Reco e- Momentum for True NCnumu Events",lepP_n,lepP_l,lepP_h)
+h_lepP_NCnue_wCuts = rt.TH1F("h_lepP_NCnue_wCuts","Reco e- Momentum for True NCnue Events",lepP_n,lepP_l,lepP_h)
+h_lepP_ext_wCuts = rt.TH1F("h_lepP_ext_wCuts","Reco e- Momentum for ExtBNB Events",lepP_n,lepP_l,lepP_h)
+h_lepP_data_wCuts = rt.TH1F("h_lepP_data_wCuts","Reco e- Momentum for BNB Data Events",lepP_n,lepP_l,lepP_h)
+h_lepP_all_wCuts = rt.THStack("h_lepP_all_wCuts", "Inclusive CCnue Selected Events")
+h_lepP_CCnue_wCuts, h_lepP_NCnue_wCuts, h_lepP_CCnumu_wCuts, h_lepP_NCnumu_wCuts, h_lepP_ext_wCuts, h_lepP_data_wCuts = configure_stacked_hists(h_lepP_CCnue_wCuts, h_lepP_NCnue_wCuts, h_lepP_CCnumu_wCuts, h_lepP_NCnumu_wCuts, h_lepP_ext_wCuts, h_lepP_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron momentum (GeV/c)")
+
+partScore_n = 24
+partScore_l = -23.
+partScore_h = 1.
+
+h_elScr_CCnue_wCuts = rt.TH1F("h_elScr_CCnue_wCuts","Reco e- Electron Score for True CCnue Events",partScore_n,partScore_l,partScore_h)
+h_elScr_CCnumu_wCuts = rt.TH1F("h_elScr_CCnumu_wCuts","Reco e- Electron Score for True CCnumu Events",partScore_n,partScore_l,partScore_h)
+h_elScr_NCnumu_wCuts = rt.TH1F("h_elScr_NCnumu_wCuts","Reco e- Electron Score for True NCnumu Events",partScore_n,partScore_l,partScore_h)
+h_elScr_NCnue_wCuts = rt.TH1F("h_elScr_NCnue_wCuts","Reco e- Electron Score for True NCnue Events",partScore_n,partScore_l,partScore_h)
+h_elScr_ext_wCuts = rt.TH1F("h_elScr_ext_wCuts","Reco e- Electron Score for ExtBNB Events",partScore_n,partScore_l,partScore_h)
+h_elScr_data_wCuts = rt.TH1F("h_elScr_data_wCuts","Reco e- Electron Score for BNB Data Events",partScore_n,partScore_l,partScore_h)
+h_elScr_all_wCuts = rt.THStack("h_elScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_elScr_CCnue_wCuts, h_elScr_NCnue_wCuts, h_elScr_CCnumu_wCuts, h_elScr_NCnumu_wCuts, h_elScr_ext_wCuts, h_elScr_data_wCuts = configure_stacked_hists(h_elScr_CCnue_wCuts, h_elScr_NCnue_wCuts, h_elScr_CCnumu_wCuts, h_elScr_NCnumu_wCuts, h_elScr_ext_wCuts, h_elScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's electron score")
+
+h_phScr_CCnue_wCuts = rt.TH1F("h_phScr_CCnue_wCuts","Reco e- Photon Score for True CCnue Events",partScore_n,partScore_l,partScore_h)
+h_phScr_CCnumu_wCuts = rt.TH1F("h_phScr_CCnumu_wCuts","Reco e- Photon Score for True CCnumu Events",partScore_n,partScore_l,partScore_h)
+h_phScr_NCnumu_wCuts = rt.TH1F("h_phScr_NCnumu_wCuts","Reco e- Photon Score for True NCnumu Events",partScore_n,partScore_l,partScore_h)
+h_phScr_NCnue_wCuts = rt.TH1F("h_phScr_NCnue_wCuts","Reco e- Photon Score for True NCnue Events",partScore_n,partScore_l,partScore_h)
+h_phScr_ext_wCuts = rt.TH1F("h_phScr_ext_wCuts","Reco e- Photon Score for ExtBNB Events",partScore_n,partScore_l,partScore_h)
+h_phScr_data_wCuts = rt.TH1F("h_phScr_data_wCuts","Reco e- Photon Score for BNB Data Events",partScore_n,partScore_l,partScore_h)
+h_phScr_all_wCuts = rt.THStack("h_phScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_phScr_CCnue_wCuts, h_phScr_NCnue_wCuts, h_phScr_CCnumu_wCuts, h_phScr_NCnumu_wCuts, h_phScr_ext_wCuts, h_phScr_data_wCuts = configure_stacked_hists(h_phScr_CCnue_wCuts, h_phScr_NCnue_wCuts, h_phScr_CCnumu_wCuts, h_phScr_NCnumu_wCuts, h_phScr_ext_wCuts, h_phScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's photon score")
+
+h_piScr_CCnue_wCuts = rt.TH1F("h_piScr_CCnue_wCuts","Reco e- Pion Score for True CCnue Events",partScore_n,partScore_l,partScore_h)
+h_piScr_CCnumu_wCuts = rt.TH1F("h_piScr_CCnumu_wCuts","Reco e- Pion Score for True CCnumu Events",partScore_n,partScore_l,partScore_h)
+h_piScr_NCnumu_wCuts = rt.TH1F("h_piScr_NCnumu_wCuts","Reco e- Pion Score for True NCnumu Events",partScore_n,partScore_l,partScore_h)
+h_piScr_NCnue_wCuts = rt.TH1F("h_piScr_NCnue_wCuts","Reco e- Pion Score for True NCnue Events",partScore_n,partScore_l,partScore_h)
+h_piScr_ext_wCuts = rt.TH1F("h_piScr_ext_wCuts","Reco e- Pion Score for ExtBNB Events",partScore_n,partScore_l,partScore_h)
+h_piScr_data_wCuts = rt.TH1F("h_piScr_data_wCuts","Reco e- Pion Score for BNB Data Events",partScore_n,partScore_l,partScore_h)
+h_piScr_all_wCuts = rt.THStack("h_piScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_piScr_CCnue_wCuts, h_piScr_NCnue_wCuts, h_piScr_CCnumu_wCuts, h_piScr_NCnumu_wCuts, h_piScr_ext_wCuts, h_piScr_data_wCuts = configure_stacked_hists(h_piScr_CCnue_wCuts, h_piScr_NCnue_wCuts, h_piScr_CCnumu_wCuts, h_piScr_NCnumu_wCuts, h_piScr_ext_wCuts, h_piScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's pion score")
+
+h_muScr_CCnue_wCuts = rt.TH1F("h_muScr_CCnue_wCuts","Reco e- Muon Score for True CCnue Events",partScore_n,partScore_l,partScore_h)
+h_muScr_CCnumu_wCuts = rt.TH1F("h_muScr_CCnumu_wCuts","Reco e- Muon Score for True CCnumu Events",partScore_n,partScore_l,partScore_h)
+h_muScr_NCnumu_wCuts = rt.TH1F("h_muScr_NCnumu_wCuts","Reco e- Muon Score for True NCnumu Events",partScore_n,partScore_l,partScore_h)
+h_muScr_NCnue_wCuts = rt.TH1F("h_muScr_NCnue_wCuts","Reco e- Muon Score for True NCnue Events",partScore_n,partScore_l,partScore_h)
+h_muScr_ext_wCuts = rt.TH1F("h_muScr_ext_wCuts","Reco e- Muon Score for ExtBNB Events",partScore_n,partScore_l,partScore_h)
+h_muScr_data_wCuts = rt.TH1F("h_muScr_data_wCuts","Reco e- Muon Score for BNB Data Events",partScore_n,partScore_l,partScore_h)
+h_muScr_all_wCuts = rt.THStack("h_muScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_muScr_CCnue_wCuts, h_muScr_NCnue_wCuts, h_muScr_CCnumu_wCuts, h_muScr_NCnumu_wCuts, h_muScr_ext_wCuts, h_muScr_data_wCuts = configure_stacked_hists(h_muScr_CCnue_wCuts, h_muScr_NCnue_wCuts, h_muScr_CCnumu_wCuts, h_muScr_NCnumu_wCuts, h_muScr_ext_wCuts, h_muScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's muon score")
+
+h_prScr_CCnue_wCuts = rt.TH1F("h_prScr_CCnue_wCuts","Reco e- Proton Score for True CCnue Events",partScore_n,partScore_l,partScore_h)
+h_prScr_CCnumu_wCuts = rt.TH1F("h_prScr_CCnumu_wCuts","Reco e- Proton Score for True CCnumu Events",partScore_n,partScore_l,partScore_h)
+h_prScr_NCnumu_wCuts = rt.TH1F("h_prScr_NCnumu_wCuts","Reco e- Proton Score for True NCnumu Events",partScore_n,partScore_l,partScore_h)
+h_prScr_NCnue_wCuts = rt.TH1F("h_prScr_NCnue_wCuts","Reco e- Proton Score for True NCnue Events",partScore_n,partScore_l,partScore_h)
+h_prScr_ext_wCuts = rt.TH1F("h_prScr_ext_wCuts","Reco e- Proton Score for ExtBNB Events",partScore_n,partScore_l,partScore_h)
+h_prScr_data_wCuts = rt.TH1F("h_prScr_data_wCuts","Reco e- Proton Score for BNB Data Events",partScore_n,partScore_l,partScore_h)
+h_prScr_all_wCuts = rt.THStack("h_prScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_prScr_CCnue_wCuts, h_prScr_NCnue_wCuts, h_prScr_CCnumu_wCuts, h_prScr_NCnumu_wCuts, h_prScr_ext_wCuts, h_prScr_data_wCuts = configure_stacked_hists(h_prScr_CCnue_wCuts, h_prScr_NCnue_wCuts, h_prScr_CCnumu_wCuts, h_prScr_NCnumu_wCuts, h_prScr_ext_wCuts, h_prScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's proton score")
+
+procScore_n = 14
+procScore_l = -13.
+procScore_h = 1.
+
+h_pPScr_CCnue_wCuts = rt.TH1F("h_pPScr_CCnue_wCuts","Reco e- Primary Score for True CCnue Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_CCnumu_wCuts = rt.TH1F("h_pPScr_CCnumu_wCuts","Reco e- Primary Score for True CCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_NCnumu_wCuts = rt.TH1F("h_pPScr_NCnumu_wCuts","Reco e- Primary Score for True NCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_NCnue_wCuts = rt.TH1F("h_pPScr_NCnue_wCuts","Reco e- Primary Score for True NCnue Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_ext_wCuts = rt.TH1F("h_pPScr_ext_wCuts","Reco e- Primary Score for ExtBNB Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_data_wCuts = rt.TH1F("h_pPScr_data_wCuts","Reco e- Primary Score for BNB Data Events",procScore_n,procScore_l,procScore_h)
+h_pPScr_all_wCuts = rt.THStack("h_pPScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_pPScr_CCnue_wCuts, h_pPScr_NCnue_wCuts, h_pPScr_CCnumu_wCuts, h_pPScr_NCnumu_wCuts, h_pPScr_ext_wCuts, h_pPScr_data_wCuts = configure_stacked_hists(h_pPScr_CCnue_wCuts, h_pPScr_NCnue_wCuts, h_pPScr_CCnumu_wCuts, h_pPScr_NCnumu_wCuts, h_pPScr_ext_wCuts, h_pPScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's primary score")
+
+h_pNScr_CCnue_wCuts = rt.TH1F("h_pNScr_CCnue_wCuts","Reco e- Secondary (Neutral Parent) Score for True CCnue Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_CCnumu_wCuts = rt.TH1F("h_pNScr_CCnumu_wCuts","Reco e- Secondary (Neutral Parent) Score for True CCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_NCnumu_wCuts = rt.TH1F("h_pNScr_NCnumu_wCuts","Reco e- Secondary (Neutral Parent) Score for True NCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_NCnue_wCuts = rt.TH1F("h_pNScr_NCnue_wCuts","Reco e- Secondary (Neutral Parent) Score for True NCnue Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_ext_wCuts = rt.TH1F("h_pNScr_ext_wCuts","Reco e- Secondary (Neutral Parent) Score for ExtBNB Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_data_wCuts = rt.TH1F("h_pNScr_data_wCuts","Reco e- Secondary (Neutral Parent) Score for BNB Data Events",procScore_n,procScore_l,procScore_h)
+h_pNScr_all_wCuts = rt.THStack("h_pNScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_pNScr_CCnue_wCuts, h_pNScr_NCnue_wCuts, h_pNScr_CCnumu_wCuts, h_pNScr_NCnumu_wCuts, h_pNScr_ext_wCuts, h_pNScr_data_wCuts = configure_stacked_hists(h_pNScr_CCnue_wCuts, h_pNScr_NCnue_wCuts, h_pNScr_CCnumu_wCuts, h_pNScr_NCnumu_wCuts, h_pNScr_ext_wCuts, h_pNScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's secondary (neutral parent) score")
+
+h_pCScr_CCnue_wCuts = rt.TH1F("h_pCScr_CCnue_wCuts","Reco e- Secondary (Charged Parent) Score for True CCnue Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_CCnumu_wCuts = rt.TH1F("h_pCScr_CCnumu_wCuts","Reco e- Secondary (Charged Parent) Score for True CCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_NCnumu_wCuts = rt.TH1F("h_pCScr_NCnumu_wCuts","Reco e- Secondary (Charged Parent) Score for True NCnumu Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_NCnue_wCuts = rt.TH1F("h_pCScr_NCnue_wCuts","Reco e- Secondary (Charged Parent) Score for True NCnue Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_ext_wCuts = rt.TH1F("h_pCScr_ext_wCuts","Reco e- Secondary (Charged Parent) Score for ExtBNB Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_data_wCuts = rt.TH1F("h_pCScr_data_wCuts","Reco e- Secondary (Charged Parent) Score for BNB Data Events",procScore_n,procScore_l,procScore_h)
+h_pCScr_all_wCuts = rt.THStack("h_pCScr_all_wCuts", "Inclusive CCnue Selected Events")
+h_pCScr_CCnue_wCuts, h_pCScr_NCnue_wCuts, h_pCScr_CCnumu_wCuts, h_pCScr_NCnumu_wCuts, h_pCScr_ext_wCuts, h_pCScr_data_wCuts = configure_stacked_hists(h_pCScr_CCnue_wCuts, h_pCScr_NCnue_wCuts, h_pCScr_CCnumu_wCuts, h_pCScr_NCnumu_wCuts, h_pCScr_ext_wCuts, h_pCScr_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron's secondary (charged parent) score")
+
+
+
+h_pidConfVsProcConf_sig = rt.TH2F("h_pidConfVsProcConf_sig","PID Confidence vs. Process Confidence, Signal",21,-1,20,21,-1,20)
+h_pidConfVsProcConf_bkg = rt.TH2F("h_pidConfVsProcConf_bkg","PID Confidence vs. Process Confidence, Background",21,-1,20,21,-1,20)
+h_pidConfVsProcConf_nuBkg = rt.TH2F("h_pidConfVsProcConf_nuBkg","PID Confidence vs. Process Confidence, Background",21,-1,20,21,-1,20)
+h_pidConfVsProcConf_extBkg = rt.TH2F("h_pidConfVsProcConf_extBkg","PID Confidence vs. Process Confidence, Background",21,-1,20,21,-1,20)
+h_pidConf2VsProcConf2_sig = rt.TH2F("h_pidConf2VsProcConf2_sig","PID Confidence (Max) vs. Process Confidence (Max), Signal",21,-1,20,21,-1,20)
+h_pidConf2VsProcConf2_bkg = rt.TH2F("h_pidConf2VsProcConf2_bkg","PID Confidence (Max) vs. Process Confidence (Max), Background",21,-1,20,21,-1,20)
+h_pidConf2VsProcConf2_nuBkg = rt.TH2F("h_pidConf2VsProcConf2_nuBkg","PID Confidence (Max) vs. Process Confidence (Max), Background",21,-1,20,21,-1,20)
+h_pidConf2VsProcConf2_extBkg = rt.TH2F("h_pidConf2VsProcConf2_extBkg","PID Confidence (Max) vs. Process Confidence (Max), Background",21,-1,20,21,-1,20)
+h_pidConfVsProcConf_sig.GetXaxis().SetTitle("PID Confidence")
+h_pidConfVsProcConf_sig.GetYaxis().SetTitle("Process Confidence")
+h_pidConfVsProcConf_bkg.GetXaxis().SetTitle("PID Confidence")
+h_pidConfVsProcConf_bkg.GetYaxis().SetTitle("Process Confidence")
+h_pidConf2VsProcConf2_sig.GetXaxis().SetTitle("PID Confidence")
+h_pidConf2VsProcConf2_sig.GetYaxis().SetTitle("Process Confidence")
+h_pidConf2VsProcConf2_bkg.GetXaxis().SetTitle("PID Confidence")
+h_pidConf2VsProcConf2_bkg.GetYaxis().SetTitle("Process Confidence")
+
 
 h_phScVsPrSum_allMC_bkg = rt.TH2F("h_phScVsPrSum_allMC_bkg","Photon Score vs. Purity for Largest e- Shower in Neutrino Background",21,0,1.05,21,-20,1)
 h_phScVsPrSum_allMC_bkg.GetXaxis().SetTitle("total simulated particle purity")
@@ -679,6 +1050,8 @@ def FillNuHistos(h_CCnumu, h_NCnumu, h_NCnue, val, weight, eventType):
   return h_CCnumu, h_NCnumu, h_NCnue
 
 
+print("beginning bnb nu overlay loop")
+
 for i in range(tnu.GetEntries()):
 
   tnu.GetEntry(i)
@@ -711,11 +1084,11 @@ for i in range(tnu.GetEntries()):
   if eventType < 0:
     continue
 
-  vtxPos = rt.TVector3(tnu.vtxX, tnu.vtxY, tnu.vtxZ)
   if args.smallFV:
+    vtxPos = rt.TVector3(tnu.vtxX, tnu.vtxY, tnu.vtxZ)
     vtxIsFiducial = isFiducial(vtxPos)
   else:
-    vtxIsFiducial = isFiducialWC(vtxPos)
+    vtxIsFiducial = (tnu.vtxIsFiducial == 1)
   if args.oldVertexVar:
     if tnu.nVertices < 1 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
       continue
@@ -723,11 +1096,21 @@ for i in range(tnu.GetEntries()):
     if tnu.foundVertex == 0 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
       continue
 
+  recoNuE_GeV = tnu.recoNuE/1000.
+  if args.recoEOverflow and recoNuE_GeV > 2.6:
+    recoNuE_GeV = 2.7
+
+  h_visE_CCnumu_wCutSet1, h_visE_NCnumu_wCutSet1, h_visE_NCnue_wCutSet1 = FillNuHistos(h_visE_CCnumu_wCutSet1,
+    h_visE_NCnumu_wCutSet1, h_visE_NCnue_wCutSet1, recoNuE_GeV, tnu.xsecWeight, eventType)
+
   h_cosFrac_CCnumu, h_cosFrac_NCnumu, h_cosFrac_NCnue = FillNuHistos(h_cosFrac_CCnumu,
     h_cosFrac_NCnumu, h_cosFrac_NCnue, tnu.vtxFracHitsOnCosmic, tnu.xsecWeight, eventType)
 
   if tnu.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_NCnue_wCutSet2 = FillNuHistos(h_visE_CCnumu_wCutSet2,
+    h_visE_NCnumu_wCutSet2, h_visE_NCnue_wCutSet2, recoNuE_GeV, tnu.xsecWeight, eventType)
 
   if args.makeKPplots:
     nearestCosKP = 999.
@@ -748,10 +1131,13 @@ for i in range(tnu.GetEntries()):
   visE = 0.
   nMuons = 0
   nElectrons = 0
+  nPrimElectrons = 0
+  maxMuScore = -20
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
   elMaxPur = -1.
+  elMaxQEnergy = -1.
   elMaxQComp = -1.
   elMaxQPur = -1.
   elMaxQVtxDist = -1.
@@ -760,12 +1146,20 @@ for i in range(tnu.GetEntries()):
   elMaxQPhScore = -1.
   elMaxQPiScore = -1.
   elMaxQMuScore = -1.
+  elMaxQPrScore = -1.
   elMaxQElPurity = -1.
   elMaxQPhPurity = -1.
   elMaxQPiPurity = -1.
   elMaxQPuritySum = -1.
   elMaxQConf = -1.
+  elMaxQConf2 = -1.
   elMaxQFrac = -1.
+  elMaxQProc = -1
+  elMaxQPrimScore = -1.
+  elMaxQNtrlScore = -1.
+  elMaxQChgdScore = -1.
+  elMaxQPrimConf = -1.
+  elMaxQPrimConf2 = -1.
   elMaxQ = -1.
   muMaxQ = -1.
   muMaxComp = -1.
@@ -778,9 +1172,11 @@ for i in range(tnu.GetEntries()):
 
   for iT in range(tnu.nTracks):
     visE += tnu.trackCharge[iT]
-    if tnu.trackIsSecondary[iT] == 1:
+    if tnu.trackIsSecondary[iT] == 1 or tnu.trackClassified[iT] != 1:
       continue
-    if tnu.trackClassified[iT] == 1 and tnu.trackPID[iT] == 13:
+    if tnu.trackMuScore[iT] > maxMuScore:
+      maxMuScore = tnu.trackMuScore[iT]
+    if tnu.trackPID[iT] == 13:
       nMuons += 1
       if tnu.trackComp[iT] > args.compCut:
         nCompMuons += 1
@@ -798,15 +1194,21 @@ for i in range(tnu.GetEntries()):
     if tnu.showerClassified[iS] == 1:
       nClassShowers += 1
       avgShwComp += tnu.showerComp[iS]
-    if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0 or tnu.showerDistToVtx[iS] > args.distCut or tnu.showerComp[iS] < args.compCut or tnu.showerPurity[iS] < args.purityCut:
+    if tnu.showerIsSecondary[iS] == 1 or tnu.showerClassified[iS] == 0:
       continue
+    if nMuons == 0 and tnu.showerPID[iS] == 11 and tnu.showerProcess[iS] == 0:
+      nPrimElectrons += 1
     if nMuons == 0 and tnu.showerPID[iS] == 11:
       nElectrons += 1
       elConf = tnu.showerElScore[iS] - (tnu.showerPhScore[iS] + tnu.showerPiScore[iS])/2.
+      primConf = tnu.showerPrimaryScore[iS] - (tnu.showerFromNeutralScore[iS] + tnu.showerFromChargedScore[iS])/2.
+      elConf2 = tnu.showerElScore[iS] - max(tnu.showerPhScore[iS], tnu.showerPiScore[iS])
+      primConf2 = tnu.showerPrimaryScore[iS] - max(tnu.showerFromNeutralScore[iS], tnu.showerFromChargedScore[iS])
       if elConf > maxElConf:
         maxElConf = elConf
       if tnu.showerCharge[iS] > elMaxQ:
         elMaxQ = tnu.showerCharge[iS]
+        elMaxQEnergy = tnu.showerRecoE[iS]
         elMaxQComp = tnu.showerComp[iS]
         elMaxQPur = tnu.showerPurity[iS]
         elMaxQVtxDist = tnu.showerDistToVtx[iS]
@@ -815,11 +1217,19 @@ for i in range(tnu.GetEntries()):
         elMaxQPhScore = tnu.showerPhScore[iS]
         elMaxQPiScore = tnu.showerPiScore[iS]
         elMaxQMuScore = tnu.showerMuScore[iS]
+        elMaxQPrScore = tnu.showerPrScore[iS]
         elMaxQElPurity = tnu.showerTrueElPurity[iS]
         elMaxQPhPurity = tnu.showerTruePhPurity[iS]
         elMaxQPiPurity = tnu.showerTruePiPurity[iS]
         elMaxQPuritySum = tnu.showerTrueElPurity[iS] + tnu.showerTruePhPurity[iS] + tnu.showerTruePiPurity[iS] + tnu.showerTrueMuPurity[iS] + tnu.showerTruePrPurity[iS]
         elMaxQConf = elConf
+        elMaxQPrimConf = primConf
+        elMaxQConf2 = elConf2
+        elMaxQPrimConf2 = primConf2
+        elMaxQProc = tnu.showerProcess[iS]
+        elMaxQPrimScore = tnu.showerPrimaryScore[iS]
+        elMaxQNtrlScore = tnu.showerFromNeutralScore[iS]
+        elMaxQChgdScore = tnu.showerFromChargedScore[iS]
       if tnu.showerChargeFrac[iS] > elMaxQFrac:
         elMaxQFrac = tnu.showerChargeFrac[iS]
       if tnu.showerComp[iS] > elMaxComp:
@@ -828,14 +1238,22 @@ for i in range(tnu.GetEntries()):
         elMaxPur = tnu.showerPurity[iS]
 
   if nMuons == 0:
+    h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_NCnue_wCutSet3 = FillNuHistos(h_visE_CCnumu_wCutSet3,
+      h_visE_NCnumu_wCutSet3, h_visE_NCnue_wCutSet3, recoNuE_GeV, tnu.xsecWeight, eventType)
     h_nEl_CCnumu, h_nEl_NCnumu, h_nEl_NCnue = FillNuHistos(h_nEl_CCnumu,
       h_nEl_NCnumu, h_nEl_NCnue, nElectrons, tnu.xsecWeight, eventType)
+    h_nPrimEl_CCnumu, h_nPrimEl_NCnumu, h_nPrimEl_NCnue = FillNuHistos(h_nPrimEl_CCnumu,
+      h_nPrimEl_NCnumu, h_nPrimEl_NCnue, nPrimElectrons, tnu.xsecWeight, eventType)
   h_nMu_CCnumu, h_nMu_NCnumu, h_nMu_NCnue = FillNuHistos(h_nMu_CCnumu,
     h_nMu_NCnumu, h_nMu_NCnue, nMuons, tnu.xsecWeight, eventType)
   h_nCompMu_CCnumu, h_nCompMu_NCnumu, h_nCompMu_NCnue = FillNuHistos(h_nCompMu_CCnumu,
     h_nCompMu_NCnumu, h_nCompMu_NCnue, nCompMuons, tnu.xsecWeight, eventType)
 
+  #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_NCnue_wCutSet4 = FillNuHistos(h_visE_CCnumu_wCutSet4,
+      h_visE_NCnumu_wCutSet4, h_visE_NCnue_wCutSet4, recoNuE_GeV, tnu.xsecWeight, eventType)
 
     nonPrimShwCharge -= elMaxQ
     pcaEVsum = tnu.eventPCEigenVals[0] + tnu.eventPCEigenVals[1] + tnu.eventPCEigenVals[2]
@@ -845,163 +1263,272 @@ for i in range(tnu.GetEntries()):
     if not args.applyCosmicDeltaCut:
       deltaCosmic = False
 
-    h_maxElConf_CCnumu, h_maxElConf_NCnumu, h_maxElConf_NCnue = FillNuHistos(h_maxElConf_CCnumu,
-      h_maxElConf_NCnumu, h_maxElConf_NCnue, maxElConf, tnu.xsecWeight, eventType)
-    h_elMaxComp_CCnumu, h_elMaxComp_NCnumu, h_elMaxComp_NCnue = FillNuHistos(h_elMaxComp_CCnumu,
-      h_elMaxComp_NCnumu, h_elMaxComp_NCnue, elMaxComp, tnu.xsecWeight, eventType)
-    h_elMaxPur_CCnumu, h_elMaxPur_NCnumu, h_elMaxPur_NCnue = FillNuHistos(h_elMaxPur_CCnumu,
-      h_elMaxPur_NCnumu, h_elMaxPur_NCnue, elMaxPur, tnu.xsecWeight, eventType)
-    h_elMaxQComp_CCnumu, h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue = FillNuHistos(h_elMaxQComp_CCnumu,
-      h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
-    h_elMaxQPur_CCnumu, h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue = FillNuHistos(h_elMaxQPur_CCnumu,
-      h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue, elMaxQPur, tnu.xsecWeight, eventType)
-    h_elMaxQCosTheta_CCnumu, h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue = FillNuHistos(h_elMaxQCosTheta_CCnumu,
-      h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue, elMaxQCosTheta, tnu.xsecWeight, eventType)
-    h_elMaxQElScore_CCnumu, h_elMaxQElScore_NCnumu, h_elMaxQElScore_NCnue = FillNuHistos(h_elMaxQElScore_CCnumu,
-      h_elMaxQElScore_NCnumu, h_elMaxQElScore_NCnue, elMaxQElScore, tnu.xsecWeight, eventType)
-    h_elMaxQPhScore_CCnumu, h_elMaxQPhScore_NCnumu, h_elMaxQPhScore_NCnue = FillNuHistos(h_elMaxQPhScore_CCnumu,
-      h_elMaxQPhScore_NCnumu, h_elMaxQPhScore_NCnue, elMaxQPhScore, tnu.xsecWeight, eventType)
-    h_elMaxQPiScore_CCnumu, h_elMaxQPiScore_NCnumu, h_elMaxQPiScore_NCnue = FillNuHistos(h_elMaxQPiScore_CCnumu,
-      h_elMaxQPiScore_NCnumu, h_elMaxQPiScore_NCnue, elMaxQPiScore, tnu.xsecWeight, eventType)
-    h_elMaxQConf_CCnumu, h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue = FillNuHistos(h_elMaxQConf_CCnumu,
-      h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue, elMaxQConf, tnu.xsecWeight, eventType)
-    h_elMaxQF_CCnumu, h_elMaxQF_NCnumu, h_elMaxQF_NCnue = FillNuHistos(h_elMaxQF_CCnumu,
-      h_elMaxQF_NCnumu, h_elMaxQF_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
-    h_elMaxQ_CCnumu, h_elMaxQ_NCnumu, h_elMaxQ_NCnue = FillNuHistos(h_elMaxQ_CCnumu,
-      h_elMaxQ_NCnumu, h_elMaxQ_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+    confidenceCutPassed = ( ((elMaxQPrimScore - elMaxQChgdScore) > args.chgdScoreCut) and ((elMaxQPrimScore - elMaxQNtrlScore) > args.ntrlScoreCut) ) if args.useProcScoreCuts else (elMaxQConf > args.confCut)
 
-    if elMaxQFrac > args.chargeFracCut:
-      h_elMaxComp_wQFcut_CCnumu, h_elMaxComp_wQFcut_NCnumu, h_elMaxComp_wQFcut_NCnue = FillNuHistos(h_elMaxComp_wQFcut_CCnumu,
-        h_elMaxComp_wQFcut_NCnumu, h_elMaxComp_wQFcut_NCnue, elMaxComp, tnu.xsecWeight, eventType)
-      h_elMaxQ_wQFcut_CCnumu, h_elMaxQ_wQFcut_NCnumu, h_elMaxQ_wQFcut_NCnue = FillNuHistos(h_elMaxQ_wQFcut_CCnumu,
-        h_elMaxQ_wQFcut_NCnumu, h_elMaxQ_wQFcut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+    h_elMaxQProc_CCnumu, h_elMaxQProc_NCnumu, h_elMaxQProc_NCnue = FillNuHistos(h_elMaxQProc_CCnumu,
+      h_elMaxQProc_NCnumu, h_elMaxQProc_NCnue, elMaxQProc, tnu.xsecWeight, eventType)
 
-    if elMaxQ > args.chargeCut:
-      h_elMaxComp_wQcut_CCnumu, h_elMaxComp_wQcut_NCnumu, h_elMaxComp_wQcut_NCnue = FillNuHistos(h_elMaxComp_wQcut_CCnumu,
-        h_elMaxComp_wQcut_NCnumu, h_elMaxComp_wQcut_NCnue, elMaxComp, tnu.xsecWeight, eventType)
-      h_elMaxQF_wQcut_CCnumu, h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue = FillNuHistos(h_elMaxQF_wQcut_CCnumu,
-        h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
+    if elMaxQProc == 0:
 
-    #---- the winner ------------------------------------------
-    if elMaxQConf > args.confCut:
-      h_elMaxQComp_wConfCut_CCnumu, h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue = FillNuHistos(h_elMaxQComp_wConfCut_CCnumu,
-        h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
-      h_elMaxQVtxDist_wConfCut_CCnumu, h_elMaxQVtxDist_wConfCut_NCnumu, h_elMaxQVtxDist_wConfCut_NCnue = FillNuHistos(h_elMaxQVtxDist_wConfCut_CCnumu,
-        h_elMaxQVtxDist_wConfCut_NCnumu, h_elMaxQVtxDist_wConfCut_NCnue, elMaxQVtxDist, tnu.xsecWeight, eventType)
-      h_elMaxQCosTheta_wConfCut_CCnumu, h_elMaxQCosTheta_wConfCut_NCnumu, h_elMaxQCosTheta_wConfCut_NCnue = FillNuHistos(h_elMaxQCosTheta_wConfCut_CCnumu,
-        h_elMaxQCosTheta_wConfCut_NCnumu, h_elMaxQCosTheta_wConfCut_NCnue, elMaxQCosTheta, tnu.xsecWeight, eventType)
-      h_elMaxQF_wConfCut_CCnumu, h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue = FillNuHistos(h_elMaxQF_wConfCut_CCnumu,
-        h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
-      h_elMaxQ_wConfCut_CCnumu, h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue = FillNuHistos(h_elMaxQ_wConfCut_CCnumu,
-        h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
-      if args.makeKPplots:
-        h_cosKPDist_wConfCut_CCnumu, h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue = FillNuHistos(h_cosKPDist_wConfCut_CCnumu,
-          h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue, nearestCosKP, tnu.xsecWeight, eventType)
-        h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue = FillNuHistos(h_tEndKPDist_wConfCut_CCnumu,
-          h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue, nearestTEndKP, tnu.xsecWeight, eventType)
+      h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_NCnue_wCutSet5 = FillNuHistos(h_visE_CCnumu_wCutSet5,
+        h_visE_NCnumu_wCutSet5, h_visE_NCnue_wCutSet5, recoNuE_GeV, tnu.xsecWeight, eventType)
 
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
+      h_pidConfVsProcConf_nuBkg.Fill(elMaxQConf, elMaxQPrimConf, tnu.xsecWeight)
+      h_pidConf2VsProcConf2_nuBkg.Fill(elMaxQConf2, elMaxQPrimConf2, tnu.xsecWeight)
+
+      h_maxMuScore_CCnumu, h_maxMuScore_NCnumu, h_maxMuScore_NCnue = FillNuHistos(h_maxMuScore_CCnumu,
+        h_maxMuScore_NCnumu, h_maxMuScore_NCnue, maxMuScore, tnu.xsecWeight, eventType)
+
+    if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_NCnue_wCutSet6 = FillNuHistos(h_visE_CCnumu_wCutSet6,
+        h_visE_NCnumu_wCutSet6, h_visE_NCnue_wCutSet6, recoNuE_GeV, tnu.xsecWeight, eventType)
+
+      h_vtxScore_CCnumu, h_vtxScore_NCnumu, h_vtxScore_NCnue = FillNuHistos(h_vtxScore_CCnumu,
+        h_vtxScore_NCnumu, h_vtxScore_NCnue, tnu.vtxScore, tnu.xsecWeight, eventType)
+      h_maxElConf_CCnumu, h_maxElConf_NCnumu, h_maxElConf_NCnue = FillNuHistos(h_maxElConf_CCnumu,
+        h_maxElConf_NCnumu, h_maxElConf_NCnue, maxElConf, tnu.xsecWeight, eventType)
+      h_elMaxComp_CCnumu, h_elMaxComp_NCnumu, h_elMaxComp_NCnue = FillNuHistos(h_elMaxComp_CCnumu,
+        h_elMaxComp_NCnumu, h_elMaxComp_NCnue, elMaxComp, tnu.xsecWeight, eventType)
+      h_elMaxPur_CCnumu, h_elMaxPur_NCnumu, h_elMaxPur_NCnue = FillNuHistos(h_elMaxPur_CCnumu,
+        h_elMaxPur_NCnumu, h_elMaxPur_NCnue, elMaxPur, tnu.xsecWeight, eventType)
+      h_elMaxQComp_CCnumu, h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue = FillNuHistos(h_elMaxQComp_CCnumu,
+        h_elMaxQComp_NCnumu, h_elMaxQComp_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
+      h_elMaxQPur_CCnumu, h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue = FillNuHistos(h_elMaxQPur_CCnumu,
+        h_elMaxQPur_NCnumu, h_elMaxQPur_NCnue, elMaxQPur, tnu.xsecWeight, eventType)
+      h_elMaxQCosTheta_CCnumu, h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue = FillNuHistos(h_elMaxQCosTheta_CCnumu,
+        h_elMaxQCosTheta_NCnumu, h_elMaxQCosTheta_NCnue, elMaxQCosTheta, tnu.xsecWeight, eventType)
+      h_elMaxQElScore_CCnumu, h_elMaxQElScore_NCnumu, h_elMaxQElScore_NCnue = FillNuHistos(h_elMaxQElScore_CCnumu,
+        h_elMaxQElScore_NCnumu, h_elMaxQElScore_NCnue, elMaxQElScore, tnu.xsecWeight, eventType)
+      h_elMaxQPhScore_CCnumu, h_elMaxQPhScore_NCnumu, h_elMaxQPhScore_NCnue = FillNuHistos(h_elMaxQPhScore_CCnumu,
+        h_elMaxQPhScore_NCnumu, h_elMaxQPhScore_NCnue, elMaxQPhScore, tnu.xsecWeight, eventType)
+      h_elMaxQPiScore_CCnumu, h_elMaxQPiScore_NCnumu, h_elMaxQPiScore_NCnue = FillNuHistos(h_elMaxQPiScore_CCnumu,
+        h_elMaxQPiScore_NCnumu, h_elMaxQPiScore_NCnue, elMaxQPiScore, tnu.xsecWeight, eventType)
+      if args.useProcScoreCuts:
+        if confidenceCutPassed:
+          h_elMaxQConf_CCnumu, h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue = FillNuHistos(h_elMaxQConf_CCnumu,
+            h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue, elMaxQConf, tnu.xsecWeight, eventType)
+          h_elMaxQConf2_CCnumu, h_elMaxQConf2_NCnumu, h_elMaxQConf2_NCnue = FillNuHistos(h_elMaxQConf2_CCnumu,
+            h_elMaxQConf2_NCnumu, h_elMaxQConf2_NCnue, elMaxQConf2, tnu.xsecWeight, eventType)
+      else:
+        h_elMaxQConf_CCnumu, h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue = FillNuHistos(h_elMaxQConf_CCnumu,
+          h_elMaxQConf_NCnumu, h_elMaxQConf_NCnue, elMaxQConf, tnu.xsecWeight, eventType)
+        h_elMaxQConf2_CCnumu, h_elMaxQConf2_NCnumu, h_elMaxQConf2_NCnue = FillNuHistos(h_elMaxQConf2_CCnumu,
+          h_elMaxQConf2_NCnumu, h_elMaxQConf2_NCnue, elMaxQConf2, tnu.xsecWeight, eventType)
+      h_elMaxQF_CCnumu, h_elMaxQF_NCnumu, h_elMaxQF_NCnue = FillNuHistos(h_elMaxQF_CCnumu,
+        h_elMaxQF_NCnumu, h_elMaxQF_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
+      h_elMaxQ_CCnumu, h_elMaxQ_NCnumu, h_elMaxQ_NCnue = FillNuHistos(h_elMaxQ_CCnumu,
+        h_elMaxQ_NCnumu, h_elMaxQ_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+      h_elMaxQPrimScore_CCnumu, h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_NCnue = FillNuHistos(h_elMaxQPrimScore_CCnumu,
+        h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_NCnue, elMaxQPrimScore, tnu.xsecWeight, eventType)
+      h_elMaxQNtrlScore_CCnumu, h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_NCnue = FillNuHistos(h_elMaxQNtrlScore_CCnumu,
+        h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_NCnue, elMaxQNtrlScore, tnu.xsecWeight, eventType)
+      h_elMaxQChgdScore_CCnumu, h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_NCnue = FillNuHistos(h_elMaxQChgdScore_CCnumu,
+        h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_NCnue, elMaxQChgdScore, tnu.xsecWeight, eventType)
+      h_elMaxQPrimConf_CCnumu, h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_NCnue = FillNuHistos(h_elMaxQPrimConf_CCnumu,
+        h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_NCnue, elMaxQPrimConf, tnu.xsecWeight, eventType)
+      h_elMaxQPrimConf2_CCnumu, h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_NCnue = FillNuHistos(h_elMaxQPrimConf2_CCnumu,
+        h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_NCnue, elMaxQPrimConf2, tnu.xsecWeight, eventType)
+  
+      if elMaxQFrac > args.chargeFracCut:
+        h_elMaxComp_wQFcut_CCnumu, h_elMaxComp_wQFcut_NCnumu, h_elMaxComp_wQFcut_NCnue = FillNuHistos(h_elMaxComp_wQFcut_CCnumu,
+          h_elMaxComp_wQFcut_NCnumu, h_elMaxComp_wQFcut_NCnue, elMaxComp, tnu.xsecWeight, eventType)
+        h_elMaxQ_wQFcut_CCnumu, h_elMaxQ_wQFcut_NCnumu, h_elMaxQ_wQFcut_NCnue = FillNuHistos(h_elMaxQ_wQFcut_CCnumu,
+          h_elMaxQ_wQFcut_NCnumu, h_elMaxQ_wQFcut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+  
+      if elMaxQ > args.chargeCut:
+        h_elMaxComp_wQcut_CCnumu, h_elMaxComp_wQcut_NCnumu, h_elMaxComp_wQcut_NCnue = FillNuHistos(h_elMaxComp_wQcut_CCnumu,
+          h_elMaxComp_wQcut_NCnumu, h_elMaxComp_wQcut_NCnue, elMaxComp, tnu.xsecWeight, eventType)
+        h_elMaxQF_wQcut_CCnumu, h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue = FillNuHistos(h_elMaxQF_wQcut_CCnumu,
+          h_elMaxQF_wQcut_NCnumu, h_elMaxQF_wQcut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
+  
+      #---- the winner ------------------------------------------
+      if confidenceCutPassed:
+        h_vtxScore_wConfCut_CCnumu, h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_NCnue = FillNuHistos(h_vtxScore_wConfCut_CCnumu,
+          h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_NCnue, tnu.vtxScore, tnu.xsecWeight, eventType)
+        h_elMaxQPrimScore_wConfCut_CCnumu, h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_NCnue = FillNuHistos(h_elMaxQPrimScore_wConfCut_CCnumu,
+          h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_NCnue, elMaxQPrimScore, tnu.xsecWeight, eventType)
+        h_elMaxQNtrlScore_wConfCut_CCnumu, h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_NCnue = FillNuHistos(h_elMaxQNtrlScore_wConfCut_CCnumu,
+          h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_NCnue, elMaxQNtrlScore, tnu.xsecWeight, eventType)
+        h_elMaxQChgdScore_wConfCut_CCnumu, h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_NCnue = FillNuHistos(h_elMaxQChgdScore_wConfCut_CCnumu,
+          h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_NCnue, elMaxQChgdScore, tnu.xsecWeight, eventType)
+        h_elMaxQPrimConf_wConfCut_CCnumu, h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_NCnue = FillNuHistos(h_elMaxQPrimConf_wConfCut_CCnumu,
+          h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_NCnue, elMaxQPrimConf, tnu.xsecWeight, eventType)
+        h_elMaxQPrimConf2_wConfCut_CCnumu, h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_NCnue = FillNuHistos(h_elMaxQPrimConf2_wConfCut_CCnumu,
+          h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_NCnue, elMaxQPrimConf2, tnu.xsecWeight, eventType)
+        h_elMaxQComp_wConfCut_CCnumu, h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue = FillNuHistos(h_elMaxQComp_wConfCut_CCnumu,
+          h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_NCnue, elMaxQComp, tnu.xsecWeight, eventType)
+        h_elMaxQVtxDist_wConfCut_CCnumu, h_elMaxQVtxDist_wConfCut_NCnumu, h_elMaxQVtxDist_wConfCut_NCnue = FillNuHistos(h_elMaxQVtxDist_wConfCut_CCnumu,
+          h_elMaxQVtxDist_wConfCut_NCnumu, h_elMaxQVtxDist_wConfCut_NCnue, elMaxQVtxDist, tnu.xsecWeight, eventType)
+        h_elMaxQCosTheta_wConfCut_CCnumu, h_elMaxQCosTheta_wConfCut_NCnumu, h_elMaxQCosTheta_wConfCut_NCnue = FillNuHistos(h_elMaxQCosTheta_wConfCut_CCnumu,
+          h_elMaxQCosTheta_wConfCut_NCnumu, h_elMaxQCosTheta_wConfCut_NCnue, elMaxQCosTheta, tnu.xsecWeight, eventType)
+        h_elMaxQF_wConfCut_CCnumu, h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue = FillNuHistos(h_elMaxQF_wConfCut_CCnumu,
+          h_elMaxQF_wConfCut_NCnumu, h_elMaxQF_wConfCut_NCnue, elMaxQFrac, tnu.xsecWeight, eventType)
+        h_elMaxQ_wConfCut_CCnumu, h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue = FillNuHistos(h_elMaxQ_wConfCut_CCnumu,
+          h_elMaxQ_wConfCut_NCnumu, h_elMaxQ_wConfCut_NCnue, elMaxQ, tnu.xsecWeight, eventType)
+        if args.makeKPplots:
+          h_cosKPDist_wConfCut_CCnumu, h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue = FillNuHistos(h_cosKPDist_wConfCut_CCnumu,
+            h_cosKPDist_wConfCut_NCnumu, h_cosKPDist_wConfCut_NCnue, nearestCosKP, tnu.xsecWeight, eventType)
+          h_tEndKPDist_wConfCut_CCnumu, h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue = FillNuHistos(h_tEndKPDist_wConfCut_CCnumu,
+            h_tEndKPDist_wConfCut_NCnumu, h_tEndKPDist_wConfCut_NCnue, nearestTEndKP, tnu.xsecWeight, eventType)
+
+        h_pca0y_wConfCut_CCnumu, h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_NCnue = FillNuHistos(h_pca0y_wConfCut_CCnumu, h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_NCnue, tnu.eventPCAxis0[1], tnu.xsecWeight, eventType)
+        h_pca0z_wConfCut_CCnumu, h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_NCnue = FillNuHistos(h_pca0z_wConfCut_CCnumu, h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_NCnue, tnu.eventPCAxis0[2], tnu.xsecWeight, eventType)
+        if tnu.eventPCAxis0[1] > 0.:
+          h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_NCnue = FillNuHistos(h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_NCnue, 0., tnu.xsecWeight, eventType)
+        else:
+          h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_NCnue = FillNuHistos(h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_NCnue, nonPrimShwCharge, tnu.xsecWeight, eventType)
+        if tnu.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000.:
+          h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_NCnue = FillNuHistos(h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_NCnue, 0., tnu.xsecWeight, eventType)
+        else:
+          h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_NCnue = FillNuHistos(h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_NCnue, pcaEVratio, tnu.xsecWeight, eventType)
+        if tnu.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000. or pcaEVratio < 0.9:
+          h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue = FillNuHistos(h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue, -1., tnu.xsecWeight, eventType)
+        else:
+          h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue = FillNuHistos(h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue, avgShwComp, tnu.xsecWeight, eventType)
+  
+        if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tnu.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
+          if eventType == 0:
+            n_runs1to3_CCnumu_pass += tnu.xsecWeight
+            h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+            h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+              h_visE_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and recoElP > 2.6:
+              h_lepP_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_lepP_CCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_cosTheta_CCnumu_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
+            h_elScr_CCnumu_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
+            h_phScr_CCnumu_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
+            h_piScr_CCnumu_wCuts.Fill(elMaxQPiScore, tnu.xsecWeight)
+            h_muScr_CCnumu_wCuts.Fill(elMaxQMuScore, tnu.xsecWeight)
+            h_prScr_CCnumu_wCuts.Fill(elMaxQPrScore, tnu.xsecWeight)
+            h_pPScr_CCnumu_wCuts.Fill(elMaxQPrimScore, tnu.xsecWeight)
+            h_pNScr_CCnumu_wCuts.Fill(elMaxQNtrlScore, tnu.xsecWeight)
+            h_pCScr_CCnumu_wCuts.Fill(elMaxQChgdScore, tnu.xsecWeight)
+          if eventType == 1:
+            n_runs1to3_NCnumu_pass += tnu.xsecWeight
+            h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+            h_nuEr_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+              h_visE_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and recoElP > 2.6:
+              h_lepP_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_lepP_NCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_cosTheta_NCnumu_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
+            h_elScr_NCnumu_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
+            h_phScr_NCnumu_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
+            h_piScr_NCnumu_wCuts.Fill(elMaxQPiScore, tnu.xsecWeight)
+            h_muScr_NCnumu_wCuts.Fill(elMaxQMuScore, tnu.xsecWeight)
+            h_prScr_NCnumu_wCuts.Fill(elMaxQPrScore, tnu.xsecWeight)
+            h_pPScr_NCnumu_wCuts.Fill(elMaxQPrimScore, tnu.xsecWeight)
+            h_pNScr_NCnumu_wCuts.Fill(elMaxQNtrlScore, tnu.xsecWeight)
+            h_pCScr_NCnumu_wCuts.Fill(elMaxQChgdScore, tnu.xsecWeight)
+          if eventType == 2:
+            n_runs1to3_NCnue_pass += tnu.xsecWeight
+            h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+            h_nuEr_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
+              h_visE_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            if args.recoEOverflow and recoElP > 2.6:
+              h_lepP_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
+            else:
+              h_lepP_NCnue_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_cosTheta_NCnue_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
+            h_elScr_NCnue_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
+            h_phScr_NCnue_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
+            h_piScr_NCnue_wCuts.Fill(elMaxQPiScore, tnu.xsecWeight)
+            h_muScr_NCnue_wCuts.Fill(elMaxQMuScore, tnu.xsecWeight)
+            h_prScr_NCnue_wCuts.Fill(elMaxQPrScore, tnu.xsecWeight)
+            h_pPScr_NCnue_wCuts.Fill(elMaxQPrimScore, tnu.xsecWeight)
+            h_pNScr_NCnue_wCuts.Fill(elMaxQNtrlScore, tnu.xsecWeight)
+            h_pCScr_NCnue_wCuts.Fill(elMaxQChgdScore, tnu.xsecWeight)
+  
+      else:
+        h_phScVsPrSum_allMC_bkg.Fill(elMaxQPuritySum, elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQPuritySum < 1e-3:
+          h_phScPrSumEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        elif elMaxQPhPurity < 1e-3:
+          h_phScPrSumGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQPiPurity < 1e-3:
+          h_piScPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        else:
+          h_piScPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+        if elMaxQPhPurity < 1e-3:
+          h_phScPrEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        else:
+          h_phScPrGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+        if elMaxQElPurity < 1e-3:
+          h_elScPrEq0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+          h_piScElPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+          h_muScElPrEq0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
+        else:
+          h_elScPrGr0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+          h_piScElPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+          h_muScElPrGr0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
         if eventType == 0:
-          n_runs1to3_CCnumu_pass += tnu.xsecWeight
-          h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-            h_visE_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+          h_piScVsPr_CCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+          h_phScVsPr_CCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+          h_elScVsPr_CCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+          if elMaxQPiPurity < 1e-3:
+            h_piScPrEq0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
           else:
-            h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            h_piScPrGr0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+          if elMaxQPhPurity < 1e-3:
+            h_phScPrEq0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          else:
+            h_phScPrGr0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          if elMaxQElPurity < 1e-3:
+            h_elScPrEq0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+          else:
+            h_elScPrGr0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
         if eventType == 1:
-          n_runs1to3_NCnumu_pass += tnu.xsecWeight
-          h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_nuEr_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-            h_visE_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+          h_piScVsPr_NCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+          h_phScVsPr_NCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+          h_elScVsPr_NCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+          if elMaxQPiPurity < 1e-3:
+            h_piScPrEq0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
           else:
-            h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
+            h_piScPrGr0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+          if elMaxQPhPurity < 1e-3:
+            h_phScPrEq0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          else:
+            h_phScPrGr0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          if elMaxQElPurity < 1e-3:
+            h_elScPrEq0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+          else:
+            h_elScPrGr0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
         if eventType == 2:
-          n_runs1to3_NCnue_pass += tnu.xsecWeight
-          h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
-          h_nuEr_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-          if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-            h_visE_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
+          h_piScVsPr_NCnue_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
+          h_phScVsPr_NCnue_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
+          h_elScVsPr_NCnue_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
+          if elMaxQPiPurity < 1e-3:
+            h_piScPrEq0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
           else:
-            h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-
-    else:
-      h_phScVsPrSum_allMC_bkg.Fill(elMaxQPuritySum, elMaxQPhScore, tnu.xsecWeight)
-      if elMaxQPuritySum < 1e-3:
-        h_phScPrSumEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-      elif elMaxQPhPurity < 1e-3:
-        h_phScPrSumGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-      if elMaxQPiPurity < 1e-3:
-        h_piScPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-      else:
-        h_piScPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-      if elMaxQPhPurity < 1e-3:
-        h_phScPrEq0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-      else:
-        h_phScPrGr0_allMC_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-      if elMaxQElPurity < 1e-3:
-        h_elScPrEq0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-        h_piScElPrEq0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        h_muScElPrEq0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
-      else:
-        h_elScPrGr0_allMC_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-        h_piScElPrGr0_allMC_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        h_muScElPrGr0_allMC_bkg.Fill(elMaxQMuScore, tnu.xsecWeight)
-      if eventType == 0:
-        h_piScVsPr_CCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
-        h_phScVsPr_CCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
-        h_elScVsPr_CCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
-        if elMaxQPiPurity < 1e-3:
-          h_piScPrEq0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        else:
-          h_piScPrGr0_CCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        if elMaxQPhPurity < 1e-3:
-          h_phScPrEq0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        else:
-          h_phScPrGr0_CCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        if elMaxQElPurity < 1e-3:
-          h_elScPrEq0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-        else:
-          h_elScPrGr0_CCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-      if eventType == 1:
-        h_piScVsPr_NCnumu_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
-        h_phScVsPr_NCnumu_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
-        h_elScVsPr_NCnumu_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
-        if elMaxQPiPurity < 1e-3:
-          h_piScPrEq0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        else:
-          h_piScPrGr0_NCnumu_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        if elMaxQPhPurity < 1e-3:
-          h_phScPrEq0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        else:
-          h_phScPrGr0_NCnumu_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        if elMaxQElPurity < 1e-3:
-          h_elScPrEq0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-        else:
-          h_elScPrGr0_NCnumu_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-      if eventType == 2:
-        h_piScVsPr_NCnue_bkg.Fill(elMaxQPiPurity, elMaxQPiScore, tnu.xsecWeight)
-        h_phScVsPr_NCnue_bkg.Fill(elMaxQPhPurity, elMaxQPhScore, tnu.xsecWeight)
-        h_elScVsPr_NCnue_bkg.Fill(elMaxQElPurity, elMaxQElScore, tnu.xsecWeight)
-        if elMaxQPiPurity < 1e-3:
-          h_piScPrEq0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        else:
-          h_piScPrGr0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
-        if elMaxQPhPurity < 1e-3:
-          h_phScPrEq0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        else:
-          h_phScPrGr0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
-        if elMaxQElPurity < 1e-3:
-          h_elScPrEq0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-        else:
-          h_elScPrGr0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
-    #--------------------------------------------------------------
-    #if eventType == 0 and elMaxQElScore > -1. and (elMaxQPhScore > -1. or elMaxQPiScore > -1.):
-    ##elif eventType == 0:
-    #  if elMaxQConf > args.confCut:
-    #    print("THIS IS SIGNAL!!!!!")
-    #  print("CC numu background (fileid, run, subrun, event): (%i, %i, %i, %i) with (e-,ph,pi) scores: (%f, %f, %f) removed"%(tnu.fileid,tnu.run,tnu.subrun,tnu.event,elMaxQElScore,elMaxQPhScore,elMaxQPiScore))
+            h_piScPrGr0_NCnue_bkg.Fill(elMaxQPiScore, tnu.xsecWeight)
+          if elMaxQPhPurity < 1e-3:
+            h_phScPrEq0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          else:
+            h_phScPrGr0_NCnue_bkg.Fill(elMaxQPhScore, tnu.xsecWeight)
+          if elMaxQElPurity < 1e-3:
+            h_elScPrEq0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+          else:
+            h_elScPrGr0_NCnue_bkg.Fill(elMaxQElScore, tnu.xsecWeight)
+      #--------------------------------------------------------------
+      #if eventType == 0 and elMaxQElScore > -1. and (elMaxQPhScore > -1. or elMaxQPiScore > -1.):
+      ##elif eventType == 0:
+      #  if elMaxQConf > args.confCut:
+      #    print("THIS IS SIGNAL!!!!!")
+      #  print("CC numu background (fileid, run, subrun, event): (%i, %i, %i, %i) with (e-,ph,pi) scores: (%f, %f, %f) removed"%(tnu.fileid,tnu.run,tnu.subrun,tnu.event,elMaxQElScore,elMaxQPhScore,elMaxQPiScore))
 
   if nMuons >= 1:
     h_muMaxComp_CCnumu, h_muMaxComp_NCnumu, h_muMaxComp_NCnue = FillNuHistos(h_muMaxComp_CCnumu,
@@ -1017,6 +1544,8 @@ for i in range(tnu.GetEntries()):
     
 
 
+
+print("beginning bnb intrinsic nue overlay loop")
 
 for i in range(tnue.GetEntries()):
 
@@ -1035,17 +1564,23 @@ for i in range(tnue.GetEntries()):
   h_nuE_CCnue_nCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
   h_nuEr_CCnue_nCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
 
-  vtxPos = rt.TVector3(tnue.vtxX, tnue.vtxY, tnue.vtxZ)
   if args.smallFV:
+    vtxPos = rt.TVector3(tnue.vtxX, tnue.vtxY, tnue.vtxZ)
     vtxIsFiducial = isFiducial(vtxPos)
   else:
-    vtxIsFiducial = isFiducialWC(vtxPos)
+    vtxIsFiducial = (tnue.vtxIsFiducial == 1)
   if args.oldVertexVar:
     if tnue.nVertices < 1 or not vtxIsFiducial: #tnue.vtxIsFiducial != 1:
       continue
   else:
     if tnue.foundVertex == 0 or not vtxIsFiducial: #tnue.vtxIsFiducial != 1:
       continue
+
+  recoNuE_GeV = tnue.recoNuE/1000.
+  if args.recoEOverflow and recoNuE_GeV > 2.6:
+    recoNuE_GeV = 2.7
+
+  h_visE_CCnue_wCutSet1.Fill(recoNuE_GeV, tnue.xsecWeight)
 
   h_cosFrac_CCnue.Fill(tnue.vtxFracHitsOnCosmic, tnue.xsecWeight)
   #if tnue.vtxFracHitsOnCosmic < 0 or tnue.vtxFracHitsOnCosmic > 1.:
@@ -1054,6 +1589,8 @@ for i in range(tnue.GetEntries()):
 
   if tnue.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  h_visE_CCnue_wCutSet2.Fill(recoNuE_GeV, tnue.xsecWeight)
 
   if args.makeKPplots:
     nearestCosKP = 999.
@@ -1072,10 +1609,13 @@ for i in range(tnue.GetEntries()):
   visE = 0.
   nMuons = 0
   nElectrons = 0
+  nPrimElectrons = 0
+  maxMuScore = -20
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
   elMaxPur = -1.
+  elMaxQEnergy = -1.
   elMaxQComp = -1.
   elMaxQPur = -1.
   elMaxQVtxDist = -1.
@@ -1083,8 +1623,17 @@ for i in range(tnue.GetEntries()):
   elMaxQElScore = -1.
   elMaxQPhScore = -1.
   elMaxQPiScore = -1.
+  elMaxQMuScore = -1.
+  elMaxQPrScore = -1.
   elMaxQConf = -1.
+  elMaxQConf2 = -1.
   elMaxQFrac = -1.
+  elMaxQProc = -1
+  elMaxQPrimScore = -1.
+  elMaxQNtrlScore = -1.
+  elMaxQChgdScore = -1.
+  elMaxQPrimConf = -1.
+  elMaxQPrimConf2 = -1.
   elMaxQ = -1.
   muMaxQ = -1.
   muMaxComp = -1.
@@ -1097,9 +1646,11 @@ for i in range(tnue.GetEntries()):
 
   for iT in range(tnue.nTracks):
     visE += tnue.trackCharge[iT]
-    if tnue.trackIsSecondary[iT] == 1:
+    if tnue.trackIsSecondary[iT] == 1 or tnue.trackClassified[iT] != 1:
       continue
-    if tnue.trackClassified[iT] == 1 and tnue.trackPID[iT] == 13:
+    if tnue.trackMuScore[iT] > maxMuScore:
+      maxMuScore = tnue.trackMuScore[iT]
+    if tnue.trackPID[iT] == 13:
       nMuons += 1
       if tnue.trackComp[iT] > args.compCut:
         nCompMuons += 1
@@ -1117,15 +1668,21 @@ for i in range(tnue.GetEntries()):
     if tnue.showerClassified[iS] == 1:
       nClassShowers += 1
       avgShwComp += tnue.showerComp[iS]
-    if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0 or tnue.showerDistToVtx[iS] > args.distCut or tnue.showerComp[iS] < args.compCut or tnue.showerPurity[iS] < args.purityCut:
+    if tnue.showerIsSecondary[iS] == 1 or tnue.showerClassified[iS] == 0:
       continue
+    if nMuons == 0 and tnue.showerPID[iS] == 11 and tnue.showerProcess[iS] == 0:
+      nPrimElectrons += 1
     if nMuons == 0 and tnue.showerPID[iS] == 11:
       nElectrons += 1
       elConf = tnue.showerElScore[iS] - (tnue.showerPhScore[iS] + tnue.showerPiScore[iS])/2.
+      primConf = tnue.showerPrimaryScore[iS] - (tnue.showerFromNeutralScore[iS] + tnue.showerFromChargedScore[iS])/2.
+      elConf2 = tnue.showerElScore[iS] - max(tnue.showerPhScore[iS], tnue.showerPiScore[iS])
+      primConf2 = tnue.showerPrimaryScore[iS] - max(tnue.showerFromNeutralScore[iS], tnue.showerFromChargedScore[iS])
       if elConf > maxElConf:
         maxElConf = elConf
       if tnue.showerCharge[iS] > elMaxQ:
         elMaxQ = tnue.showerCharge[iS]
+        elMaxQEnergy = tnue.showerRecoE[iS]
         elMaxQComp = tnue.showerComp[iS]
         elMaxQPur = tnue.showerPurity[iS]
         elMaxQVtxDist = tnue.showerDistToVtx[iS]
@@ -1133,7 +1690,16 @@ for i in range(tnue.GetEntries()):
         elMaxQElScore = tnue.showerElScore[iS]
         elMaxQPhScore = tnue.showerPhScore[iS]
         elMaxQPiScore = tnue.showerPiScore[iS]
+        elMaxQMuScore = tnue.showerMuScore[iS]
+        elMaxQPrScore = tnue.showerPrScore[iS]
         elMaxQConf = elConf
+        elMaxQPrimConf = primConf
+        elMaxQConf2 = elConf2
+        elMaxQPrimConf2 = primConf2
+        elMaxQProc = tnue.showerProcess[iS]
+        elMaxQPrimScore = tnue.showerPrimaryScore[iS]
+        elMaxQNtrlScore = tnue.showerFromNeutralScore[iS]
+        elMaxQChgdScore = tnue.showerFromChargedScore[iS]
       if tnue.showerChargeFrac[iS] > elMaxQFrac:
         elMaxQFrac = tnue.showerChargeFrac[iS]
       if tnue.showerComp[iS] > elMaxComp:
@@ -1142,11 +1708,16 @@ for i in range(tnue.GetEntries()):
         elMaxPur = tnue.showerPurity[iS]
 
   if nMuons == 0:
+    h_visE_CCnue_wCutSet3.Fill(recoNuE_GeV, tnue.xsecWeight)
     h_nEl_CCnue.Fill(nElectrons, tnue.xsecWeight)
+    h_nPrimEl_CCnue.Fill(nPrimElectrons, tnue.xsecWeight)
   h_nMu_CCnue.Fill(nMuons, tnue.xsecWeight)
   h_nCompMu_CCnue.Fill(nCompMuons, tnue.xsecWeight)
 
+  #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    h_visE_CCnue_wCutSet4.Fill(recoNuE_GeV, tnue.xsecWeight)
 
     nonPrimShwCharge -= elMaxQ
     pcaEVsum = tnue.eventPCEigenVals[0] + tnue.eventPCEigenVals[1] + tnue.eventPCEigenVals[2]
@@ -1156,41 +1727,104 @@ for i in range(tnue.GetEntries()):
     if not args.applyCosmicDeltaCut:
       deltaCosmic = False
 
-    h_maxElConf_CCnue.Fill(maxElConf, tnue.xsecWeight)
-    h_elMaxComp_CCnue.Fill(elMaxComp, tnue.xsecWeight)
-    h_elMaxPur_CCnue.Fill(elMaxPur, tnue.xsecWeight)
-    h_elMaxQComp_CCnue.Fill(elMaxQComp, tnue.xsecWeight)
-    h_elMaxQPur_CCnue.Fill(elMaxQPur, tnue.xsecWeight)
-    h_elMaxQCosTheta_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
-    h_elMaxQElScore_CCnue.Fill(elMaxQElScore, tnue.xsecWeight)
-    h_elMaxQPhScore_CCnue.Fill(elMaxQPhScore, tnue.xsecWeight)
-    h_elMaxQPiScore_CCnue.Fill(elMaxQPiScore, tnue.xsecWeight)
-    h_elMaxQConf_CCnue.Fill(elMaxQConf, tnue.xsecWeight)
-    h_elMaxQF_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
-    h_elMaxQ_CCnue.Fill(elMaxQ, tnue.xsecWeight)
-    if elMaxQFrac > args.chargeFracCut:
-      h_elMaxComp_wQFcut_CCnue.Fill(elMaxComp, tnue.xsecWeight)
-      h_elMaxQ_wQFcut_CCnue.Fill(elMaxQ, tnue.xsecWeight)
-    if elMaxQ > args.chargeCut:
-      h_elMaxComp_wQcut_CCnue.Fill(elMaxComp, tnue.xsecWeight)
-      h_elMaxQF_wQcut_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
-    if elMaxQConf > args.confCut:
-      h_elMaxQComp_wConfCut_CCnue.Fill(elMaxQComp, tnue.xsecWeight)
-      h_elMaxQVtxDist_wConfCut_CCnue.Fill(elMaxQVtxDist, tnue.xsecWeight)
-      h_elMaxQCosTheta_wConfCut_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
-      h_elMaxQF_wConfCut_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
-      h_elMaxQ_wConfCut_CCnue.Fill(elMaxQ, tnue.xsecWeight)
-      if args.makeKPplots:
-        h_cosKPDist_wConfCut_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
-        h_tEndKPDist_wConfCut_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
-        n_runs1to3_CCnue_pass += tnue.xsecWeight
-        h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
-        h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
-        if args.recoEOverflow and tnue.recoNuE/1000. > 2.6:
-          h_visE_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+    confidenceCutPassed = ( ((elMaxQPrimScore - elMaxQChgdScore) > args.chgdScoreCut) and ((elMaxQPrimScore - elMaxQNtrlScore) > args.ntrlScoreCut) ) if args.useProcScoreCuts else (elMaxQConf > args.confCut)
+
+    h_elMaxQProc_CCnue.Fill(elMaxQProc, tnue.xsecWeight)
+
+    if elMaxQProc == 0:
+
+      h_visE_CCnue_wCutSet5.Fill(recoNuE_GeV, tnue.xsecWeight)
+
+      h_pidConfVsProcConf_sig.Fill(elMaxQConf, elMaxQPrimConf, tnue.xsecWeight)
+      h_pidConf2VsProcConf2_sig.Fill(elMaxQConf2, elMaxQPrimConf2, tnue.xsecWeight)
+
+      h_maxMuScore_CCnue.Fill(maxMuScore, tnue.xsecWeight)
+
+    if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      h_visE_CCnue_wCutSet6.Fill(recoNuE_GeV, tnue.xsecWeight)
+
+      h_vtxScore_CCnue.Fill(tnue.vtxScore, tnue.xsecWeight)
+      h_maxElConf_CCnue.Fill(maxElConf, tnue.xsecWeight)
+      h_elMaxComp_CCnue.Fill(elMaxComp, tnue.xsecWeight)
+      h_elMaxPur_CCnue.Fill(elMaxPur, tnue.xsecWeight)
+      h_elMaxQComp_CCnue.Fill(elMaxQComp, tnue.xsecWeight)
+      h_elMaxQPur_CCnue.Fill(elMaxQPur, tnue.xsecWeight)
+      h_elMaxQCosTheta_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
+      h_elMaxQElScore_CCnue.Fill(elMaxQElScore, tnue.xsecWeight)
+      h_elMaxQPhScore_CCnue.Fill(elMaxQPhScore, tnue.xsecWeight)
+      h_elMaxQPiScore_CCnue.Fill(elMaxQPiScore, tnue.xsecWeight)
+      if args.useProcScoreCuts:
+        if confidenceCutPassed:
+          h_elMaxQConf_CCnue.Fill(elMaxQConf, tnue.xsecWeight)
+          h_elMaxQConf2_CCnue.Fill(elMaxQConf2, tnue.xsecWeight)
+      else:
+        h_elMaxQConf_CCnue.Fill(elMaxQConf, tnue.xsecWeight)
+        h_elMaxQConf2_CCnue.Fill(elMaxQConf2, tnue.xsecWeight)
+      h_elMaxQF_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
+      h_elMaxQ_CCnue.Fill(elMaxQ, tnue.xsecWeight)
+      h_elMaxQPrimScore_CCnue.Fill(elMaxQPrimScore, tnue.xsecWeight)
+      h_elMaxQNtrlScore_CCnue.Fill(elMaxQNtrlScore, tnue.xsecWeight)
+      h_elMaxQChgdScore_CCnue.Fill(elMaxQChgdScore, tnue.xsecWeight)
+      h_elMaxQPrimConf_CCnue.Fill(elMaxQPrimConf, tnue.xsecWeight)
+      h_elMaxQPrimConf2_CCnue.Fill(elMaxQPrimConf2, tnue.xsecWeight)
+      if elMaxQFrac > args.chargeFracCut:
+        h_elMaxComp_wQFcut_CCnue.Fill(elMaxComp, tnue.xsecWeight)
+        h_elMaxQ_wQFcut_CCnue.Fill(elMaxQ, tnue.xsecWeight)
+      if elMaxQ > args.chargeCut:
+        h_elMaxComp_wQcut_CCnue.Fill(elMaxComp, tnue.xsecWeight)
+        h_elMaxQF_wQcut_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
+      if confidenceCutPassed:
+        h_vtxScore_wConfCut_CCnue.Fill(tnue.vtxScore, tnue.xsecWeight)
+        h_elMaxQPrimScore_wConfCut_CCnue.Fill(elMaxQPrimScore, tnue.xsecWeight)
+        h_elMaxQNtrlScore_wConfCut_CCnue.Fill(elMaxQNtrlScore, tnue.xsecWeight)
+        h_elMaxQChgdScore_wConfCut_CCnue.Fill(elMaxQChgdScore, tnue.xsecWeight)
+        h_elMaxQPrimConf_wConfCut_CCnue.Fill(elMaxQPrimConf, tnue.xsecWeight)
+        h_elMaxQPrimConf2_wConfCut_CCnue.Fill(elMaxQPrimConf2, tnue.xsecWeight)
+        h_elMaxQComp_wConfCut_CCnue.Fill(elMaxQComp, tnue.xsecWeight)
+        h_elMaxQVtxDist_wConfCut_CCnue.Fill(elMaxQVtxDist, tnue.xsecWeight)
+        h_elMaxQCosTheta_wConfCut_CCnue.Fill(elMaxQCosTheta, tnue.xsecWeight)
+        h_elMaxQF_wConfCut_CCnue.Fill(elMaxQFrac, tnue.xsecWeight)
+        h_elMaxQ_wConfCut_CCnue.Fill(elMaxQ, tnue.xsecWeight)
+        h_pca0y_wConfCut_CCnue.Fill(tnue.eventPCAxis0[1], tnue.xsecWeight)
+        h_pca0z_wConfCut_CCnue.Fill(tnue.eventPCAxis0[2], tnue.xsecWeight)
+        if tnue.eventPCAxis0[1] > 0.:
+          h_nonPrimShwChg_wConfCut_CCnue.Fill(0., tnue.xsecWeight)
         else:
-          h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
+          h_nonPrimShwChg_wConfCut_CCnue.Fill(nonPrimShwCharge, tnue.xsecWeight)
+        if tnue.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000.:
+          h_pcaRatio_wConfCut_CCnue.Fill(0., tnue.xsecWeight)
+        else:
+          h_pcaRatio_wConfCut_CCnue.Fill(pcaEVratio, tnue.xsecWeight)
+        if tnue.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000. or pcaEVratio < 0.9:
+          h_avgShwComp_wConfCut_CCnue.Fill(-1., tnue.xsecWeight)
+        else:
+          h_avgShwComp_wConfCut_CCnue.Fill(avgShwComp, tnue.xsecWeight)
+        if args.makeKPplots:
+          h_cosKPDist_wConfCut_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
+          h_tEndKPDist_wConfCut_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
+        if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tnue.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          n_runs1to3_CCnue_pass += tnue.xsecWeight
+          h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
+          h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
+          if args.recoEOverflow and tnue.recoNuE/1000. > 2.6:
+            h_visE_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+          else:
+            h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
+          recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
+          if args.recoEOverflow and recoElP > 2.6:
+            h_lepP_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+          else:
+            h_lepP_CCnue_wCuts.Fill(recoElP, tnue.xsecWeight)
+          h_cosTheta_CCnue_wCuts.Fill(elMaxQCosTheta, tnue.xsecWeight)
+          h_elScr_CCnue_wCuts.Fill(elMaxQElScore, tnue.xsecWeight)
+          h_phScr_CCnue_wCuts.Fill(elMaxQPhScore, tnue.xsecWeight)
+          h_piScr_CCnue_wCuts.Fill(elMaxQPiScore, tnue.xsecWeight)
+          h_muScr_CCnue_wCuts.Fill(elMaxQMuScore, tnue.xsecWeight)
+          h_prScr_CCnue_wCuts.Fill(elMaxQPrScore, tnue.xsecWeight)
+          h_pPScr_CCnue_wCuts.Fill(elMaxQPrimScore, tnue.xsecWeight)
+          h_pNScr_CCnue_wCuts.Fill(elMaxQNtrlScore, tnue.xsecWeight)
+          h_pCScr_CCnue_wCuts.Fill(elMaxQChgdScore, tnue.xsecWeight)
 
   if nMuons >= 1:
     h_muMaxComp_CCnue.Fill(muMaxComp, tnue.xsecWeight)
@@ -1203,17 +1837,22 @@ for i in range(tnue.GetEntries()):
 
 
 
+print("beginning off-beam extbnb loop")
+
 for i in range(text.GetEntries()):
+
+  #if i % 100000 == 0:
+  #  print("reached entry %i of %i"%(i,text.GetEntries()))
 
   text.GetEntry(i)
 
   n_raw_ext += 1
 
-  vtxPos = rt.TVector3(text.vtxX, text.vtxY, text.vtxZ)
   if args.smallFV:
+    vtxPos = rt.TVector3(text.vtxX, text.vtxY, text.vtxZ)
     vtxIsFiducial = isFiducial(vtxPos)
   else:
-    vtxIsFiducial = isFiducialWC(vtxPos)
+    vtxIsFiducial = (text.vtxIsFiducial == 1)
   if args.oldVertexVar or args.NPMLCosmicConfig:
     if text.nVertices < 1 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
       continue
@@ -1223,10 +1862,18 @@ for i in range(text.GetEntries()):
   #if text.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
   #  continue
 
+  recoNuE_GeV = text.recoNuE/1000.
+  if args.recoEOverflow and recoNuE_GeV > 2.6:
+    recoNuE_GeV = 2.7
+
+  h_visE_ext_wCutSet1.Fill(recoNuE_GeV)
+
   h_cosFrac_ext.Fill(text.vtxFracHitsOnCosmic)
 
   if text.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  h_visE_ext_wCutSet2.Fill(recoNuE_GeV)
 
   if args.makeKPplots:
     nearestCosKP = 999.
@@ -1245,10 +1892,13 @@ for i in range(text.GetEntries()):
   visE = 0.
   nMuons = 0
   nElectrons = 0
+  nPrimElectrons = 0
+  maxMuScore = -20
   maxElConf = -1
   nCompMuons = 0
   elMaxComp = -1.
   elMaxPur = -1.
+  elMaxQEnergy = -1.
   elMaxQComp = -1.
   elMaxQPur = -1.
   elMaxQVtxDist = -1.
@@ -1256,8 +1906,17 @@ for i in range(text.GetEntries()):
   elMaxQElScore = -1.
   elMaxQPhScore = -1.
   elMaxQPiScore = -1.
+  elMaxQMuScore = -1.
+  elMaxQPrScore = -1.
   elMaxQConf = -1.
+  elMaxQConf2 = -1.
   elMaxQFrac = -1.
+  elMaxQProc = -1
+  elMaxQPrimScore = -1.
+  elMaxQNtrlScore = -1.
+  elMaxQChgdScore = -1.
+  elMaxQPrimConf = -1.
+  elMaxQPrimConf2 = -1.
   elMaxQ = -1.
   muMaxQ = -1.
   muMaxComp = -1.
@@ -1270,9 +1929,11 @@ for i in range(text.GetEntries()):
 
   for iT in range(text.nTracks):
     visE += text.trackCharge[iT]
-    if text.trackIsSecondary[iT] == 1:
+    if text.trackIsSecondary[iT] == 1 or text.trackClassified[iT] != 1:
       continue
-    if text.trackClassified[iT] == 1 and text.trackPID[iT] == 13:
+    if text.trackMuScore[iT] > maxMuScore:
+      maxMuScore = text.trackMuScore[iT]
+    if text.trackPID[iT] == 13:
       nMuons += 1
       if text.trackComp[iT] > args.compCut:
         nCompMuons += 1
@@ -1290,15 +1951,21 @@ for i in range(text.GetEntries()):
     if text.showerClassified[iS] == 1:
       nClassShowers += 1
       avgShwComp += text.showerComp[iS]
-    if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0 or text.showerDistToVtx[iS] > args.distCut or text.showerComp[iS] < args.compCut or text.showerPurity[iS] < args.purityCut:
+    if text.showerIsSecondary[iS] == 1 or text.showerClassified[iS] == 0:
       continue
+    if nMuons == 0 and text.showerPID[iS] == 11 and text.showerProcess[iS] == 0:
+      nPrimElectrons += 1
     if nMuons == 0 and text.showerPID[iS] == 11:
       nElectrons += 1
       elConf = text.showerElScore[iS] - (text.showerPhScore[iS] + text.showerPiScore[iS])/2.
+      primConf = text.showerPrimaryScore[iS] - (text.showerFromNeutralScore[iS] + text.showerFromChargedScore[iS])/2.
+      elConf2 = text.showerElScore[iS] - max(text.showerPhScore[iS], text.showerPiScore[iS])
+      primConf2 = text.showerPrimaryScore[iS] - max(text.showerFromNeutralScore[iS], text.showerFromChargedScore[iS])
       if elConf > maxElConf:
         maxElConf = elConf
       if text.showerCharge[iS] > elMaxQ:
         elMaxQ = text.showerCharge[iS]
+        elMaxQEnergy = text.showerRecoE[iS]
         elMaxQComp = text.showerComp[iS]
         elMaxQPur = text.showerPurity[iS]
         elMaxQVtxDist = text.showerDistToVtx[iS]
@@ -1306,7 +1973,16 @@ for i in range(text.GetEntries()):
         elMaxQElScore = text.showerElScore[iS]
         elMaxQPhScore = text.showerPhScore[iS]
         elMaxQPiScore = text.showerPiScore[iS]
+        elMaxQMuScore = text.showerMuScore[iS]
+        elMaxQPrScore = text.showerPrScore[iS]
         elMaxQConf = elConf
+        elMaxQPrimConf = primConf
+        elMaxQConf2 = elConf2
+        elMaxQPrimConf2 = primConf2
+        elMaxQProc = text.showerProcess[iS]
+        elMaxQPrimScore = text.showerPrimaryScore[iS]
+        elMaxQNtrlScore = text.showerFromNeutralScore[iS]
+        elMaxQChgdScore = text.showerFromChargedScore[iS]
       if text.showerChargeFrac[iS] > elMaxQFrac:
         elMaxQFrac = text.showerChargeFrac[iS]
       if text.showerComp[iS] > elMaxComp:
@@ -1315,11 +1991,16 @@ for i in range(text.GetEntries()):
         elMaxPur = text.showerPurity[iS]
 
   if nMuons == 0:
+    h_visE_ext_wCutSet3.Fill(recoNuE_GeV)
     h_nEl_ext.Fill(nElectrons)
+    h_nPrimEl_ext.Fill(nPrimElectrons)
   h_nMu_ext.Fill(nMuons)
   h_nCompMu_ext.Fill(nCompMuons)
 
+  #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    h_visE_ext_wCutSet4.Fill(recoNuE_GeV)
 
     nonPrimShwCharge -= elMaxQ
     pcaEVsum = text.eventPCEigenVals[0] + text.eventPCEigenVals[1] + text.eventPCEigenVals[2]
@@ -1329,43 +2010,110 @@ for i in range(text.GetEntries()):
     if not args.applyCosmicDeltaCut:
       deltaCosmic = False
 
-    h_maxElConf_ext.Fill(maxElConf)
-    h_elMaxComp_ext.Fill(elMaxComp)
-    h_elMaxPur_ext.Fill(elMaxPur)
-    h_elMaxQComp_ext.Fill(elMaxQComp)
-    h_elMaxQPur_ext.Fill(elMaxQPur)
-    h_elMaxQCosTheta_ext.Fill(elMaxQCosTheta)
-    h_elMaxQElScore_ext.Fill(elMaxQElScore)
-    h_elMaxQPhScore_ext.Fill(elMaxQPhScore)
-    h_elMaxQPiScore_ext.Fill(elMaxQPiScore)
-    h_elMaxQConf_ext.Fill(elMaxQConf)
-    h_elMaxQF_ext.Fill(elMaxQFrac)
-    h_elMaxQ_ext.Fill(elMaxQ)
-    if elMaxQFrac > args.chargeFracCut:
-      h_elMaxComp_wQFcut_ext.Fill(elMaxComp)
-      h_elMaxQ_wQFcut_ext.Fill(elMaxQ)
-    if elMaxQ > args.chargeCut:
-      h_elMaxComp_wQcut_ext.Fill(elMaxComp)
-      h_elMaxQF_wQcut_ext.Fill(elMaxQFrac)
-    if elMaxQConf > args.confCut:
-      h_elMaxQComp_wConfCut_ext.Fill(elMaxQComp)
-      h_elMaxQVtxDist_wConfCut_ext.Fill(elMaxQVtxDist)
-      h_elMaxQCosTheta_wConfCut_ext.Fill(elMaxQCosTheta)
-      h_elMaxQF_wConfCut_ext.Fill(elMaxQFrac)
-      h_elMaxQ_wConfCut_ext.Fill(elMaxQ)
-      if args.makeKPplots:
-        h_cosKPDist_wConfCut_ext.Fill(nearestCosKP)
-        h_tEndKPDist_wConfCut_ext.Fill(nearestTEndKP)
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
-        if args.printEXTinfo:
-          print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
-        n_runs1to3_ext_pass += 1.
-        #h_nuE_ext_wCuts.Fill(text.trueNuE)
-        h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
-        if args.recoEOverflow and text.recoNuE/1000. > 2.6:
-          h_visE_ext_wCuts.Fill(2.7)
+    confidenceCutPassed = ( ((elMaxQPrimScore - elMaxQChgdScore) > args.chgdScoreCut) and ((elMaxQPrimScore - elMaxQNtrlScore) > args.ntrlScoreCut) ) if args.useProcScoreCuts else (elMaxQConf > args.confCut)
+
+    h_elMaxQProc_ext.Fill(elMaxQProc)
+
+    if elMaxQProc == 0:
+
+      h_visE_ext_wCutSet5.Fill(recoNuE_GeV)
+
+      h_pidConfVsProcConf_extBkg.Fill(elMaxQConf, elMaxQPrimConf)
+      h_pidConf2VsProcConf2_extBkg.Fill(elMaxQConf2, elMaxQPrimConf2)
+
+      h_maxMuScore_ext.Fill(maxMuScore)
+
+    if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      h_visE_ext_wCutSet6.Fill(recoNuE_GeV)
+
+      h_vtxScore_ext.Fill(text.vtxScore)
+      h_maxElConf_ext.Fill(maxElConf)
+      h_elMaxComp_ext.Fill(elMaxComp)
+      h_elMaxPur_ext.Fill(elMaxPur)
+      h_elMaxQComp_ext.Fill(elMaxQComp)
+      h_elMaxQPur_ext.Fill(elMaxQPur)
+      h_elMaxQCosTheta_ext.Fill(elMaxQCosTheta)
+      h_elMaxQElScore_ext.Fill(elMaxQElScore)
+      h_elMaxQPhScore_ext.Fill(elMaxQPhScore)
+      h_elMaxQPiScore_ext.Fill(elMaxQPiScore)
+      if args.useProcScoreCuts:
+        if confidenceCutPassed:
+          h_elMaxQConf_ext.Fill(elMaxQConf)
+          h_elMaxQConf2_ext.Fill(elMaxQConf2)
+      else:
+        h_elMaxQConf_ext.Fill(elMaxQConf)
+        h_elMaxQConf2_ext.Fill(elMaxQConf2)
+      h_elMaxQF_ext.Fill(elMaxQFrac)
+      h_elMaxQ_ext.Fill(elMaxQ)
+      h_elMaxQPrimScore_ext.Fill(elMaxQPrimScore)
+      h_elMaxQNtrlScore_ext.Fill(elMaxQNtrlScore)
+      h_elMaxQChgdScore_ext.Fill(elMaxQChgdScore)
+      h_elMaxQPrimConf_ext.Fill(elMaxQPrimConf)
+      h_elMaxQPrimConf2_ext.Fill(elMaxQPrimConf2)
+      if elMaxQFrac > args.chargeFracCut:
+        h_elMaxComp_wQFcut_ext.Fill(elMaxComp)
+        h_elMaxQ_wQFcut_ext.Fill(elMaxQ)
+      if elMaxQ > args.chargeCut:
+        h_elMaxComp_wQcut_ext.Fill(elMaxComp)
+        h_elMaxQF_wQcut_ext.Fill(elMaxQFrac)
+      if confidenceCutPassed:
+        h_vtxScore_wConfCut_ext.Fill(text.vtxScore)
+        h_elMaxQPrimScore_wConfCut_ext.Fill(elMaxQPrimScore)
+        h_elMaxQNtrlScore_wConfCut_ext.Fill(elMaxQNtrlScore)
+        h_elMaxQChgdScore_wConfCut_ext.Fill(elMaxQChgdScore)
+        h_elMaxQPrimConf_wConfCut_ext.Fill(elMaxQPrimConf)
+        h_elMaxQPrimConf2_wConfCut_ext.Fill(elMaxQPrimConf2)
+        h_elMaxQComp_wConfCut_ext.Fill(elMaxQComp)
+        h_elMaxQVtxDist_wConfCut_ext.Fill(elMaxQVtxDist)
+        h_elMaxQCosTheta_wConfCut_ext.Fill(elMaxQCosTheta)
+        h_elMaxQF_wConfCut_ext.Fill(elMaxQFrac)
+        h_elMaxQ_wConfCut_ext.Fill(elMaxQ)
+        h_pca0y_wConfCut_ext.Fill(text.eventPCAxis0[1])
+        h_pca0z_wConfCut_ext.Fill(text.eventPCAxis0[2])
+        if text.eventPCAxis0[1] > 0.:
+          h_nonPrimShwChg_wConfCut_ext.Fill(0.)
         else:
-          h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
+          h_nonPrimShwChg_wConfCut_ext.Fill(nonPrimShwCharge)
+        if text.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000.:
+          h_pcaRatio_wConfCut_ext.Fill(0.)
+        else:
+          h_pcaRatio_wConfCut_ext.Fill(pcaEVratio)
+        if text.eventPCAxis0[1] > 0. or nonPrimShwCharge < 10000. or pcaEVratio < 0.9:
+          h_avgShwComp_wConfCut_ext.Fill(-1.)
+        else:
+          h_avgShwComp_wConfCut_ext.Fill(avgShwComp)
+        if args.makeKPplots:
+          h_cosKPDist_wConfCut_ext.Fill(nearestCosKP)
+          h_tEndKPDist_wConfCut_ext.Fill(nearestTEndKP)
+        #if args.printEXTinfo:
+        #  print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
+        #  print("background event details: elMaxQComp = %f, elMaxQPur = %f, elMaxQVtxDist = %f, elMaxQCosTheta = %f, elMaxQConf = %f, elMaxQPrimConf2 = %f, vtxScore = %f, deltaCosmic = %f, pcaAxis0y = %f, nonPrimShowerCharge = %f, pcaEVratio = %f, avgShowerComp = %f"%(elMaxQComp,elMaxQPur,elMaxQVtxDist,elMaxQCosTheta,elMaxQConf,elMaxQPrimConf2,text.vtxScore,deltaCosmic,text.eventPCAxis0[1],nonPrimShwCharge,pcaEVratio,avgShwComp))
+        if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and text.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          if args.printEXTinfo:
+            print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
+            #print("background event details: elMaxQComp = %f, elMaxQCosTheta = %f, vtxScore = %f, deltaCosmic = %f, pcaAxis0y = %f, nonPrimShowerCharge = %f, pcaEVratio = %f, avgShowerComp = %f"%(elMaxQComp,elMaxQCosTheta,vtxScore,deltaCosmic,text.eventPCAxis0[1],nonPrimShwCharge,pcaEVratio,avgShwComp))
+          n_runs1to3_ext_pass += 1.
+          #h_nuE_ext_wCuts.Fill(text.trueNuE)
+          h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
+          if args.recoEOverflow and text.recoNuE/1000. > 2.6:
+            h_visE_ext_wCuts.Fill(2.7)
+          else:
+            h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
+          recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
+          if args.recoEOverflow and recoElP > 2.6:
+            h_lepP_ext_wCuts.Fill(2.7)
+          else:
+            h_lepP_ext_wCuts.Fill(recoElP)
+          h_cosTheta_ext_wCuts.Fill(elMaxQCosTheta)
+          h_elScr_ext_wCuts.Fill(elMaxQElScore)
+          h_phScr_ext_wCuts.Fill(elMaxQPhScore)
+          h_piScr_ext_wCuts.Fill(elMaxQPiScore)
+          h_muScr_ext_wCuts.Fill(elMaxQMuScore)
+          h_prScr_ext_wCuts.Fill(elMaxQPrScore)
+          h_pPScr_ext_wCuts.Fill(elMaxQPrimScore)
+          h_pNScr_ext_wCuts.Fill(elMaxQNtrlScore)
+          h_pCScr_ext_wCuts.Fill(elMaxQChgdScore)
 
   if nMuons >= 1:
     h_muMaxComp_ext.Fill(muMaxComp)
@@ -1377,17 +2125,19 @@ for i in range(text.GetEntries()):
 
 
 
+print("beginning on-beam bnb loop")
+
 for i in range(tdata.GetEntries()):
 
   tdata.GetEntry(i)
 
   n_raw_data += 1
 
-  vtxPos = rt.TVector3(tdata.vtxX, tdata.vtxY, tdata.vtxZ)
   if args.smallFV:
+    vtxPos = rt.TVector3(tdata.vtxX, tdata.vtxY, tdata.vtxZ)
     vtxIsFiducial = isFiducial(vtxPos)
   else:
-    vtxIsFiducial = isFiducialWC(vtxPos)
+    vtxIsFiducial = (tdata.vtxIsFiducial == 1)
   if args.oldVertexVar:
     if tdata.nVertices < 1 or not vtxIsFiducial: #tdata.vtxIsFiducial != 1:
       continue
@@ -1395,14 +2145,36 @@ for i in range(tdata.GetEntries()):
     if tdata.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
       continue
 
+  recoNuE_GeV = tdata.recoNuE/1000.
+  if args.recoEOverflow and recoNuE_GeV > 2.6:
+    recoNuE_GeV = 2.7
+
+  h_visE_data_wCutSet1.Fill(recoNuE_GeV)
+
   if tdata.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  h_visE_data_wCutSet2.Fill(recoNuE_GeV)
 
   visE = 0.
   nMuons = 0
   nElectrons = 0
+  maxMuScore = -20
+  elMaxQVtxDist = -1.
   elMaxQCosTheta = -1.
+  elMaxQElScore = -1.
+  elMaxQPhScore = -1.
+  elMaxQPiScore = -1.
+  elMaxQMuScore = -1.
+  elMaxQPrScore = -1.
   elMaxQConf = -1.
+  elMaxQEnergy = -1.
+  elMaxQComp = -1.
+  elMaxQPur = -1.
+  elMaxQProc = -1
+  elMaxQPrimScore = -1.
+  elMaxQNtrlScore = -1.
+  elMaxQChgdScore = -1.
   elMaxQFrac = -1.
   elMaxQ = -1.
   nonPrimShwCharge = 0.
@@ -1411,9 +2183,11 @@ for i in range(tdata.GetEntries()):
 
   for iT in range(tdata.nTracks):
     visE += tdata.trackCharge[iT]
-    if tdata.trackIsSecondary[iT] == 1:
+    if tdata.trackIsSecondary[iT] == 1 or tdata.trackClassified[iT] != 1:
       continue
-    if tdata.trackClassified[iT] == 1 and tdata.trackPID[iT] == 13:
+    if tdata.trackMuScore[iT] > maxMuScore:
+      maxMuScore = tdata.trackMuScore[iT]
+    if tdata.trackPID[iT] == 13:
       nMuons += 1
   for iS in range(tdata.nShowers):
     visE += tdata.showerCharge[iS]
@@ -1421,19 +2195,48 @@ for i in range(tdata.GetEntries()):
     if tdata.showerClassified[iS] == 1:
       nClassShowers += 1
       avgShwComp += tdata.showerComp[iS]
-    if tdata.showerIsSecondary[iS] == 1 or tdata.showerClassified[iS] == 0 or tdata.showerDistToVtx[iS] > args.distCut or tdata.showerComp[iS] < args.compCut or tdata.showerPurity[iS] < args.purityCut:
+    if tdata.showerIsSecondary[iS] == 1 or tdata.showerClassified[iS] == 0:
       continue
     if nMuons == 0 and tdata.showerPID[iS] == 11:
       nElectrons += 1
       elConf = tdata.showerElScore[iS] - (tdata.showerPhScore[iS] + tdata.showerPiScore[iS])/2.
       if tdata.showerCharge[iS] > elMaxQ:
         elMaxQ = tdata.showerCharge[iS]
+        elMaxQEnergy = tdata.showerRecoE[iS]
+        elMaxQVtxDist = tdata.showerDistToVtx[iS]
         elMaxQCosTheta = tdata.showerCosTheta[iS]
+        elMaxQElScore = tdata.showerElScore[iS]
+        elMaxQPhScore = tdata.showerPhScore[iS]
+        elMaxQPiScore = tdata.showerPiScore[iS]
+        elMaxQMuScore = tdata.showerMuScore[iS]
+        elMaxQPrScore = tdata.showerPrScore[iS]
         elMaxQConf = elConf
+        elMaxQComp = tdata.showerComp[iS]
+        elMaxQPur = tdata.showerPurity[iS]
+        elMaxQProc = tdata.showerProcess[iS]
+        elMaxQPrimScore = tdata.showerPrimaryScore[iS]
+        elMaxQNtrlScore = tdata.showerFromNeutralScore[iS]
+        elMaxQChgdScore = tdata.showerFromChargedScore[iS]
       if tdata.showerChargeFrac[iS] > elMaxQFrac:
         elMaxQFrac = tdata.showerChargeFrac[iS]
 
+  if nMuons == 0:
+    h_visE_data_wCutSet3.Fill(recoNuE_GeV)
+
   if nElectrons >= 1:
+
+    h_visE_data_wCutSet4.Fill(recoNuE_GeV)
+
+    if elMaxQProc != 0:
+      continue
+
+    h_visE_data_wCutSet5.Fill(recoNuE_GeV)
+
+    if maxMuScore >= args.maxMuScoreCut:
+      continue
+
+    h_visE_data_wCutSet6.Fill(recoNuE_GeV)
+
     nonPrimShwCharge -= elMaxQ
     pcaEVsum = tdata.eventPCEigenVals[0] + tdata.eventPCEigenVals[1] + tdata.eventPCEigenVals[2]
     pcaEVratio = tdata.eventPCEigenVals[0]/pcaEVsum if (pcaEVsum > 0.) else 0.
@@ -1441,14 +2244,28 @@ for i in range(tdata.GetEntries()):
     deltaCosmic = (tdata.eventPCAxis0[1] < 0. and nonPrimShwCharge > 10000 and pcaEVratio > 0.9 and avgShwComp < 0.5)
     if not args.applyCosmicDeltaCut:
       deltaCosmic = False
-    if elMaxQConf > args.confCut:
-      if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and not deltaCosmic:
-        n_runs1to3_data_pass += 1.
-        if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
-          h_visE_data_wCuts.Fill(2.7)
-        else:
-          h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
-        out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, tdata.recoNuE))
+    confidenceCutPassed = ( ((elMaxQPrimScore - elMaxQChgdScore) > args.chgdScoreCut) and ((elMaxQPrimScore - elMaxQNtrlScore) > args.ntrlScoreCut) ) if args.useProcScoreCuts else (elMaxQConf > args.confCut)
+    if confidenceCutPassed and elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tdata.vtxScore > args.vtxScoreCut and not deltaCosmic:
+      n_runs1to3_data_pass += 1.
+      if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
+        h_visE_data_wCuts.Fill(2.7)
+      else:
+        h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
+      recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
+      if args.recoEOverflow and recoElP > 2.6:
+        h_lepP_data_wCuts.Fill(2.7)
+      else:
+        h_lepP_data_wCuts.Fill(recoElP)
+      h_cosTheta_data_wCuts.Fill(elMaxQCosTheta)
+      h_elScr_data_wCuts.Fill(elMaxQElScore)
+      h_phScr_data_wCuts.Fill(elMaxQPhScore)
+      h_piScr_data_wCuts.Fill(elMaxQPiScore)
+      h_muScr_data_wCuts.Fill(elMaxQMuScore)
+      h_prScr_data_wCuts.Fill(elMaxQPrScore)
+      h_pPScr_data_wCuts.Fill(elMaxQPrimScore)
+      h_pNScr_data_wCuts.Fill(elMaxQNtrlScore)
+      h_pCScr_data_wCuts.Fill(elMaxQChgdScore)
+      out_data_sel_evts.write("%i %i %i %i %f\n"%(tdata.fileid, tdata.run, tdata.subrun, tdata.event, tdata.recoNuE))
 
 
 
@@ -1532,12 +2349,198 @@ h_visE_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_visE_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
 h_visE_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
 h_visE_ext_wCuts.Scale(targetPOT/textPOTsum)
-
 h_visE_all_wCuts.Add(h_visE_ext_wCuts)
 h_visE_all_wCuts.Add(h_visE_NCnue_wCuts)
 h_visE_all_wCuts.Add(h_visE_NCnumu_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnumu_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnue_wCuts)
+
+h_visE_CCnumu_wCutSet1.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet1.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet1.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet1.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet1.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet1.Add(h_visE_ext_wCutSet1)
+h_visE_all_wCutSet1.Add(h_visE_NCnue_wCutSet1)
+h_visE_all_wCutSet1.Add(h_visE_NCnumu_wCutSet1)
+h_visE_all_wCutSet1.Add(h_visE_CCnumu_wCutSet1)
+h_visE_all_wCutSet1.Add(h_visE_CCnue_wCutSet1)
+
+h_visE_CCnumu_wCutSet2.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet2.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet2.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet2.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet2.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet2.Add(h_visE_ext_wCutSet2)
+h_visE_all_wCutSet2.Add(h_visE_NCnue_wCutSet2)
+h_visE_all_wCutSet2.Add(h_visE_NCnumu_wCutSet2)
+h_visE_all_wCutSet2.Add(h_visE_CCnumu_wCutSet2)
+h_visE_all_wCutSet2.Add(h_visE_CCnue_wCutSet2)
+
+h_visE_CCnumu_wCutSet3.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet3.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet3.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet3.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet3.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet3.Add(h_visE_ext_wCutSet3)
+h_visE_all_wCutSet3.Add(h_visE_NCnue_wCutSet3)
+h_visE_all_wCutSet3.Add(h_visE_NCnumu_wCutSet3)
+h_visE_all_wCutSet3.Add(h_visE_CCnumu_wCutSet3)
+h_visE_all_wCutSet3.Add(h_visE_CCnue_wCutSet3)
+
+h_visE_CCnumu_wCutSet4.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet4.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet4.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet4.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet4.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet4.Add(h_visE_ext_wCutSet4)
+h_visE_all_wCutSet4.Add(h_visE_NCnue_wCutSet4)
+h_visE_all_wCutSet4.Add(h_visE_NCnumu_wCutSet4)
+h_visE_all_wCutSet4.Add(h_visE_CCnumu_wCutSet4)
+h_visE_all_wCutSet4.Add(h_visE_CCnue_wCutSet4)
+
+h_visE_CCnumu_wCutSet5.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet5.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet5.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet5.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet5.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet5.Add(h_visE_ext_wCutSet5)
+h_visE_all_wCutSet5.Add(h_visE_NCnue_wCutSet5)
+h_visE_all_wCutSet5.Add(h_visE_NCnumu_wCutSet5)
+h_visE_all_wCutSet5.Add(h_visE_CCnumu_wCutSet5)
+h_visE_all_wCutSet5.Add(h_visE_CCnue_wCutSet5)
+
+h_visE_CCnumu_wCutSet6.Scale(targetPOT/tnuPOTsum)
+h_visE_NCnumu_wCutSet6.Scale(targetPOT/tnuPOTsum)
+h_visE_CCnue_wCutSet6.Scale(targetPOT/tnuePOTsum)
+h_visE_NCnue_wCutSet6.Scale(targetPOT/tnuPOTsum)
+h_visE_ext_wCutSet6.Scale(targetPOT/textPOTsum)
+h_visE_all_wCutSet6.Add(h_visE_ext_wCutSet6)
+h_visE_all_wCutSet6.Add(h_visE_NCnue_wCutSet6)
+h_visE_all_wCutSet6.Add(h_visE_NCnumu_wCutSet6)
+h_visE_all_wCutSet6.Add(h_visE_CCnumu_wCutSet6)
+h_visE_all_wCutSet6.Add(h_visE_CCnue_wCutSet6)
+
+h_cosTheta_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_cosTheta_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_cosTheta_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_cosTheta_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_cosTheta_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_cosTheta_all_wCuts.Add(h_cosTheta_ext_wCuts)
+h_cosTheta_all_wCuts.Add(h_cosTheta_NCnue_wCuts)
+h_cosTheta_all_wCuts.Add(h_cosTheta_NCnumu_wCuts)
+h_cosTheta_all_wCuts.Add(h_cosTheta_CCnumu_wCuts)
+h_cosTheta_all_wCuts.Add(h_cosTheta_CCnue_wCuts)
+
+h_lepP_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_lepP_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_lepP_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_lepP_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_lepP_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_lepP_all_wCuts.Add(h_lepP_ext_wCuts)
+h_lepP_all_wCuts.Add(h_lepP_NCnue_wCuts)
+h_lepP_all_wCuts.Add(h_lepP_NCnumu_wCuts)
+h_lepP_all_wCuts.Add(h_lepP_CCnumu_wCuts)
+h_lepP_all_wCuts.Add(h_lepP_CCnue_wCuts)
+
+h_elScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_elScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_elScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_elScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_elScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_elScr_all_wCuts.Add(h_elScr_ext_wCuts)
+h_elScr_all_wCuts.Add(h_elScr_NCnue_wCuts)
+h_elScr_all_wCuts.Add(h_elScr_NCnumu_wCuts)
+h_elScr_all_wCuts.Add(h_elScr_CCnumu_wCuts)
+h_elScr_all_wCuts.Add(h_elScr_CCnue_wCuts)
+
+h_phScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_phScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_phScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_phScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_phScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_phScr_all_wCuts.Add(h_phScr_ext_wCuts)
+h_phScr_all_wCuts.Add(h_phScr_NCnue_wCuts)
+h_phScr_all_wCuts.Add(h_phScr_NCnumu_wCuts)
+h_phScr_all_wCuts.Add(h_phScr_CCnumu_wCuts)
+h_phScr_all_wCuts.Add(h_phScr_CCnue_wCuts)
+
+h_piScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_piScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_piScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_piScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_piScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_piScr_all_wCuts.Add(h_piScr_ext_wCuts)
+h_piScr_all_wCuts.Add(h_piScr_NCnue_wCuts)
+h_piScr_all_wCuts.Add(h_piScr_NCnumu_wCuts)
+h_piScr_all_wCuts.Add(h_piScr_CCnumu_wCuts)
+h_piScr_all_wCuts.Add(h_piScr_CCnue_wCuts)
+
+h_muScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_muScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_muScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_muScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_muScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_muScr_all_wCuts.Add(h_muScr_ext_wCuts)
+h_muScr_all_wCuts.Add(h_muScr_NCnue_wCuts)
+h_muScr_all_wCuts.Add(h_muScr_NCnumu_wCuts)
+h_muScr_all_wCuts.Add(h_muScr_CCnumu_wCuts)
+h_muScr_all_wCuts.Add(h_muScr_CCnue_wCuts)
+
+h_prScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_prScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_prScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_prScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_prScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_prScr_all_wCuts.Add(h_prScr_ext_wCuts)
+h_prScr_all_wCuts.Add(h_prScr_NCnue_wCuts)
+h_prScr_all_wCuts.Add(h_prScr_NCnumu_wCuts)
+h_prScr_all_wCuts.Add(h_prScr_CCnumu_wCuts)
+h_prScr_all_wCuts.Add(h_prScr_CCnue_wCuts)
+
+h_pPScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pPScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pPScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_pPScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pPScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_pPScr_all_wCuts.Add(h_pPScr_ext_wCuts)
+h_pPScr_all_wCuts.Add(h_pPScr_NCnue_wCuts)
+h_pPScr_all_wCuts.Add(h_pPScr_NCnumu_wCuts)
+h_pPScr_all_wCuts.Add(h_pPScr_CCnumu_wCuts)
+h_pPScr_all_wCuts.Add(h_pPScr_CCnue_wCuts)
+
+h_pNScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pNScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pNScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_pNScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pNScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_pNScr_all_wCuts.Add(h_pNScr_ext_wCuts)
+h_pNScr_all_wCuts.Add(h_pNScr_NCnue_wCuts)
+h_pNScr_all_wCuts.Add(h_pNScr_NCnumu_wCuts)
+h_pNScr_all_wCuts.Add(h_pNScr_CCnumu_wCuts)
+h_pNScr_all_wCuts.Add(h_pNScr_CCnue_wCuts)
+
+h_pCScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pCScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pCScr_CCnue_wCuts.Scale(targetPOT/tnuePOTsum)
+h_pCScr_NCnue_wCuts.Scale(targetPOT/tnuPOTsum)
+h_pCScr_ext_wCuts.Scale(targetPOT/textPOTsum)
+h_pCScr_all_wCuts.Add(h_pCScr_ext_wCuts)
+h_pCScr_all_wCuts.Add(h_pCScr_NCnue_wCuts)
+h_pCScr_all_wCuts.Add(h_pCScr_NCnumu_wCuts)
+h_pCScr_all_wCuts.Add(h_pCScr_CCnumu_wCuts)
+h_pCScr_all_wCuts.Add(h_pCScr_CCnue_wCuts)
+
+h_pidConfVsProcConf_sig.Scale(targetPOT/tnuePOTsum)
+h_pidConfVsProcConf_nuBkg.Scale(targetPOT/tnuPOTsum)
+h_pidConfVsProcConf_extBkg.Scale(targetPOT/textPOTsum)
+h_pidConfVsProcConf_bkg.Add(h_pidConfVsProcConf_nuBkg)
+h_pidConfVsProcConf_bkg.Add(h_pidConfVsProcConf_extBkg)
+h_pidConf2VsProcConf2_sig.Scale(targetPOT/tnuePOTsum)
+h_pidConf2VsProcConf2_nuBkg.Scale(targetPOT/tnuPOTsum)
+h_pidConf2VsProcConf2_extBkg.Scale(targetPOT/textPOTsum)
+h_pidConf2VsProcConf2_bkg.Add(h_pidConf2VsProcConf2_nuBkg)
+h_pidConf2VsProcConf2_bkg.Add(h_pidConf2VsProcConf2_extBkg)
 
 h_cosFrac_CCnumu.Scale(targetPOT/tnuPOTsum)
 h_cosFrac_NCnumu.Scale(targetPOT/tnuPOTsum)
@@ -1575,6 +2578,24 @@ h_nEl_NCnumu.Scale(targetPOT/tnuPOTsum)
 h_nEl_CCnue.Scale(targetPOT/tnuePOTsum)
 h_nEl_NCnue.Scale(targetPOT/tnuPOTsum)
 h_nEl_ext.Scale(targetPOT/textPOTsum)
+
+h_nPrimEl_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_nPrimEl_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_nPrimEl_CCnue.Scale(targetPOT/tnuePOTsum)
+h_nPrimEl_NCnue.Scale(targetPOT/tnuPOTsum)
+h_nPrimEl_ext.Scale(targetPOT/textPOTsum)
+
+h_maxMuScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxMuScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_maxMuScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_maxMuScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_maxMuScore_ext.Scale(targetPOT/textPOTsum)
+
+h_vtxScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_vtxScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_ext.Scale(targetPOT/textPOTsum)
 
 #print("h_cosFrac_CCnue scaled integral: ", h_cosFrac_CCnue.Integral())
 #print("h_nEl_CCnue scaled integral: ", h_nEl_CCnue.Integral())
@@ -1692,6 +2713,114 @@ h_elMaxQConf_NCnumu.Scale(targetPOT/tnuPOTsum)
 h_elMaxQConf_CCnue.Scale(targetPOT/tnuePOTsum)
 h_elMaxQConf_NCnue.Scale(targetPOT/tnuPOTsum)
 h_elMaxQConf_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQConf2_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf2_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf2_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQConf2_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQConf2_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQProc_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQProc_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQProc_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQProc_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQProc_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQNtrlScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQNtrlScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQChgdScore_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQChgdScore_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimConf_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimConf_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimConf2_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimConf2_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_ext.Scale(targetPOT/textPOTsum)
+
+h_vtxScore_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_vtxScore_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_vtxScore_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimScore_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimScore_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimScore_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQNtrlScore_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQNtrlScore_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQNtrlScore_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQChgdScore_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQChgdScore_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQChgdScore_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimConf_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimConf_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_elMaxQPrimConf2_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_elMaxQPrimConf2_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_elMaxQPrimConf2_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_nonPrimShwChg_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_nonPrimShwChg_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_nonPrimShwChg_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_nonPrimShwChg_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_nonPrimShwChg_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_pcaRatio_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_pcaRatio_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_pcaRatio_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_pcaRatio_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_pcaRatio_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_pca0y_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_pca0y_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_pca0y_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_pca0y_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_pca0y_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_pca0z_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_pca0z_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_pca0z_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_pca0z_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_pca0z_wConfCut_ext.Scale(targetPOT/textPOTsum)
+
+h_avgShwComp_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_wConfCut_CCnue.Scale(targetPOT/tnuePOTsum)
+h_avgShwComp_wConfCut_NCnue.Scale(targetPOT/tnuPOTsum)
+h_avgShwComp_wConfCut_ext.Scale(targetPOT/textPOTsum)
 
 h_elMaxQComp_wConfCut_CCnumu.Scale(targetPOT/tnuPOTsum)
 h_elMaxQComp_wConfCut_NCnumu.Scale(targetPOT/tnuPOTsum)
@@ -1853,6 +2982,42 @@ leg_nEl.Draw()
 #cnv_nEl.SaveAs("nEl.png")
 cnv_nEl.Write()
 
+cnv_nPrimEl = rt.TCanvas("cnv_nPrimEl","cnv_nPrimEl")
+hists_nPrimEl = sortHists([h_nPrimEl_CCnumu, h_nPrimEl_NCnumu, h_nPrimEl_CCnue, h_nPrimEl_NCnue, h_nPrimEl_ext])
+hists_nPrimEl[0].Draw("EHIST")
+for i in range(1,len(hists_nPrimEl)):
+  hists_nPrimEl[i].Draw("EHISTSAME")
+leg_nPrimEl = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_nPrimEl = configureLegend(leg_nPrimEl, h_nPrimEl_CCnumu,
+  h_nPrimEl_NCnumu, h_nPrimEl_CCnue, h_nPrimEl_NCnue, h_nPrimEl_ext)
+leg_nPrimEl.Draw()
+#cnv_nPrimEl.SaveAs("nPrimEl.png")
+cnv_nPrimEl.Write()
+
+cnv_maxMuScore = rt.TCanvas("cnv_maxMuScore","cnv_maxMuScore")
+hists_maxMuScore = sortHists([h_maxMuScore_CCnumu, h_maxMuScore_NCnumu, h_maxMuScore_CCnue, h_maxMuScore_NCnue, h_maxMuScore_ext])
+hists_maxMuScore[0].Draw("EHIST")
+for i in range(1,len(hists_maxMuScore)):
+  hists_maxMuScore[i].Draw("EHISTSAME")
+leg_maxMuScore = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_maxMuScore = configureLegend(leg_maxMuScore, h_maxMuScore_CCnumu,
+  h_maxMuScore_NCnumu, h_maxMuScore_CCnue, h_maxMuScore_NCnue, h_maxMuScore_ext)
+leg_maxMuScore.Draw()
+#cnv_maxMuScore.SaveAs("maxMuScore.png")
+cnv_maxMuScore.Write()
+
+cnv_vtxScore = rt.TCanvas("cnv_vtxScore","cnv_vtxScore")
+hists_vtxScore = sortHists([h_vtxScore_CCnumu, h_vtxScore_NCnumu, h_vtxScore_CCnue, h_vtxScore_NCnue, h_vtxScore_ext])
+hists_vtxScore[0].Draw("EHIST")
+for i in range(1,len(hists_vtxScore)):
+  hists_vtxScore[i].Draw("EHISTSAME")
+leg_vtxScore = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_vtxScore = configureLegend(leg_vtxScore, h_vtxScore_CCnumu,
+  h_vtxScore_NCnumu, h_vtxScore_CCnue, h_vtxScore_NCnue, h_vtxScore_ext)
+leg_vtxScore.Draw()
+#cnv_vtxScore.SaveAs("vtxScore.png")
+cnv_vtxScore.Write()
+
 cnv_maxElConf = rt.TCanvas("cnv_maxElConf","cnv_maxElConf")
 hists_maxElConf = sortHists([h_maxElConf_CCnumu, h_maxElConf_NCnumu, h_maxElConf_CCnue, h_maxElConf_NCnue, h_maxElConf_ext])
 hists_maxElConf[0].Draw("EHIST")
@@ -1997,6 +3162,106 @@ leg_elMaxQConf.Draw()
 #cnv_elMaxQConf.SaveAs("elMaxQConf.png")
 cnv_elMaxQConf.Write()
 
+cnv_elMaxQConf2 = rt.TCanvas("cnv_elMaxQConf2","cnv_elMaxQConf2")
+hists_elMaxQConf2 = sortHists([h_elMaxQConf2_CCnumu, h_elMaxQConf2_NCnumu, h_elMaxQConf2_CCnue, h_elMaxQConf2_NCnue, h_elMaxQConf2_ext])
+hists_elMaxQConf2[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQConf2)):
+  hists_elMaxQConf2[i].Draw("EHISTSAME")
+leg_elMaxQConf2 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQConf2 = configureLegend(leg_elMaxQConf2, h_elMaxQConf2_CCnumu,
+  h_elMaxQConf2_NCnumu, h_elMaxQConf2_CCnue, h_elMaxQConf2_NCnue, h_elMaxQConf2_ext)
+leg_elMaxQConf2.Draw()
+#cnv_elMaxQConf2.SaveAs("elMaxQConf2.png")
+cnv_elMaxQConf2.Write()
+
+cnv_elMaxQProc = rt.TCanvas("cnv_elMaxQProc","cnv_elMaxQProc")
+hists_elMaxQProc = sortHists([h_elMaxQProc_CCnumu, h_elMaxQProc_NCnumu, h_elMaxQProc_CCnue, h_elMaxQProc_NCnue, h_elMaxQProc_ext])
+hists_elMaxQProc[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQProc)):
+  hists_elMaxQProc[i].Draw("EHISTSAME")
+leg_elMaxQProc = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQProc = configureLegend(leg_elMaxQProc, h_elMaxQProc_CCnumu,
+  h_elMaxQProc_NCnumu, h_elMaxQProc_CCnue, h_elMaxQProc_NCnue, h_elMaxQProc_ext)
+leg_elMaxQProc.Draw()
+#cnv_elMaxQProc.SaveAs("elMaxQProc.png")
+cnv_elMaxQProc.Write()
+
+cnv_elMaxQPrimScore = rt.TCanvas("cnv_elMaxQPrimScore","cnv_elMaxQPrimScore")
+hists_elMaxQPrimScore = sortHists([h_elMaxQPrimScore_CCnumu, h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_CCnue, h_elMaxQPrimScore_NCnue, h_elMaxQPrimScore_ext])
+hists_elMaxQPrimScore[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimScore)):
+  hists_elMaxQPrimScore[i].Draw("EHISTSAME")
+leg_elMaxQPrimScore = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimScore = configureLegend(leg_elMaxQPrimScore, h_elMaxQPrimScore_CCnumu,
+  h_elMaxQPrimScore_NCnumu, h_elMaxQPrimScore_CCnue, h_elMaxQPrimScore_NCnue, h_elMaxQPrimScore_ext)
+leg_elMaxQPrimScore.Draw()
+#cnv_elMaxQPrimScore.SaveAs("elMaxQPrimScore.png")
+cnv_elMaxQPrimScore.Write()
+
+cnv_elMaxQNtrlScore = rt.TCanvas("cnv_elMaxQNtrlScore","cnv_elMaxQNtrlScore")
+hists_elMaxQNtrlScore = sortHists([h_elMaxQNtrlScore_CCnumu, h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_CCnue, h_elMaxQNtrlScore_NCnue, h_elMaxQNtrlScore_ext])
+hists_elMaxQNtrlScore[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQNtrlScore)):
+  hists_elMaxQNtrlScore[i].Draw("EHISTSAME")
+leg_elMaxQNtrlScore = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQNtrlScore = configureLegend(leg_elMaxQNtrlScore, h_elMaxQNtrlScore_CCnumu,
+  h_elMaxQNtrlScore_NCnumu, h_elMaxQNtrlScore_CCnue, h_elMaxQNtrlScore_NCnue, h_elMaxQNtrlScore_ext)
+leg_elMaxQNtrlScore.Draw()
+#cnv_elMaxQNtrlScore.SaveAs("elMaxQNtrlScore.png")
+cnv_elMaxQNtrlScore.Write()
+
+cnv_elMaxQChgdScore = rt.TCanvas("cnv_elMaxQChgdScore","cnv_elMaxQChgdScore")
+hists_elMaxQChgdScore = sortHists([h_elMaxQChgdScore_CCnumu, h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_CCnue, h_elMaxQChgdScore_NCnue, h_elMaxQChgdScore_ext])
+hists_elMaxQChgdScore[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQChgdScore)):
+  hists_elMaxQChgdScore[i].Draw("EHISTSAME")
+leg_elMaxQChgdScore = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQChgdScore = configureLegend(leg_elMaxQChgdScore, h_elMaxQChgdScore_CCnumu,
+  h_elMaxQChgdScore_NCnumu, h_elMaxQChgdScore_CCnue, h_elMaxQChgdScore_NCnue, h_elMaxQChgdScore_ext)
+leg_elMaxQChgdScore.Draw()
+#cnv_elMaxQChgdScore.SaveAs("elMaxQChgdScore.png")
+cnv_elMaxQChgdScore.Write()
+
+cnv_elMaxQPrimConf = rt.TCanvas("cnv_elMaxQPrimConf","cnv_elMaxQPrimConf")
+hists_elMaxQPrimConf = sortHists([h_elMaxQPrimConf_CCnumu, h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_CCnue, h_elMaxQPrimConf_NCnue, h_elMaxQPrimConf_ext])
+hists_elMaxQPrimConf[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimConf)):
+  hists_elMaxQPrimConf[i].Draw("EHISTSAME")
+leg_elMaxQPrimConf = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimConf = configureLegend(leg_elMaxQPrimConf, h_elMaxQPrimConf_CCnumu,
+  h_elMaxQPrimConf_NCnumu, h_elMaxQPrimConf_CCnue, h_elMaxQPrimConf_NCnue, h_elMaxQPrimConf_ext)
+leg_elMaxQPrimConf.Draw()
+#cnv_elMaxQPrimConf.SaveAs("elMaxQPrimConf.png")
+cnv_elMaxQPrimConf.Write()
+
+cnv_elMaxQPrimConf2 = rt.TCanvas("cnv_elMaxQPrimConf2","cnv_elMaxQPrimConf2")
+hists_elMaxQPrimConf2 = sortHists([h_elMaxQPrimConf2_CCnumu, h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_CCnue, h_elMaxQPrimConf2_NCnue, h_elMaxQPrimConf2_ext])
+hists_elMaxQPrimConf2[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimConf2)):
+  hists_elMaxQPrimConf2[i].Draw("EHISTSAME")
+leg_elMaxQPrimConf2 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimConf2 = configureLegend(leg_elMaxQPrimConf2, h_elMaxQPrimConf2_CCnumu,
+  h_elMaxQPrimConf2_NCnumu, h_elMaxQPrimConf2_CCnue, h_elMaxQPrimConf2_NCnue, h_elMaxQPrimConf2_ext)
+leg_elMaxQPrimConf2.Draw()
+#cnv_elMaxQPrimConf2.SaveAs("elMaxQPrimConf2.png")
+cnv_elMaxQPrimConf2.Write()
+
+cnv_pidConfVsProcConf_sig = rt.TCanvas("cnv_pidConfVsProcConf_sig","cnv_pidConfVsProcConf_sig")
+h_pidConfVsProcConf_sig.Draw("COLZ")
+cnv_pidConfVsProcConf_sig.Write()
+
+cnv_pidConfVsProcConf_bkg = rt.TCanvas("cnv_pidConfVsProcConf_bkg","cnv_pidConfVsProcConf_bkg")
+h_pidConfVsProcConf_bkg.Draw("COLZ")
+cnv_pidConfVsProcConf_bkg.Write()
+
+cnv_pidConf2VsProcConf2_sig = rt.TCanvas("cnv_pidConf2VsProcConf2_sig","cnv_pidConf2VsProcConf2_sig")
+h_pidConf2VsProcConf2_sig.Draw("COLZ")
+cnv_pidConf2VsProcConf2_sig.Write()
+
+cnv_pidConf2VsProcConf2_bkg = rt.TCanvas("cnv_pidConf2VsProcConf2_bkg","cnv_pidConf2VsProcConf2_bkg")
+h_pidConf2VsProcConf2_bkg.Draw("COLZ")
+cnv_pidConf2VsProcConf2_bkg.Write()
+
 cnv_elMaxQF = rt.TCanvas("cnv_elMaxQF","cnv_elMaxQF")
 hists_elMaxQF = sortHists([h_elMaxQF_CCnumu, h_elMaxQF_NCnumu, h_elMaxQF_CCnue, h_elMaxQF_NCnue, h_elMaxQF_ext])
 hists_elMaxQF[0].Draw("EHIST")
@@ -2020,6 +3285,78 @@ leg_elMaxQ = configureLegend(leg_elMaxQ, h_elMaxQ_CCnumu,
 leg_elMaxQ.Draw()
 #cnv_elMaxQ.SaveAs("elMaxQ.png")
 cnv_elMaxQ.Write()
+
+cnv_vtxScore_wConfCut = rt.TCanvas("cnv_vtxScore_wConfCut","cnv_vtxScore_wConfCut")
+hists_vtxScore_wConfCut = sortHists([h_vtxScore_wConfCut_CCnumu, h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_CCnue, h_vtxScore_wConfCut_NCnue, h_vtxScore_wConfCut_ext])
+hists_vtxScore_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_vtxScore_wConfCut)):
+  hists_vtxScore_wConfCut[i].Draw("EHISTSAME")
+leg_vtxScore_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_vtxScore_wConfCut = configureLegend(leg_vtxScore_wConfCut, h_vtxScore_wConfCut_CCnumu,
+  h_vtxScore_wConfCut_NCnumu, h_vtxScore_wConfCut_CCnue, h_vtxScore_wConfCut_NCnue, h_vtxScore_wConfCut_ext)
+leg_vtxScore_wConfCut.Draw()
+#cnv_vtxScore_wConfCut.SaveAs("vtxScore_wConfCut.png")
+cnv_vtxScore_wConfCut.Write()
+
+cnv_elMaxQPrimScore_wConfCut = rt.TCanvas("cnv_elMaxQPrimScore_wConfCut","cnv_elMaxQPrimScore_wConfCut")
+hists_elMaxQPrimScore_wConfCut = sortHists([h_elMaxQPrimScore_wConfCut_CCnumu, h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_CCnue, h_elMaxQPrimScore_wConfCut_NCnue, h_elMaxQPrimScore_wConfCut_ext])
+hists_elMaxQPrimScore_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimScore_wConfCut)):
+  hists_elMaxQPrimScore_wConfCut[i].Draw("EHISTSAME")
+leg_elMaxQPrimScore_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimScore_wConfCut = configureLegend(leg_elMaxQPrimScore_wConfCut, h_elMaxQPrimScore_wConfCut_CCnumu,
+  h_elMaxQPrimScore_wConfCut_NCnumu, h_elMaxQPrimScore_wConfCut_CCnue, h_elMaxQPrimScore_wConfCut_NCnue, h_elMaxQPrimScore_wConfCut_ext)
+leg_elMaxQPrimScore_wConfCut.Draw()
+#cnv_elMaxQPrimScore_wConfCut.SaveAs("elMaxQPrimScore_wConfCut.png")
+cnv_elMaxQPrimScore_wConfCut.Write()
+
+cnv_elMaxQNtrlScore_wConfCut = rt.TCanvas("cnv_elMaxQNtrlScore_wConfCut","cnv_elMaxQNtrlScore_wConfCut")
+hists_elMaxQNtrlScore_wConfCut = sortHists([h_elMaxQNtrlScore_wConfCut_CCnumu, h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_CCnue, h_elMaxQNtrlScore_wConfCut_NCnue, h_elMaxQNtrlScore_wConfCut_ext])
+hists_elMaxQNtrlScore_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQNtrlScore_wConfCut)):
+  hists_elMaxQNtrlScore_wConfCut[i].Draw("EHISTSAME")
+leg_elMaxQNtrlScore_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQNtrlScore_wConfCut = configureLegend(leg_elMaxQNtrlScore_wConfCut, h_elMaxQNtrlScore_wConfCut_CCnumu,
+  h_elMaxQNtrlScore_wConfCut_NCnumu, h_elMaxQNtrlScore_wConfCut_CCnue, h_elMaxQNtrlScore_wConfCut_NCnue, h_elMaxQNtrlScore_wConfCut_ext)
+leg_elMaxQNtrlScore_wConfCut.Draw()
+#cnv_elMaxQNtrlScore_wConfCut.SaveAs("elMaxQNtrlScore_wConfCut.png")
+cnv_elMaxQNtrlScore_wConfCut.Write()
+
+cnv_elMaxQChgdScore_wConfCut = rt.TCanvas("cnv_elMaxQChgdScore_wConfCut","cnv_elMaxQChgdScore_wConfCut")
+hists_elMaxQChgdScore_wConfCut = sortHists([h_elMaxQChgdScore_wConfCut_CCnumu, h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_CCnue, h_elMaxQChgdScore_wConfCut_NCnue, h_elMaxQChgdScore_wConfCut_ext])
+hists_elMaxQChgdScore_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQChgdScore_wConfCut)):
+  hists_elMaxQChgdScore_wConfCut[i].Draw("EHISTSAME")
+leg_elMaxQChgdScore_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQChgdScore_wConfCut = configureLegend(leg_elMaxQChgdScore_wConfCut, h_elMaxQChgdScore_wConfCut_CCnumu,
+  h_elMaxQChgdScore_wConfCut_NCnumu, h_elMaxQChgdScore_wConfCut_CCnue, h_elMaxQChgdScore_wConfCut_NCnue, h_elMaxQChgdScore_wConfCut_ext)
+leg_elMaxQChgdScore_wConfCut.Draw()
+#cnv_elMaxQChgdScore_wConfCut.SaveAs("elMaxQChgdScore_wConfCut.png")
+cnv_elMaxQChgdScore_wConfCut.Write()
+
+cnv_elMaxQPrimConf_wConfCut = rt.TCanvas("cnv_elMaxQPrimConf_wConfCut","cnv_elMaxQPrimConf_wConfCut")
+hists_elMaxQPrimConf_wConfCut = sortHists([h_elMaxQPrimConf_wConfCut_CCnumu, h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_CCnue, h_elMaxQPrimConf_wConfCut_NCnue, h_elMaxQPrimConf_wConfCut_ext])
+hists_elMaxQPrimConf_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimConf_wConfCut)):
+  hists_elMaxQPrimConf_wConfCut[i].Draw("EHISTSAME")
+leg_elMaxQPrimConf_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimConf_wConfCut = configureLegend(leg_elMaxQPrimConf_wConfCut, h_elMaxQPrimConf_wConfCut_CCnumu,
+  h_elMaxQPrimConf_wConfCut_NCnumu, h_elMaxQPrimConf_wConfCut_CCnue, h_elMaxQPrimConf_wConfCut_NCnue, h_elMaxQPrimConf_wConfCut_ext)
+leg_elMaxQPrimConf_wConfCut.Draw()
+#cnv_elMaxQPrimConf_wConfCut.SaveAs("elMaxQPrimConf_wConfCut.png")
+cnv_elMaxQPrimConf_wConfCut.Write()
+
+cnv_elMaxQPrimConf2_wConfCut = rt.TCanvas("cnv_elMaxQPrimConf2_wConfCut","cnv_elMaxQPrimConf2_wConfCut")
+hists_elMaxQPrimConf2_wConfCut = sortHists([h_elMaxQPrimConf2_wConfCut_CCnumu, h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_CCnue, h_elMaxQPrimConf2_wConfCut_NCnue, h_elMaxQPrimConf2_wConfCut_ext])
+hists_elMaxQPrimConf2_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_elMaxQPrimConf2_wConfCut)):
+  hists_elMaxQPrimConf2_wConfCut[i].Draw("EHISTSAME")
+leg_elMaxQPrimConf2_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elMaxQPrimConf2_wConfCut = configureLegend(leg_elMaxQPrimConf2_wConfCut, h_elMaxQPrimConf2_wConfCut_CCnumu,
+  h_elMaxQPrimConf2_wConfCut_NCnumu, h_elMaxQPrimConf2_wConfCut_CCnue, h_elMaxQPrimConf2_wConfCut_NCnue, h_elMaxQPrimConf2_wConfCut_ext)
+leg_elMaxQPrimConf2_wConfCut.Draw()
+#cnv_elMaxQPrimConf2_wConfCut.SaveAs("elMaxQPrimConf2_wConfCut.png")
+cnv_elMaxQPrimConf2_wConfCut.Write()
 
 cnv_elMaxQComp_wConfCut = rt.TCanvas("cnv_elMaxQComp_wConfCut","cnv_elMaxQComp_wConfCut")
 hists_elMaxQComp_wConfCut = sortHists([h_elMaxQComp_wConfCut_CCnumu, h_elMaxQComp_wConfCut_NCnumu, h_elMaxQComp_wConfCut_CCnue, h_elMaxQComp_wConfCut_NCnue, h_elMaxQComp_wConfCut_ext])
@@ -2056,6 +3393,66 @@ leg_elMaxQCosTheta_wConfCut = configureLegend(leg_elMaxQCosTheta_wConfCut, h_elM
 leg_elMaxQCosTheta_wConfCut.Draw()
 #cnv_elMaxQCosTheta_wConfCut.SaveAs("elMaxQCosTheta_wConfCut.png")
 cnv_elMaxQCosTheta_wConfCut.Write()
+
+cnv_nonPrimShwChg_wConfCut = rt.TCanvas("cnv_nonPrimShwChg_wConfCut","cnv_nonPrimShwChg_wConfCut")
+hists_nonPrimShwChg_wConfCut = sortHists([h_nonPrimShwChg_wConfCut_CCnumu, h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_CCnue, h_nonPrimShwChg_wConfCut_NCnue, h_nonPrimShwChg_wConfCut_ext])
+hists_nonPrimShwChg_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_nonPrimShwChg_wConfCut)):
+  hists_nonPrimShwChg_wConfCut[i].Draw("EHISTSAME")
+leg_nonPrimShwChg_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_nonPrimShwChg_wConfCut = configureLegend(leg_nonPrimShwChg_wConfCut, h_nonPrimShwChg_wConfCut_CCnumu,
+  h_nonPrimShwChg_wConfCut_NCnumu, h_nonPrimShwChg_wConfCut_CCnue, h_nonPrimShwChg_wConfCut_NCnue, h_nonPrimShwChg_wConfCut_ext)
+leg_nonPrimShwChg_wConfCut.Draw()
+#cnv_nonPrimShwChg_wConfCut.SaveAs("nonPrimShwChg_wConfCut.png")
+cnv_nonPrimShwChg_wConfCut.Write()
+
+cnv_pcaRatio_wConfCut = rt.TCanvas("cnv_pcaRatio_wConfCut","cnv_pcaRatio_wConfCut")
+hists_pcaRatio_wConfCut = sortHists([h_pcaRatio_wConfCut_CCnumu, h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_CCnue, h_pcaRatio_wConfCut_NCnue, h_pcaRatio_wConfCut_ext])
+hists_pcaRatio_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_pcaRatio_wConfCut)):
+  hists_pcaRatio_wConfCut[i].Draw("EHISTSAME")
+leg_pcaRatio_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pcaRatio_wConfCut = configureLegend(leg_pcaRatio_wConfCut, h_pcaRatio_wConfCut_CCnumu,
+  h_pcaRatio_wConfCut_NCnumu, h_pcaRatio_wConfCut_CCnue, h_pcaRatio_wConfCut_NCnue, h_pcaRatio_wConfCut_ext)
+leg_pcaRatio_wConfCut.Draw()
+#cnv_pcaRatio_wConfCut.SaveAs("pcaRatio_wConfCut.png")
+cnv_pcaRatio_wConfCut.Write()
+
+cnv_pca0y_wConfCut = rt.TCanvas("cnv_pca0y_wConfCut","cnv_pca0y_wConfCut")
+hists_pca0y_wConfCut = sortHists([h_pca0y_wConfCut_CCnumu, h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_CCnue, h_pca0y_wConfCut_NCnue, h_pca0y_wConfCut_ext])
+hists_pca0y_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_pca0y_wConfCut)):
+  hists_pca0y_wConfCut[i].Draw("EHISTSAME")
+leg_pca0y_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pca0y_wConfCut = configureLegend(leg_pca0y_wConfCut, h_pca0y_wConfCut_CCnumu,
+  h_pca0y_wConfCut_NCnumu, h_pca0y_wConfCut_CCnue, h_pca0y_wConfCut_NCnue, h_pca0y_wConfCut_ext)
+leg_pca0y_wConfCut.Draw()
+#cnv_pca0y_wConfCut.SaveAs("pca0y_wConfCut.png")
+cnv_pca0y_wConfCut.Write()
+
+cnv_pca0z_wConfCut = rt.TCanvas("cnv_pca0z_wConfCut","cnv_pca0z_wConfCut")
+hists_pca0z_wConfCut = sortHists([h_pca0z_wConfCut_CCnumu, h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_CCnue, h_pca0z_wConfCut_NCnue, h_pca0z_wConfCut_ext])
+hists_pca0z_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_pca0z_wConfCut)):
+  hists_pca0z_wConfCut[i].Draw("EHISTSAME")
+leg_pca0z_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pca0z_wConfCut = configureLegend(leg_pca0z_wConfCut, h_pca0z_wConfCut_CCnumu,
+  h_pca0z_wConfCut_NCnumu, h_pca0z_wConfCut_CCnue, h_pca0z_wConfCut_NCnue, h_pca0z_wConfCut_ext)
+leg_pca0z_wConfCut.Draw()
+#cnv_pca0z_wConfCut.SaveAs("pca0z_wConfCut.png")
+cnv_pca0z_wConfCut.Write()
+
+cnv_avgShwComp_wConfCut = rt.TCanvas("cnv_avgShwComp_wConfCut","cnv_avgShwComp_wConfCut")
+hists_avgShwComp_wConfCut = sortHists([h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_CCnue, h_avgShwComp_wConfCut_NCnue, h_avgShwComp_wConfCut_ext])
+hists_avgShwComp_wConfCut[0].Draw("EHIST")
+for i in range(1,len(hists_avgShwComp_wConfCut)):
+  hists_avgShwComp_wConfCut[i].Draw("EHISTSAME")
+leg_avgShwComp_wConfCut = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_avgShwComp_wConfCut = configureLegend(leg_avgShwComp_wConfCut, h_avgShwComp_wConfCut_CCnumu,
+  h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_CCnue, h_avgShwComp_wConfCut_NCnue, h_avgShwComp_wConfCut_ext)
+leg_avgShwComp_wConfCut.Draw()
+#cnv_avgShwComp_wConfCut.SaveAs("avgShwComp_wConfCut.png")
+cnv_avgShwComp_wConfCut.Write()
 
 if args.makeKPplots:
   cnv_cosKPDist_wConfCut = rt.TCanvas("cnv_cosKPDist_wConfCut","cnv_cosKPDist_wConfCut")
@@ -2376,17 +3773,24 @@ leg_elSc_NCnue_bkg.AddEntry(h_elScPrGr0_NCnue_bkg, "electron purity > 0", "l")
 leg_elSc_NCnue_bkg.Draw()
 cnv_elSc_NCnue_bkg.Write()
 
-#h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
-#h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
-h_nuE_CCnue_eff.GetYaxis().SetTitle("efficiency")
+h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.003)
+#h_nuE_CCnue_eff.GetYaxis().SetRangeUser(0,1.0)
+#h_nuE_CCnue_pur.GetYaxis().SetRangeUser(0,1.0)
+#h_nuE_CCnue_pur.SetLineColor(rt.kRed)
+if not args.plotPurityVsTrueE:
+  h_nuE_CCnue_eff.GetYaxis().SetTitle("efficiency")
 cnv_CCnue_sel_trueE = rt.TCanvas("cnv_CCnue_sel_trueE","cnv_CCnue_sel_trueE")
 cnv_CCnue_sel_trueE.SetGrid()
 h_nuE_CCnue_eff.Draw("E")
-#h_nuE_CCnue_pur.Draw("ESAME")
-#leg_CCnue_sel_trueE = rt.TLegend(0.7,0.7,0.9,0.9)
-#leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
-#leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_pur, "purity", "l")
-#leg_CCnue_sel_trueE.Draw()
+if args.plotPurityVsTrueE:
+  h_nuE_CCnue_pur.Draw("ESAME")
+  leg_CCnue_sel_trueE = rt.TLegend(0.7,0.7,0.9,0.9)
+  leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_eff, "efficiency", "l")
+  leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_pur, "purity", "l")
+  #leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_eff, "DL Gen2", "l")
+  #leg_CCnue_sel_trueE.AddEntry(h_nuE_CCnue_pur, "Wire Cell", "l")
+  leg_CCnue_sel_trueE.Draw()
 cnv_CCnue_sel_trueE.Write()
 
 h_nuEr_CCnue_eff.GetYaxis().SetRangeUser(0,1.003)
@@ -2414,6 +3818,230 @@ leg_visE_sel.AddEntry(h_visE_CCnue_wCuts, "CC nue (%.2f)"%h_visE_CCnue_wCuts.Int
 leg_visE_sel.AddEntry(h_visE_data_wCuts, "5e19 data (%.2f)"%h_visE_data_wCuts.Integral(), "l")
 leg_visE_sel.Draw()
 cnv_visE_sel.Write()
+
+cnv_visE_sel_cutSet1 = rt.TCanvas("cnv_visE_sel_cutSet1", "cnv_visE_sel_cutSet1")
+h_visE_data_wCutSet1.Draw("E")
+h_visE_all_wCutSet1.Draw("hist same")
+h_visE_data_wCutSet1.Draw("ESAME")
+leg_visE_sel_cutSet1 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet1.AddEntry(h_visE_ext_wCutSet1, "cosmic background (%.2f)"%h_visE_ext_wCutSet1.Integral(), "f")
+leg_visE_sel_cutSet1.AddEntry(h_visE_NCnue_wCutSet1, "NC nue (%.2f)"%h_visE_NCnue_wCutSet1.Integral(), "f")
+leg_visE_sel_cutSet1.AddEntry(h_visE_NCnumu_wCutSet1, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet1.Integral(), "f")
+leg_visE_sel_cutSet1.AddEntry(h_visE_CCnumu_wCutSet1, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet1.Integral(), "f")
+leg_visE_sel_cutSet1.AddEntry(h_visE_CCnue_wCutSet1, "CC nue (%.2f)"%h_visE_CCnue_wCutSet1.Integral(), "f")
+leg_visE_sel_cutSet1.AddEntry(h_visE_data_wCutSet1, "5e19 data (%.2f)"%h_visE_data_wCutSet1.Integral(), "l")
+leg_visE_sel_cutSet1.Draw()
+cnv_visE_sel_cutSet1.Write()
+
+cnv_visE_sel_cutSet2 = rt.TCanvas("cnv_visE_sel_cutSet2", "cnv_visE_sel_cutSet2")
+h_visE_data_wCutSet2.Draw("E")
+h_visE_all_wCutSet2.Draw("hist same")
+h_visE_data_wCutSet2.Draw("ESAME")
+leg_visE_sel_cutSet2 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet2.AddEntry(h_visE_ext_wCutSet2, "cosmic background (%.2f)"%h_visE_ext_wCutSet2.Integral(), "f")
+leg_visE_sel_cutSet2.AddEntry(h_visE_NCnue_wCutSet2, "NC nue (%.2f)"%h_visE_NCnue_wCutSet2.Integral(), "f")
+leg_visE_sel_cutSet2.AddEntry(h_visE_NCnumu_wCutSet2, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet2.Integral(), "f")
+leg_visE_sel_cutSet2.AddEntry(h_visE_CCnumu_wCutSet2, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet2.Integral(), "f")
+leg_visE_sel_cutSet2.AddEntry(h_visE_CCnue_wCutSet2, "CC nue (%.2f)"%h_visE_CCnue_wCutSet2.Integral(), "f")
+leg_visE_sel_cutSet2.AddEntry(h_visE_data_wCutSet2, "5e19 data (%.2f)"%h_visE_data_wCutSet2.Integral(), "l")
+leg_visE_sel_cutSet2.Draw()
+cnv_visE_sel_cutSet2.Write()
+
+cnv_visE_sel_cutSet3 = rt.TCanvas("cnv_visE_sel_cutSet3", "cnv_visE_sel_cutSet3")
+h_visE_data_wCutSet3.Draw("E")
+h_visE_all_wCutSet3.Draw("hist same")
+h_visE_data_wCutSet3.Draw("ESAME")
+leg_visE_sel_cutSet3 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet3.AddEntry(h_visE_ext_wCutSet3, "cosmic background (%.2f)"%h_visE_ext_wCutSet3.Integral(), "f")
+leg_visE_sel_cutSet3.AddEntry(h_visE_NCnue_wCutSet3, "NC nue (%.2f)"%h_visE_NCnue_wCutSet3.Integral(), "f")
+leg_visE_sel_cutSet3.AddEntry(h_visE_NCnumu_wCutSet3, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet3.Integral(), "f")
+leg_visE_sel_cutSet3.AddEntry(h_visE_CCnumu_wCutSet3, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet3.Integral(), "f")
+leg_visE_sel_cutSet3.AddEntry(h_visE_CCnue_wCutSet3, "CC nue (%.2f)"%h_visE_CCnue_wCutSet3.Integral(), "f")
+leg_visE_sel_cutSet3.AddEntry(h_visE_data_wCutSet3, "5e19 data (%.2f)"%h_visE_data_wCutSet3.Integral(), "l")
+leg_visE_sel_cutSet3.Draw()
+cnv_visE_sel_cutSet3.Write()
+
+cnv_visE_sel_cutSet4 = rt.TCanvas("cnv_visE_sel_cutSet4", "cnv_visE_sel_cutSet4")
+h_visE_data_wCutSet4.Draw("E")
+h_visE_all_wCutSet4.Draw("hist same")
+h_visE_data_wCutSet4.Draw("ESAME")
+leg_visE_sel_cutSet4 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet4.AddEntry(h_visE_ext_wCutSet4, "cosmic background (%.2f)"%h_visE_ext_wCutSet4.Integral(), "f")
+leg_visE_sel_cutSet4.AddEntry(h_visE_NCnue_wCutSet4, "NC nue (%.2f)"%h_visE_NCnue_wCutSet4.Integral(), "f")
+leg_visE_sel_cutSet4.AddEntry(h_visE_NCnumu_wCutSet4, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet4.Integral(), "f")
+leg_visE_sel_cutSet4.AddEntry(h_visE_CCnumu_wCutSet4, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet4.Integral(), "f")
+leg_visE_sel_cutSet4.AddEntry(h_visE_CCnue_wCutSet4, "CC nue (%.2f)"%h_visE_CCnue_wCutSet4.Integral(), "f")
+leg_visE_sel_cutSet4.AddEntry(h_visE_data_wCutSet4, "5e19 data (%.2f)"%h_visE_data_wCutSet4.Integral(), "l")
+leg_visE_sel_cutSet4.Draw()
+cnv_visE_sel_cutSet4.Write()
+
+cnv_visE_sel_cutSet5 = rt.TCanvas("cnv_visE_sel_cutSet5", "cnv_visE_sel_cutSet5")
+h_visE_data_wCutSet5.Draw("E")
+h_visE_all_wCutSet5.Draw("hist same")
+h_visE_data_wCutSet5.Draw("ESAME")
+leg_visE_sel_cutSet5 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet5.AddEntry(h_visE_ext_wCutSet5, "cosmic background (%.2f)"%h_visE_ext_wCutSet5.Integral(), "f")
+leg_visE_sel_cutSet5.AddEntry(h_visE_NCnue_wCutSet5, "NC nue (%.2f)"%h_visE_NCnue_wCutSet5.Integral(), "f")
+leg_visE_sel_cutSet5.AddEntry(h_visE_NCnumu_wCutSet5, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet5.Integral(), "f")
+leg_visE_sel_cutSet5.AddEntry(h_visE_CCnumu_wCutSet5, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet5.Integral(), "f")
+leg_visE_sel_cutSet5.AddEntry(h_visE_CCnue_wCutSet5, "CC nue (%.2f)"%h_visE_CCnue_wCutSet5.Integral(), "f")
+leg_visE_sel_cutSet5.AddEntry(h_visE_data_wCutSet5, "5e19 data (%.2f)"%h_visE_data_wCutSet5.Integral(), "l")
+leg_visE_sel_cutSet5.Draw()
+cnv_visE_sel_cutSet5.Write()
+
+cnv_visE_sel_cutSet6 = rt.TCanvas("cnv_visE_sel_cutSet6", "cnv_visE_sel_cutSet6")
+h_visE_data_wCutSet6.Draw("E")
+h_visE_all_wCutSet6.Draw("hist same")
+h_visE_data_wCutSet6.Draw("ESAME")
+leg_visE_sel_cutSet6 = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_visE_sel_cutSet6.AddEntry(h_visE_ext_wCutSet6, "cosmic background (%.2f)"%h_visE_ext_wCutSet6.Integral(), "f")
+leg_visE_sel_cutSet6.AddEntry(h_visE_NCnue_wCutSet6, "NC nue (%.2f)"%h_visE_NCnue_wCutSet6.Integral(), "f")
+leg_visE_sel_cutSet6.AddEntry(h_visE_NCnumu_wCutSet6, "NC numu (%.2f)"%h_visE_NCnumu_wCutSet6.Integral(), "f")
+leg_visE_sel_cutSet6.AddEntry(h_visE_CCnumu_wCutSet6, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet6.Integral(), "f")
+leg_visE_sel_cutSet6.AddEntry(h_visE_CCnue_wCutSet6, "CC nue (%.2f)"%h_visE_CCnue_wCutSet6.Integral(), "f")
+leg_visE_sel_cutSet6.AddEntry(h_visE_data_wCutSet6, "5e19 data (%.2f)"%h_visE_data_wCutSet6.Integral(), "l")
+leg_visE_sel_cutSet6.Draw()
+cnv_visE_sel_cutSet6.Write()
+
+cnv_cosTheta_sel = rt.TCanvas("cnv_cosTheta_sel", "cnv_cosTheta_sel")
+h_cosTheta_data_wCuts.Draw("E")
+h_cosTheta_all_wCuts.Draw("hist same")
+h_cosTheta_data_wCuts.Draw("ESAME")
+leg_cosTheta_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_cosTheta_sel.AddEntry(h_cosTheta_ext_wCuts, "cosmic background (%.2f)"%h_cosTheta_ext_wCuts.Integral(), "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_NCnue_wCuts, "NC nue (%.2f)"%h_cosTheta_NCnue_wCuts.Integral(), "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_NCnumu_wCuts, "NC numu (%.2f)"%h_cosTheta_NCnumu_wCuts.Integral(), "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_CCnumu_wCuts, "CC numu (%.2f)"%h_cosTheta_CCnumu_wCuts.Integral(), "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_CCnue_wCuts, "CC nue (%.2f)"%h_cosTheta_CCnue_wCuts.Integral(), "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_data_wCuts, "5e19 data (%.2f)"%h_cosTheta_data_wCuts.Integral(), "l")
+leg_cosTheta_sel.Draw()
+cnv_cosTheta_sel.Write()
+
+cnv_lepP_sel = rt.TCanvas("cnv_lepP_sel", "cnv_lepP_sel")
+h_lepP_data_wCuts.Draw("E")
+h_lepP_all_wCuts.Draw("hist same")
+h_lepP_data_wCuts.Draw("ESAME")
+leg_lepP_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_lepP_sel.AddEntry(h_lepP_ext_wCuts, "cosmic background (%.2f)"%h_lepP_ext_wCuts.Integral(), "f")
+leg_lepP_sel.AddEntry(h_lepP_NCnue_wCuts, "NC nue (%.2f)"%h_lepP_NCnue_wCuts.Integral(), "f")
+leg_lepP_sel.AddEntry(h_lepP_NCnumu_wCuts, "NC numu (%.2f)"%h_lepP_NCnumu_wCuts.Integral(), "f")
+leg_lepP_sel.AddEntry(h_lepP_CCnumu_wCuts, "CC numu (%.2f)"%h_lepP_CCnumu_wCuts.Integral(), "f")
+leg_lepP_sel.AddEntry(h_lepP_CCnue_wCuts, "CC nue (%.2f)"%h_lepP_CCnue_wCuts.Integral(), "f")
+leg_lepP_sel.AddEntry(h_lepP_data_wCuts, "5e19 data (%.2f)"%h_lepP_data_wCuts.Integral(), "l")
+leg_lepP_sel.Draw()
+cnv_lepP_sel.Write()
+
+cnv_elScr_sel = rt.TCanvas("cnv_elScr_sel", "cnv_elScr_sel")
+h_elScr_data_wCuts.Draw("E")
+h_elScr_all_wCuts.Draw("hist same")
+h_elScr_data_wCuts.Draw("ESAME")
+leg_elScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_elScr_sel.AddEntry(h_elScr_ext_wCuts, "cosmic background (%.2f)"%h_elScr_ext_wCuts.Integral(), "f")
+leg_elScr_sel.AddEntry(h_elScr_NCnue_wCuts, "NC nue (%.2f)"%h_elScr_NCnue_wCuts.Integral(), "f")
+leg_elScr_sel.AddEntry(h_elScr_NCnumu_wCuts, "NC numu (%.2f)"%h_elScr_NCnumu_wCuts.Integral(), "f")
+leg_elScr_sel.AddEntry(h_elScr_CCnumu_wCuts, "CC numu (%.2f)"%h_elScr_CCnumu_wCuts.Integral(), "f")
+leg_elScr_sel.AddEntry(h_elScr_CCnue_wCuts, "CC nue (%.2f)"%h_elScr_CCnue_wCuts.Integral(), "f")
+leg_elScr_sel.AddEntry(h_elScr_data_wCuts, "5e19 data (%.2f)"%h_elScr_data_wCuts.Integral(), "l")
+leg_elScr_sel.Draw()
+cnv_elScr_sel.Write()
+
+cnv_phScr_sel = rt.TCanvas("cnv_phScr_sel", "cnv_phScr_sel")
+h_phScr_data_wCuts.Draw("E")
+h_phScr_all_wCuts.Draw("hist same")
+h_phScr_data_wCuts.Draw("ESAME")
+leg_phScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_phScr_sel.AddEntry(h_phScr_ext_wCuts, "cosmic background (%.2f)"%h_phScr_ext_wCuts.Integral(), "f")
+leg_phScr_sel.AddEntry(h_phScr_NCnue_wCuts, "NC nue (%.2f)"%h_phScr_NCnue_wCuts.Integral(), "f")
+leg_phScr_sel.AddEntry(h_phScr_NCnumu_wCuts, "NC numu (%.2f)"%h_phScr_NCnumu_wCuts.Integral(), "f")
+leg_phScr_sel.AddEntry(h_phScr_CCnumu_wCuts, "CC numu (%.2f)"%h_phScr_CCnumu_wCuts.Integral(), "f")
+leg_phScr_sel.AddEntry(h_phScr_CCnue_wCuts, "CC nue (%.2f)"%h_phScr_CCnue_wCuts.Integral(), "f")
+leg_phScr_sel.AddEntry(h_phScr_data_wCuts, "5e19 data (%.2f)"%h_phScr_data_wCuts.Integral(), "l")
+leg_phScr_sel.Draw()
+cnv_phScr_sel.Write()
+
+cnv_piScr_sel = rt.TCanvas("cnv_piScr_sel", "cnv_piScr_sel")
+h_piScr_data_wCuts.Draw("E")
+h_piScr_all_wCuts.Draw("hist same")
+h_piScr_data_wCuts.Draw("ESAME")
+leg_piScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_piScr_sel.AddEntry(h_piScr_ext_wCuts, "cosmic background (%.2f)"%h_piScr_ext_wCuts.Integral(), "f")
+leg_piScr_sel.AddEntry(h_piScr_NCnue_wCuts, "NC nue (%.2f)"%h_piScr_NCnue_wCuts.Integral(), "f")
+leg_piScr_sel.AddEntry(h_piScr_NCnumu_wCuts, "NC numu (%.2f)"%h_piScr_NCnumu_wCuts.Integral(), "f")
+leg_piScr_sel.AddEntry(h_piScr_CCnumu_wCuts, "CC numu (%.2f)"%h_piScr_CCnumu_wCuts.Integral(), "f")
+leg_piScr_sel.AddEntry(h_piScr_CCnue_wCuts, "CC nue (%.2f)"%h_piScr_CCnue_wCuts.Integral(), "f")
+leg_piScr_sel.AddEntry(h_piScr_data_wCuts, "5e19 data (%.2f)"%h_piScr_data_wCuts.Integral(), "l")
+leg_piScr_sel.Draw()
+cnv_piScr_sel.Write()
+
+cnv_muScr_sel = rt.TCanvas("cnv_muScr_sel", "cnv_muScr_sel")
+h_muScr_data_wCuts.Draw("E")
+h_muScr_all_wCuts.Draw("hist same")
+h_muScr_data_wCuts.Draw("ESAME")
+leg_muScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_muScr_sel.AddEntry(h_muScr_ext_wCuts, "cosmic background (%.2f)"%h_muScr_ext_wCuts.Integral(), "f")
+leg_muScr_sel.AddEntry(h_muScr_NCnue_wCuts, "NC nue (%.2f)"%h_muScr_NCnue_wCuts.Integral(), "f")
+leg_muScr_sel.AddEntry(h_muScr_NCnumu_wCuts, "NC numu (%.2f)"%h_muScr_NCnumu_wCuts.Integral(), "f")
+leg_muScr_sel.AddEntry(h_muScr_CCnumu_wCuts, "CC numu (%.2f)"%h_muScr_CCnumu_wCuts.Integral(), "f")
+leg_muScr_sel.AddEntry(h_muScr_CCnue_wCuts, "CC nue (%.2f)"%h_muScr_CCnue_wCuts.Integral(), "f")
+leg_muScr_sel.AddEntry(h_muScr_data_wCuts, "5e19 data (%.2f)"%h_muScr_data_wCuts.Integral(), "l")
+leg_muScr_sel.Draw()
+cnv_muScr_sel.Write()
+
+cnv_prScr_sel = rt.TCanvas("cnv_prScr_sel", "cnv_prScr_sel")
+h_prScr_data_wCuts.Draw("E")
+h_prScr_all_wCuts.Draw("hist same")
+h_prScr_data_wCuts.Draw("ESAME")
+leg_prScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_prScr_sel.AddEntry(h_prScr_ext_wCuts, "cosmic background (%.2f)"%h_prScr_ext_wCuts.Integral(), "f")
+leg_prScr_sel.AddEntry(h_prScr_NCnue_wCuts, "NC nue (%.2f)"%h_prScr_NCnue_wCuts.Integral(), "f")
+leg_prScr_sel.AddEntry(h_prScr_NCnumu_wCuts, "NC numu (%.2f)"%h_prScr_NCnumu_wCuts.Integral(), "f")
+leg_prScr_sel.AddEntry(h_prScr_CCnumu_wCuts, "CC numu (%.2f)"%h_prScr_CCnumu_wCuts.Integral(), "f")
+leg_prScr_sel.AddEntry(h_prScr_CCnue_wCuts, "CC nue (%.2f)"%h_prScr_CCnue_wCuts.Integral(), "f")
+leg_prScr_sel.AddEntry(h_prScr_data_wCuts, "5e19 data (%.2f)"%h_prScr_data_wCuts.Integral(), "l")
+leg_prScr_sel.Draw()
+cnv_prScr_sel.Write()
+
+cnv_pPScr_sel = rt.TCanvas("cnv_pPScr_sel", "cnv_pPScr_sel")
+h_pPScr_data_wCuts.Draw("E")
+h_pPScr_all_wCuts.Draw("hist same")
+h_pPScr_data_wCuts.Draw("ESAME")
+leg_pPScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pPScr_sel.AddEntry(h_pPScr_ext_wCuts, "cosmic background (%.2f)"%h_pPScr_ext_wCuts.Integral(), "f")
+leg_pPScr_sel.AddEntry(h_pPScr_NCnue_wCuts, "NC nue (%.2f)"%h_pPScr_NCnue_wCuts.Integral(), "f")
+leg_pPScr_sel.AddEntry(h_pPScr_NCnumu_wCuts, "NC numu (%.2f)"%h_pPScr_NCnumu_wCuts.Integral(), "f")
+leg_pPScr_sel.AddEntry(h_pPScr_CCnumu_wCuts, "CC numu (%.2f)"%h_pPScr_CCnumu_wCuts.Integral(), "f")
+leg_pPScr_sel.AddEntry(h_pPScr_CCnue_wCuts, "CC nue (%.2f)"%h_pPScr_CCnue_wCuts.Integral(), "f")
+leg_pPScr_sel.AddEntry(h_pPScr_data_wCuts, "5e19 data (%.2f)"%h_pPScr_data_wCuts.Integral(), "l")
+leg_pPScr_sel.Draw()
+cnv_pPScr_sel.Write()
+
+cnv_pNScr_sel = rt.TCanvas("cnv_pNScr_sel", "cnv_pNScr_sel")
+h_pNScr_data_wCuts.Draw("E")
+h_pNScr_all_wCuts.Draw("hist same")
+h_pNScr_data_wCuts.Draw("ESAME")
+leg_pNScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pNScr_sel.AddEntry(h_pNScr_ext_wCuts, "cosmic background (%.2f)"%h_pNScr_ext_wCuts.Integral(), "f")
+leg_pNScr_sel.AddEntry(h_pNScr_NCnue_wCuts, "NC nue (%.2f)"%h_pNScr_NCnue_wCuts.Integral(), "f")
+leg_pNScr_sel.AddEntry(h_pNScr_NCnumu_wCuts, "NC numu (%.2f)"%h_pNScr_NCnumu_wCuts.Integral(), "f")
+leg_pNScr_sel.AddEntry(h_pNScr_CCnumu_wCuts, "CC numu (%.2f)"%h_pNScr_CCnumu_wCuts.Integral(), "f")
+leg_pNScr_sel.AddEntry(h_pNScr_CCnue_wCuts, "CC nue (%.2f)"%h_pNScr_CCnue_wCuts.Integral(), "f")
+leg_pNScr_sel.AddEntry(h_pNScr_data_wCuts, "5e19 data (%.2f)"%h_pNScr_data_wCuts.Integral(), "l")
+leg_pNScr_sel.Draw()
+cnv_pNScr_sel.Write()
+
+cnv_pCScr_sel = rt.TCanvas("cnv_pCScr_sel", "cnv_pCScr_sel")
+h_pCScr_data_wCuts.Draw("E")
+h_pCScr_all_wCuts.Draw("hist same")
+h_pCScr_data_wCuts.Draw("ESAME")
+leg_pCScr_sel = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_pCScr_sel.AddEntry(h_pCScr_ext_wCuts, "cosmic background (%.2f)"%h_pCScr_ext_wCuts.Integral(), "f")
+leg_pCScr_sel.AddEntry(h_pCScr_NCnue_wCuts, "NC nue (%.2f)"%h_pCScr_NCnue_wCuts.Integral(), "f")
+leg_pCScr_sel.AddEntry(h_pCScr_NCnumu_wCuts, "NC numu (%.2f)"%h_pCScr_NCnumu_wCuts.Integral(), "f")
+leg_pCScr_sel.AddEntry(h_pCScr_CCnumu_wCuts, "CC numu (%.2f)"%h_pCScr_CCnumu_wCuts.Integral(), "f")
+leg_pCScr_sel.AddEntry(h_pCScr_CCnue_wCuts, "CC nue (%.2f)"%h_pCScr_CCnue_wCuts.Integral(), "f")
+leg_pCScr_sel.AddEntry(h_pCScr_data_wCuts, "5e19 data (%.2f)"%h_pCScr_data_wCuts.Integral(), "l")
+leg_pCScr_sel.Draw()
+cnv_pCScr_sel.Write()
 
 h_nuE_CCnue_nCuts.Write()
 h_nuE_CCnue_wCuts.Write()
