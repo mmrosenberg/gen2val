@@ -4,7 +4,7 @@ import numpy as np
 import ROOT as rt
 
 from math import isinf, sqrt
-from helpers.plotting_functions import sortHists
+from helpers.plotting_functions import sortHists, getOverflowLabel
 from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
 
 
@@ -635,6 +635,8 @@ def configure_stacked_hists(h_CCnue, h_NCnue, h_CCnumu, h_NCnumu, h_ext, h_data,
   h_data.SetTitle(title)
   h_data.GetYaxis().SetTitle("events per "+targetPOTstring+" POT")
   h_data.GetXaxis().SetTitle(xtitle)
+  if args.recoEOverflow and "GeV" in xtitle:
+    h_data.GetXaxis().CenterTitle(True)
   return h_CCnue, h_NCnue, h_CCnumu, h_NCnumu, h_ext, h_data
 
 visE_n = 30
@@ -3809,6 +3811,9 @@ cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
 h_visE_data_wCuts.Draw("E")
 h_visE_all_wCuts.Draw("hist same")
 h_visE_data_wCuts.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel = getOverflowLabel(h_visE_data_wCuts)
+  label_visE_sel.Draw()
 leg_visE_sel = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel.AddEntry(h_visE_ext_wCuts, "cosmic background (%.2f)"%h_visE_ext_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_NCnue_wCuts, "NC nue (%.2f)"%h_visE_NCnue_wCuts.Integral(), "f")
@@ -3823,6 +3828,9 @@ cnv_visE_sel_cutSet1 = rt.TCanvas("cnv_visE_sel_cutSet1", "cnv_visE_sel_cutSet1"
 h_visE_data_wCutSet1.Draw("E")
 h_visE_all_wCutSet1.Draw("hist same")
 h_visE_data_wCutSet1.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet1 = getOverflowLabel(h_visE_data_wCutSet1)
+  label_visE_sel_cutSet1.Draw()
 leg_visE_sel_cutSet1 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet1.AddEntry(h_visE_ext_wCutSet1, "cosmic background (%.2f)"%h_visE_ext_wCutSet1.Integral(), "f")
 leg_visE_sel_cutSet1.AddEntry(h_visE_NCnue_wCutSet1, "NC nue (%.2f)"%h_visE_NCnue_wCutSet1.Integral(), "f")
@@ -3837,6 +3845,9 @@ cnv_visE_sel_cutSet2 = rt.TCanvas("cnv_visE_sel_cutSet2", "cnv_visE_sel_cutSet2"
 h_visE_data_wCutSet2.Draw("E")
 h_visE_all_wCutSet2.Draw("hist same")
 h_visE_data_wCutSet2.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet2 = getOverflowLabel(h_visE_data_wCutSet2)
+  label_visE_sel_cutSet2.Draw()
 leg_visE_sel_cutSet2 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet2.AddEntry(h_visE_ext_wCutSet2, "cosmic background (%.2f)"%h_visE_ext_wCutSet2.Integral(), "f")
 leg_visE_sel_cutSet2.AddEntry(h_visE_NCnue_wCutSet2, "NC nue (%.2f)"%h_visE_NCnue_wCutSet2.Integral(), "f")
@@ -3851,6 +3862,9 @@ cnv_visE_sel_cutSet3 = rt.TCanvas("cnv_visE_sel_cutSet3", "cnv_visE_sel_cutSet3"
 h_visE_data_wCutSet3.Draw("E")
 h_visE_all_wCutSet3.Draw("hist same")
 h_visE_data_wCutSet3.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet3 = getOverflowLabel(h_visE_data_wCutSet3)
+  label_visE_sel_cutSet3.Draw()
 leg_visE_sel_cutSet3 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet3.AddEntry(h_visE_ext_wCutSet3, "cosmic background (%.2f)"%h_visE_ext_wCutSet3.Integral(), "f")
 leg_visE_sel_cutSet3.AddEntry(h_visE_NCnue_wCutSet3, "NC nue (%.2f)"%h_visE_NCnue_wCutSet3.Integral(), "f")
@@ -3865,6 +3879,9 @@ cnv_visE_sel_cutSet4 = rt.TCanvas("cnv_visE_sel_cutSet4", "cnv_visE_sel_cutSet4"
 h_visE_data_wCutSet4.Draw("E")
 h_visE_all_wCutSet4.Draw("hist same")
 h_visE_data_wCutSet4.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet4 = getOverflowLabel(h_visE_data_wCutSet4)
+  label_visE_sel_cutSet4.Draw()
 leg_visE_sel_cutSet4 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet4.AddEntry(h_visE_ext_wCutSet4, "cosmic background (%.2f)"%h_visE_ext_wCutSet4.Integral(), "f")
 leg_visE_sel_cutSet4.AddEntry(h_visE_NCnue_wCutSet4, "NC nue (%.2f)"%h_visE_NCnue_wCutSet4.Integral(), "f")
@@ -3879,6 +3896,9 @@ cnv_visE_sel_cutSet5 = rt.TCanvas("cnv_visE_sel_cutSet5", "cnv_visE_sel_cutSet5"
 h_visE_data_wCutSet5.Draw("E")
 h_visE_all_wCutSet5.Draw("hist same")
 h_visE_data_wCutSet5.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet5 = getOverflowLabel(h_visE_data_wCutSet5)
+  label_visE_sel_cutSet5.Draw()
 leg_visE_sel_cutSet5 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet5.AddEntry(h_visE_ext_wCutSet5, "cosmic background (%.2f)"%h_visE_ext_wCutSet5.Integral(), "f")
 leg_visE_sel_cutSet5.AddEntry(h_visE_NCnue_wCutSet5, "NC nue (%.2f)"%h_visE_NCnue_wCutSet5.Integral(), "f")
@@ -3893,6 +3913,9 @@ cnv_visE_sel_cutSet6 = rt.TCanvas("cnv_visE_sel_cutSet6", "cnv_visE_sel_cutSet6"
 h_visE_data_wCutSet6.Draw("E")
 h_visE_all_wCutSet6.Draw("hist same")
 h_visE_data_wCutSet6.Draw("ESAME")
+if args.recoEOverflow:
+  label_visE_sel_cutSet6 = getOverflowLabel(h_visE_data_wCutSet6)
+  label_visE_sel_cutSet6.Draw()
 leg_visE_sel_cutSet6 = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_visE_sel_cutSet6.AddEntry(h_visE_ext_wCutSet6, "cosmic background (%.2f)"%h_visE_ext_wCutSet6.Integral(), "f")
 leg_visE_sel_cutSet6.AddEntry(h_visE_NCnue_wCutSet6, "NC nue (%.2f)"%h_visE_NCnue_wCutSet6.Integral(), "f")
@@ -3921,6 +3944,9 @@ cnv_lepP_sel = rt.TCanvas("cnv_lepP_sel", "cnv_lepP_sel")
 h_lepP_data_wCuts.Draw("E")
 h_lepP_all_wCuts.Draw("hist same")
 h_lepP_data_wCuts.Draw("ESAME")
+if args.recoEOverflow:
+  label_lepP_sel = getOverflowLabel(h_lepP_data_wCuts)
+  label_lepP_sel.Draw()
 leg_lepP_sel = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_lepP_sel.AddEntry(h_lepP_ext_wCuts, "cosmic background (%.2f)"%h_lepP_ext_wCuts.Integral(), "f")
 leg_lepP_sel.AddEntry(h_lepP_NCnue_wCuts, "NC nue (%.2f)"%h_lepP_NCnue_wCuts.Integral(), "f")
