@@ -236,6 +236,23 @@ h_nuE_CCnumu_pur.GetXaxis().SetTitle("true neutrino energy (GeV)")
 h_nuE_CCnumu_pur.SetLineColor(8)
 h_nuE_CCnumu_pur.SetLineWidth(2)
 
+
+def configureEffHist(hist, color):
+  hist.GetXaxis().SetTitle("true neutrino energy (GeV)")
+  hist.SetLineColor(color)
+  hist.SetLineWidth(2)
+  return hist
+
+h_nuE_CCnumu_wCuts1 = rt.TH1F("h_nuE_CCnumu_wCuts1","Neutrino Energy for True CCnumu Events",30,0,3)
+h_nuE_CCnumu_wCuts2 = rt.TH1F("h_nuE_CCnumu_wCuts2","Neutrino Energy for True CCnumu Events",30,0,3)
+h_nuE_CCnumu_wCutsAll = rt.TH1F("h_nuE_CCnumu_wCutsAll","Neutrino Energy for True CCnumu Events",30,0,3)
+h_nuE_CCnumu_eff1 = rt.TH1F("h_nuE_CCnumu_eff1","Inclusive CCnumu Efficiency",30,0,3)
+h_nuE_CCnumu_eff2 = rt.TH1F("h_nuE_CCnumu_eff2","Inclusive CCnumu Efficiency",30,0,3)
+h_nuE_CCnumu_effAll = rt.TH1F("h_nuE_CCnumu_effAll","Inclusive CCnumu Efficiency",30,0,3)
+h_nuE_CCnumu_eff1 = configureEffHist(h_nuE_CCnumu_eff1, rt.kBlue)
+h_nuE_CCnumu_eff2 = configureEffHist(h_nuE_CCnumu_eff2, 8)
+h_nuE_CCnumu_effAll = configureEffHist(h_nuE_CCnumu_effAll, rt.kRed)
+
 h_nuEr_CCnumu_wCuts = rt.TH1F("h_nuEr_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
 h_nuEr_CCnumu_nCuts = rt.TH1F("h_nuEr_CCnue_nCuts","Neutrino Energy for True CCnue Events",30,0,3)
 h_nuEr_CCnue_wCuts = rt.TH1F("h_nuEr_CCnue_wCuts","Neutrino Energy for True CCnue Events",30,0,3)
@@ -628,6 +645,9 @@ for i in range(tnu.GetEntries()):
   if tnu.foundVertex == 0 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
     continue
 
+  if eventType == 0:
+    h_nuE_CCnumu_wCuts1.Fill(tnu.trueNuE, tnu.xsecWeight)
+
   overflowRecoEVal = tnu.recoNuE/1000.
   if overflowRecoEVal > 2.0 and args.recoEOverflow:
     overflowRecoEVal = 2.001
@@ -642,6 +662,9 @@ for i in range(tnu.GetEntries()):
 
   if tnu.vtxFracHitsOnCosmic >= 1.:
     continue
+
+  if eventType == 0:
+    h_nuE_CCnumu_wCuts2.Fill(tnu.trueNuE, tnu.xsecWeight)
 
   h_visE_CCnumu_wCutsSet2, h_visE_NCnumu_wCutsSet2, h_visE_NCnue_wCutsSet2 = FillNuHistos(h_visE_CCnumu_wCutsSet2, h_visE_NCnumu_wCutsSet2, h_visE_NCnue_wCutsSet2, overflowRecoEVal, tnu.xsecWeight, eventType)
 
@@ -779,6 +802,7 @@ for i in range(tnu.GetEntries()):
   if eventType == 0:
     n_CCnumu_wCuts += tnu.xsecWeight
     h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
+    h_nuE_CCnumu_wCutsAll.Fill(tnu.trueNuE, tnu.xsecWeight)
     h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
     if args.recoEOverflow and tnu.recoNuE/1000. > 2.0:
       h_visE_CCnumu_wCuts.Fill(2.001, tnu.xsecWeight)
@@ -1377,6 +1401,13 @@ h_nuE_all_wCuts.Add(h_nuE_CCnue_wCuts)
 h_nuE_all_wCuts.Add(h_nuE_NCnue_wCuts)
 #h_nuE_CCnumu_pur.Divide(h_nuE_CCnumu_wCuts,h_nuE_all_wCuts,1,1,"B")
 h_nuE_CCnumu_pur.Divide(h_nuE_CCnumu_wCuts,h_nuE_all_wCuts)
+
+h_nuE_CCnumu_wCuts1.Scale(targetPOT/tnuPOTsum)
+h_nuE_CCnumu_wCuts2.Scale(targetPOT/tnuPOTsum)
+h_nuE_CCnumu_wCutsAll.Scale(targetPOT/tnuPOTsum)
+h_nuE_CCnumu_eff1.Divide(h_nuE_CCnumu_wCuts1,h_nuE_CCnumu_nCuts,1,1,"B")
+h_nuE_CCnumu_eff2.Divide(h_nuE_CCnumu_wCuts2,h_nuE_CCnumu_nCuts,1,1,"B")
+h_nuE_CCnumu_effAll.Divide(h_nuE_CCnumu_wCutsAll,h_nuE_CCnumu_nCuts,1,1,"B")
 
 h_nuEr_CCnumu_nCuts.Scale(targetPOT/tnuPOTsum)
 h_nuEr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -2313,5 +2344,20 @@ cnv_lowEExVsX_allCuts = rt.TCanvas("cnv_lowEExVsX_allCuts", "cnv_lowEExVsX_allCu
 h_lowEExVsX_wCuts.Draw("E")
 cnv_lowEExVsX_allCuts.Write()
 
+
+h_nuE_CCnumu_eff1.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnumu_eff2.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnumu_effAll.GetYaxis().SetRangeUser(0,1.003)
+cnv_cutSets_eff = rt.TCanvas("cnv_cutSets_eff","cnv_cutSets_eff")
+cnv_cutSets_eff.SetGrid()
+h_nuE_CCnumu_eff1.Draw("E")
+h_nuE_CCnumu_eff2.Draw("ESAME")
+h_nuE_CCnumu_effAll.Draw("ESAME")
+leg_cutSets_eff = rt.TLegend(0.7,0.7,0.9,0.9)
+leg_cutSets_eff.AddEntry(h_nuE_CCnumu_eff1, "cut set 1", "l")
+leg_cutSets_eff.AddEntry(h_nuE_CCnumu_eff2, "cut set 2", "l")
+leg_cutSets_eff.AddEntry(h_nuE_CCnumu_effAll, "all cuts", "l")
+leg_cutSets_eff.Draw()
+cnv_cutSets_eff.Write()
 
 
