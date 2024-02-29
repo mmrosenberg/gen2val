@@ -28,19 +28,30 @@ from helpers.pionEnergyEstimator import pionRange2T
 f = rt.TFile("analyze_range_mass_scaling_process_output.root")
 t = f.Get("ParticleTree")
 
-h_pi = rt.TH2F("h_pi","h_pi",800,0,800,2000,0,2000)
-h_mu = rt.TH2F("h_mu","h_mu",800,0,800,2000,0,2000)
+def configureHists(hists):
+  for hist in hists:
+    hist.GetXaxis().SetTitle("range (cm)")
+    hist.GetYaxis().SetTitle("kinetic energy (MeV)")
+  return hists
+
+h_pi = rt.TH2F("h_pi","Simulated Pions",800,0,800,2000,0,2000)
+h_mu = rt.TH2F("h_mu","Simulated Muons",800,0,800,2000,0,2000)
+h_pr = rt.TH2F("h_pr","Simulated Protons",800,0,800,2000,0,2000)
+h_pi, h_mu, h_pr = configureHists((h_pi,h_mu,h_pr))
 
 t.Draw("KE:length >> h_pi","pdg == 211")
 t.Draw("KE:length >> h_mu","pdg == 13")
+t.Draw("KE:length >> h_pr","pdg == 2212")
 
 range_mu = []
 KE_mu = []
 range_pi = []
 KE_pi = []
+range_pr = []
 
 for ix in range(1,801):
   range_pi.append(0.5 + (ix-1))
+  range_pr.append(0.5 + (ix-1))
   range_mu.append(0.5 + (ix-1))
   found_pi_val = False
   found_mu_val = False
@@ -62,6 +73,7 @@ fspline = rt.TFile("/home/matthew/microboone/tufts/ubdl/larflow/larflow/Reco/dat
 muSpline = fspline.Get("sMuonRange2T")
 prSpline = fspline.Get("sProtonRange2T")
 KE_mu_spline = [muSpline.Eval(range_mu[i]) for i in range(800)]
+KE_pr_spline = [prSpline.Eval(range_pr[i]) for i in range(800)]
 KE_pi_spline1 = [muSpline.Eval(range_pi[i])*1.32 for i in range(800)]
 KE_pi_spline2 = [muSpline.Eval(range_pi[i]*1.32) for i in range(800)]
 
@@ -97,14 +109,16 @@ g_pi_spline1 = rt.TGraph(800,np.array(range_pi),np.array(KE_pi_spline1))
 g_pi_spline2 = rt.TGraph(800,np.array(range_pi),np.array(KE_pi_spline2))
 g_pi_spline3 = rt.TGraph(800,np.array(range_pi),np.array(KE_pi_spline3))
 g_mu_spline = rt.TGraph(800,np.array(range_mu),np.array(KE_mu_spline))
+g_pr_spline = rt.TGraph(800,np.array(range_pr),np.array(KE_pr_spline))
 g_pi.SetLineColor(rt.kBlue)
 g_mu.SetLineColor(rt.kBlue)
-g_pi_spline1.SetLineColor(rt.kBlue)
-g_pi_spline2.SetLineColor(rt.kRed)
-g_pi_spline3.SetLineColor(8)
+g_pi_spline1.SetLineColor(rt.kRed)
+g_pi_spline2.SetLineColor(8)
+g_pi_spline3.SetLineColor(rt.kBlue)
 g_mu_spline.SetLineColor(rt.kBlue)
+g_pr_spline.SetLineColor(rt.kBlue)
 
-fout = rt.TFile("foo.root","RECREATE")
+fout = rt.TFile("analyze_range_mass_scaling_plot_output.root","RECREATE")
 h_pi.Write()
 h_mu.Write()
 
@@ -118,12 +132,17 @@ h_mu.Draw()
 g_mu.Draw("LSAME")
 cnv_mu.Write()
 
-cnv_pi_spline = rt.TCanvas("cnv_pi_spline","cnv_pi_spline")
+cnv_pi_multi_spline = rt.TCanvas("cnv_pi_multi_spline","cnv_pi_multi_spline")
 h_pi.Draw()
 g_pi_spline1.Draw("LSAME")
 g_pi_spline2.Draw("LSAME")
 g_pi_spline3.Draw("LSAME")
 #g_pi.Draw("LSAME")
+cnv_pi_multi_spline.Write()
+
+cnv_pi_spline = rt.TCanvas("cnv_pi_spline","cnv_pi_spline")
+h_pi.Draw()
+g_pi_spline3.Draw("LSAME")
 cnv_pi_spline.Write()
 
 cnv_mu_spline = rt.TCanvas("cnv_mu_spline","cnv_mu_spline")
@@ -131,15 +150,20 @@ h_mu.Draw()
 g_mu_spline.Draw("LSAME")
 cnv_mu_spline.Write()
 
+cnv_pr_spline = rt.TCanvas("cnv_pr_spline","cnv_pr_spline")
+h_pr.Draw()
+g_pr_spline.Draw("LSAME")
+cnv_pr_spline.Write()
 
-plt.figure(1)
-plt.plot(range_mu[5:85], KE_mu_spline[5:85], 'k-')
-plt.plot(range_mu[5:85], KE_mu[5:85], 'b-')
-plt.plot(range_pi[5:85], KE_pi[5:85], 'r-')
 
-plt.figure(2)
-plt.plot(range_pi[5:85], ratio[5:85], 'g-')
+#plt.figure(1)
+#plt.plot(range_mu[5:85], KE_mu_spline[5:85], 'k-')
+#plt.plot(range_mu[5:85], KE_mu[5:85], 'b-')
+#plt.plot(range_pi[5:85], KE_pi[5:85], 'r-')
 
-plt.show()
+#plt.figure(2)
+#plt.plot(range_pi[5:85], ratio[5:85], 'g-')
+
+#plt.show()
 
 

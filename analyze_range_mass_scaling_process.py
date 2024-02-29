@@ -54,12 +54,14 @@ for infile in args.input:
     mctracks = ioll.get_data(larlite.data.kMCTrack, "mcreco")
 
     for mctrack in mctracks:
-      if abs(mctrack.PdgCode()) in [13, 211] and mctrack.Process() == 'primary' and isInDetector(mctrack.End()):
+      if abs(mctrack.PdgCode()) in [13, 211, 2212] and mctrack.Process() == 'primary' and isInDetector(mctrack.End()):
         pdg[0] = abs(mctrack.PdgCode())
         length[0] = getTrackLength(mctrack)
         mass = 105.7
         if abs(mctrack.PdgCode()) == 211:
           mass = 139.6
+        if abs(mctrack.PdgCode()) == 2212:
+          mass = 938.3
         KE[0] = mctrack.Start().E() - mass
         tree.Fill()
 
