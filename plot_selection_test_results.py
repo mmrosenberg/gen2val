@@ -6,6 +6,7 @@ import ROOT as rt
 from math import isinf, sqrt
 from helpers.plotting_functions import sortHists, getOverflowLabel
 from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
+from helpers.systematics import SetUncertainties
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
@@ -36,6 +37,7 @@ parser.add_argument("--smallFV", help="use 20cm fiducial volume", action="store_
 parser.add_argument("--NPMLCosmicConfig", help="used extBNB file and incorrect scaling from NPML plots", action="store_true")
 parser.add_argument("--printEXTinfo", help="print event info for selected cosmic background", action="store_true")
 parser.add_argument("--plotPurityVsTrueE", help="plot purity vs. true E (cosmic bkg excluded if present)", action="store_true")
+parser.add_argument("--write_ntuples", help="write ntuples with selected events to file", action="store_true")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -61,6 +63,17 @@ tdata = fdata.Get("EventTree")
 
 out_data_sel_evts = open(args.out5e19EvtFile,"w")
 out_data_sel_evts.write("fileid run subrun event recoNuE\n")
+
+if args.write_ntuples:
+  fnu_trimmed = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_passed.root"),"RECREATE")
+  tnu_trimmed = tnu.CloneTree(0)
+  fnue_trimmed = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_passed.root"),"RECREATE")
+  tnue_trimmed = tnue.CloneTree(0)
+  fext_trimmed = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_passed.root"),"RECREATE")
+  text_trimmed = text.CloneTree(0)
+  fdata_trimmed = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_passed.root"),"RECREATE")
+  tdata_trimmed = tdata.CloneTree(0)
+
 
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
 runs1to3POT = 6.67e+20
@@ -654,6 +667,7 @@ h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue
 h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",visE_n,visE_l,visE_h)
 h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",visE_n,visE_l,visE_h)
 h_visE_all_wCuts = rt.THStack("h_visE_all_wCuts", "Inclusive CCnue Selected Events")
+h_visE_predErr_wCuts = rt.TH1F("h_visE_predErr_wCuts", "Inclusive CCnue Selected Events",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCuts, h_visE_NCnue_wCuts, h_visE_CCnumu_wCuts, h_visE_NCnumu_wCuts, h_visE_ext_wCuts, h_visE_data_wCuts = configure_stacked_hists(h_visE_CCnue_wCuts, h_visE_NCnue_wCuts, h_visE_CCnumu_wCuts, h_visE_NCnumu_wCuts, h_visE_ext_wCuts, h_visE_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet1 = rt.TH1F("h_visE_CCnue_wCutSet1","Reco Nu Energy for True CCnue Events (Cut Set 1)",visE_n,visE_l,visE_h)
@@ -1390,6 +1404,8 @@ for i in range(tnu.GetEntries()):
           h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue = FillNuHistos(h_avgShwComp_wConfCut_CCnumu, h_avgShwComp_wConfCut_NCnumu, h_avgShwComp_wConfCut_NCnue, avgShwComp, tnu.xsecWeight, eventType)
   
         if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tnu.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          if args.write_ntuples:
+            tnu_trimmed.Fill()
           recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
           if eventType == 0:
             n_runs1to3_CCnumu_pass += tnu.xsecWeight
@@ -1806,6 +1822,8 @@ for i in range(tnue.GetEntries()):
           h_cosKPDist_wConfCut_CCnue.Fill(nearestCosKP, tnue.xsecWeight)
           h_tEndKPDist_wConfCut_CCnue.Fill(nearestTEndKP, tnue.xsecWeight)
         if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tnue.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          if args.write_ntuples:
+            tnue_trimmed.Fill()
           n_runs1to3_CCnue_pass += tnue.xsecWeight
           h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
           h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
@@ -2092,6 +2110,8 @@ for i in range(text.GetEntries()):
         #  print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
         #  print("background event details: elMaxQComp = %f, elMaxQPur = %f, elMaxQVtxDist = %f, elMaxQCosTheta = %f, elMaxQConf = %f, elMaxQPrimConf2 = %f, vtxScore = %f, deltaCosmic = %f, pcaAxis0y = %f, nonPrimShowerCharge = %f, pcaEVratio = %f, avgShowerComp = %f"%(elMaxQComp,elMaxQPur,elMaxQVtxDist,elMaxQCosTheta,elMaxQConf,elMaxQPrimConf2,text.vtxScore,deltaCosmic,text.eventPCAxis0[1],nonPrimShwCharge,pcaEVratio,avgShwComp))
         if elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and text.vtxScore > args.vtxScoreCut and not deltaCosmic:
+          if args.write_ntuples:
+            text_trimmed.Fill()
           if args.printEXTinfo:
             print("extBNB background event passed selection: (fileid, run, subrun, event, vtxX, vtxY, vtxZ) = (%i, %i, %i, %i, %f, %f, %f)"%(text.fileid, text.run, text.subrun, text.event, text.vtxX, text.vtxY, text.vtxZ))
             #print("background event details: elMaxQComp = %f, elMaxQCosTheta = %f, vtxScore = %f, deltaCosmic = %f, pcaAxis0y = %f, nonPrimShowerCharge = %f, pcaEVratio = %f, avgShowerComp = %f"%(elMaxQComp,elMaxQCosTheta,vtxScore,deltaCosmic,text.eventPCAxis0[1],nonPrimShwCharge,pcaEVratio,avgShwComp))
@@ -2248,6 +2268,8 @@ for i in range(tdata.GetEntries()):
       deltaCosmic = False
     confidenceCutPassed = ( ((elMaxQPrimScore - elMaxQChgdScore) > args.chgdScoreCut) and ((elMaxQPrimScore - elMaxQNtrlScore) > args.ntrlScoreCut) ) if args.useProcScoreCuts else (elMaxQConf > args.confCut)
     if confidenceCutPassed and elMaxQ > args.chargeCut and elMaxQFrac > args.chargeFracCut and elMaxQCosTheta > args.cosThetaCut and elMaxQVtxDist < args.distCut and elMaxQComp > args.compCut and elMaxQPur > args.purityCut and tdata.vtxScore > args.vtxScoreCut and not deltaCosmic:
+      if args.write_ntuples:
+        tdata_trimmed.Fill()
       n_runs1to3_data_pass += 1.
       if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
         h_visE_data_wCuts.Fill(2.7)
@@ -2356,6 +2378,12 @@ h_visE_all_wCuts.Add(h_visE_NCnue_wCuts)
 h_visE_all_wCuts.Add(h_visE_NCnumu_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnumu_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnue_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_ext_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_NCnue_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_NCnumu_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_CCnumu_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_CCnue_wCuts)
+h_visE_predErr_wCuts = SetUncertainties(h_visE_predErr_wCuts, "recoNuE", "CCnue")
 
 h_visE_CCnumu_wCutSet1.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet1.Scale(targetPOT/tnuPOTsum)
@@ -3811,6 +3839,9 @@ cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
 h_visE_data_wCuts.Draw("E")
 h_visE_all_wCuts.Draw("hist same")
 h_visE_data_wCuts.Draw("ESAME")
+h_visE_predErr_wCuts.SetFillColor(4)
+h_visE_predErr_wCuts.SetFillStyle(3002)
+h_visE_predErr_wCuts.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel = getOverflowLabel(h_visE_data_wCuts)
   label_visE_sel.Draw()
@@ -3821,8 +3852,12 @@ leg_visE_sel.AddEntry(h_visE_NCnumu_wCuts, "NC numu (%.2f)"%h_visE_NCnumu_wCuts.
 leg_visE_sel.AddEntry(h_visE_CCnumu_wCuts, "CC numu (%.2f)"%h_visE_CCnumu_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_CCnue_wCuts, "CC nue (%.2f)"%h_visE_CCnue_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_data_wCuts, "5e19 data (%.2f)"%h_visE_data_wCuts.Integral(), "l")
+leg_visE_sel.AddEntry(h_visE_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel.Draw()
 cnv_visE_sel.Write()
+h_visE_data_wCuts.Write()
+h_visE_all_wCuts.Write()
+h_visE_predErr_wCuts.Write()
 
 cnv_visE_sel_cutSet1 = rt.TCanvas("cnv_visE_sel_cutSet1", "cnv_visE_sel_cutSet1")
 h_visE_data_wCutSet1.Draw("E")
@@ -4139,5 +4174,28 @@ h_visE_ext_wCuts.Write()
 #lPad_nuE_CCnue.cd()
 #h_nuE_CCnue_eff.Draw("E")
 #cnv_nuE_CCnue.Write()
+
+
+if args.write_ntuples:
+
+  fnu_trimmed.cd()
+  tnu_trimmed.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed.Close()
+  
+  fnue_trimmed.cd()
+  tnue_trimmed.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed.Close()
+  
+  fext_trimmed.cd()
+  text_trimmed.Write("",rt.TObject.kOverwrite)
+  fext_trimmed.Close()
+  
+  fdata_trimmed.cd()
+  tdata_trimmed.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed.Close()
+
+
 
 

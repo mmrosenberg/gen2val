@@ -6,6 +6,7 @@ import ROOT as rt
 from math import isinf, sqrt
 from helpers.plotting_functions import sortHists, getOverflowLabel
 from helpers.larflowreco_ana_funcs import isFiducial, getDistance, getCosThetaBeamVector, getCosThetaGravVector 
+from helpers.systematics import SetUncertainties
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
@@ -21,6 +22,7 @@ parser.add_argument("--procCuts", help="apply process classification/score cuts"
 parser.add_argument("--smallFV", help="use 20cm fiducial volume", action="store_true")
 parser.add_argument("--recoEOverflow", help="plot overflow bin for final recoE selection plot", action="store_true")
 parser.add_argument("--plotPurityVsTrueE", help="plot purity vs. true E (cosmic bkg excluded if present)", action="store_true")
+parser.add_argument("--write_ntuples", help="write ntuples with selected events to file", action="store_true")
 args = parser.parse_args()
 
 #rt.gROOT.SetBatch(True)
@@ -40,6 +42,16 @@ text = fext.Get("EventTree")
 
 fdata = rt.TFile(args.data_file)
 tdata = fdata.Get("EventTree")
+
+if args.write_ntuples:
+  fnu_trimmed = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnumuInc_passed.root"),"RECREATE")
+  tnu_trimmed = tnu.CloneTree(0)
+  fnue_trimmed = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnumuInc_passed.root"),"RECREATE")
+  tnue_trimmed = tnue.CloneTree(0)
+  fext_trimmed = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnumuInc_passed.root"),"RECREATE")
+  text_trimmed = text.CloneTree(0)
+  fdata_trimmed = rt.TFile(args.data_file.replace(".root","_trimmed_CCnumuInc_passed.root"),"RECREATE")
+  tdata_trimmed = tdata.CloneTree(0)
 
 targetPOT = 4.4e+19
 targetPOTstring = "4.4e+19"
@@ -295,6 +307,7 @@ h_visE_NCnumu_wCuts = rt.TH1F("h_visE_NCnumu_wCuts","Reco Nu Energy for True NCn
 h_visE_NCnue_wCuts = rt.TH1F("h_visE_NCnue_wCuts","Reco Nu Energy for True NCnue Events",visEn,visEl,visEh)
 h_visE_ext_wCuts = rt.TH1F("h_visE_ext_wCuts","Reco Nu Energy for ExtBNB Events",visEn,visEl,visEh)
 h_visE_data_wCuts = rt.TH1F("h_visE_data_wCuts","Reco Nu Energy for BNB Data Events",visEn,visEl,visEh)
+h_visE_predErr_wCuts = rt.TH1F("h_visE_predErr_wCuts", "Inclusive CCnumu Selected Events",visEn,visEl,visEh)
 
 h_visE_CCnue_wCutsSet1 = rt.TH1F("h_visE_CCnue_wCutsSet1","Reco Nu Energy for True CCnue Events",visEn,visEl,visEh)
 h_visE_CCnumu_wCutsSet1 = rt.TH1F("h_visE_CCnumu_wCutsSet1","Reco Nu Energy for True CCnumu Events",visEn,visEl,visEh)
@@ -798,6 +811,9 @@ for i in range(tnu.GetEntries()):
   h_selMu_scoreConf_CCnumu, h_selMu_scoreConf_NCnumu, h_selMu_scoreConf_NCnue = FillNuHistos(h_selMu_scoreConf_CCnumu,
     h_selMu_scoreConf_NCnumu, h_selMu_scoreConf_NCnue, selMu_scoreConf, tnu.xsecWeight, eventType)
 
+  if args.write_ntuples:
+    tnu_trimmed.Fill()
+
   recoMuP = sqrt( (selMu_recoE + 105.66)**2 - 105.66**2 )/1000.
   if eventType == 0:
     n_CCnumu_wCuts += tnu.xsecWeight
@@ -1022,6 +1038,9 @@ for i in range(tnue.GetEntries()):
   h_selMu_piScore_CCnue.Fill(selMu_piScore, tnue.xsecWeight)
   h_selMu_scoreConf_CCnue.Fill(selMu_scoreConf, tnue.xsecWeight)
 
+  if args.write_ntuples:
+    tnue_trimmed.Fill()
+
   n_CCnue_wCuts += tnue.xsecWeight
   h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
   h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
@@ -1196,6 +1215,9 @@ for i in range(text.GetEntries()):
   h_selMu_piScore_ext.Fill(selMu_piScore)
   h_selMu_scoreConf_ext.Fill(selMu_scoreConf)
 
+  if args.write_ntuples:
+    text_trimmed.Fill()
+
   n_ext_wCuts += 1.
   h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
   if args.recoEOverflow and text.recoNuE/1000. > 2.0:
@@ -1329,6 +1351,9 @@ for i in range(tdata.GetEntries()):
   if tdata.recoNuE < 400.:
     h_lowENVsX_data_wCuts.Fill(tdata.vtxX)
 
+  if args.write_ntuples:
+    tdata_trimmed.Fill()
+
   n_data_wCuts += 1.
   if args.recoEOverflow and tdata.recoNuE/1000. > 2.0:
     h_visE_data_wCuts.Fill(2.001)
@@ -1435,6 +1460,12 @@ h_visE_all_wCuts.Add(h_visE_NCnue_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnue_wCuts)
 h_visE_all_wCuts.Add(h_visE_NCnumu_wCuts)
 h_visE_all_wCuts.Add(h_visE_CCnumu_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_ext_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_NCnue_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_NCnumu_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_CCnumu_wCuts)
+h_visE_predErr_wCuts.Add(h_visE_CCnue_wCuts)
+h_visE_predErr_wCuts = SetUncertainties(h_visE_predErr_wCuts, "recoNuE", "CCnumu")
 
 h_visE_CCnumu_wCutsSet1.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutsSet1.Scale(targetPOT/tnuPOTsum)
@@ -2058,6 +2089,9 @@ cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
 h_visE_data_wCuts.Draw("E")
 h_visE_all_wCuts.Draw("hist same")
 h_visE_data_wCuts.Draw("ESAME")
+h_visE_predErr_wCuts.SetFillColor(4)
+h_visE_predErr_wCuts.SetFillStyle(3002)
+h_visE_predErr_wCuts.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel = getOverflowLabel(h_visE_data_wCuts)
   label_visE_sel.Draw()
@@ -2068,8 +2102,12 @@ leg_visE_sel.AddEntry(h_visE_CCnue_wCuts, "CC nue (%.2f)"%h_visE_CCnue_wCuts.Int
 leg_visE_sel.AddEntry(h_visE_NCnumu_wCuts, "NC numu (%.2f)"%h_visE_NCnumu_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_CCnumu_wCuts, "CC numu (%.2f)"%h_visE_CCnumu_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_data_wCuts, "5e19 data (%.2f)"%h_visE_data_wCuts.Integral(), "l")
+leg_visE_sel.AddEntry(h_visE_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel.Draw()
 cnv_visE_sel.Write()
+h_visE_data_wCuts.Write()
+h_visE_all_wCuts.Write()
+h_visE_predErr_wCuts.Write()
 
 cnv_visE_cutSet1 = rt.TCanvas("cnv_visE_cutSet1", "cnv_visE_cutSet1")
 h_visE_data_wCutsSet1.Draw("E")
@@ -2359,5 +2397,31 @@ leg_cutSets_eff.AddEntry(h_nuE_CCnumu_eff2, "cut set 2", "l")
 leg_cutSets_eff.AddEntry(h_nuE_CCnumu_effAll, "all cuts", "l")
 leg_cutSets_eff.Draw()
 cnv_cutSets_eff.Write()
+
+h_nuE_CCnumu_eff1.Write()
+h_nuE_CCnumu_eff2.Write()
+h_nuE_CCnumu_effAll.Write()
+
+
+if args.write_ntuples:
+
+  fnu_trimmed.cd()
+  tnu_trimmed.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed.Close()
+  
+  fnue_trimmed.cd()
+  tnue_trimmed.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed.Close()
+  
+  fext_trimmed.cd()
+  text_trimmed.Write("",rt.TObject.kOverwrite)
+  fext_trimmed.Close()
+  
+  fdata_trimmed.cd()
+  tdata_trimmed.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed.Close()
+
 
 
