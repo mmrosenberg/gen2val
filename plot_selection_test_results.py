@@ -73,6 +73,57 @@ if args.write_ntuples:
   text_trimmed = text.CloneTree(0)
   fdata_trimmed = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_passed.root"),"RECREATE")
   tdata_trimmed = tdata.CloneTree(0)
+  fnu_trimmed_cutSet1 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet1_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet1 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet1 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet1_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet1 = tnue.CloneTree(0)
+  fext_trimmed_cutSet1 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet1_passed.root"),"RECREATE")
+  text_trimmed_cutSet1 = text.CloneTree(0)
+  fdata_trimmed_cutSet1 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet1_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet1 = tdata.CloneTree(0)
+  fnu_trimmed_cutSet2 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet2_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet2 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet2 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet2_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet2 = tnue.CloneTree(0)
+  fext_trimmed_cutSet2 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet2_passed.root"),"RECREATE")
+  text_trimmed_cutSet2 = text.CloneTree(0)
+  fdata_trimmed_cutSet2 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet2_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet2 = tdata.CloneTree(0)
+  fnu_trimmed_cutSet3 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet3_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet3 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet3 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet3_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet3 = tnue.CloneTree(0)
+  fext_trimmed_cutSet3 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet3_passed.root"),"RECREATE")
+  text_trimmed_cutSet3 = text.CloneTree(0)
+  fdata_trimmed_cutSet3 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet3_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet3 = tdata.CloneTree(0)
+  fnu_trimmed_cutSet4 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet4_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet4 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet4 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet4_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet4 = tnue.CloneTree(0)
+  fext_trimmed_cutSet4 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet4_passed.root"),"RECREATE")
+  text_trimmed_cutSet4 = text.CloneTree(0)
+  fdata_trimmed_cutSet4 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet4_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet4 = tdata.CloneTree(0)
+  fnu_trimmed_cutSet5 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet5_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet5 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet5 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet5_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet5 = tnue.CloneTree(0)
+  fext_trimmed_cutSet5 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet5_passed.root"),"RECREATE")
+  text_trimmed_cutSet5 = text.CloneTree(0)
+  fdata_trimmed_cutSet5 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet5_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet5 = tdata.CloneTree(0)
+  fnu_trimmed_cutSet6 = rt.TFile(args.bnbnu_file.replace(".root","_trimmed_CCnueInc_cutSet6_passed.root"),"RECREATE")
+  tnu_trimmed_cutSet6 = tnu.CloneTree(0)
+  fnue_trimmed_cutSet6 = rt.TFile(args.bnbnue_file.replace(".root","_trimmed_CCnueInc_cutSet6_passed.root"),"RECREATE")
+  tnue_trimmed_cutSet6 = tnue.CloneTree(0)
+  fext_trimmed_cutSet6 = rt.TFile(args.extbnb_file.replace(".root","_trimmed_CCnueInc_cutSet6_passed.root"),"RECREATE")
+  text_trimmed_cutSet6 = text.CloneTree(0)
+  fdata_trimmed_cutSet6 = rt.TFile(args.data_file.replace(".root","_trimmed_CCnueInc_cutSet6_passed.root"),"RECREATE")
+  tdata_trimmed_cutSet6 = tdata.CloneTree(0)
+
+
+
 
 
 run3POT = 4.3e+19 + 1.701e+20 + 2.97e+19 + 1.524e+17
@@ -677,6 +728,7 @@ h_visE_NCnue_wCutSet1 = rt.TH1F("h_visE_NCnue_wCutSet1","Reco Nu Energy for True
 h_visE_ext_wCutSet1 = rt.TH1F("h_visE_ext_wCutSet1","Reco Nu Energy for ExtBNB Events (Cut Set 1)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet1 = rt.TH1F("h_visE_data_wCutSet1","Reco Nu Energy for BNB Data Events (Cut Set 1)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet1 = rt.THStack("h_visE_all_wCutSet1", "Inclusive CCnue Selected Events (Cut Set 1)")
+h_visE_predErr_wCutSet1 = rt.TH1F("h_visE_predErr_wCutSet1", "Inclusive CCnue Selected Events (Cut Set 1)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet1, h_visE_NCnue_wCutSet1, h_visE_CCnumu_wCutSet1, h_visE_NCnumu_wCutSet1, h_visE_ext_wCutSet1, h_visE_data_wCutSet1 = configure_stacked_hists(h_visE_CCnue_wCutSet1, h_visE_NCnue_wCutSet1, h_visE_CCnumu_wCutSet1, h_visE_NCnumu_wCutSet1, h_visE_ext_wCutSet1, h_visE_data_wCutSet1, "Inclusive CCnue Selected Events (Cut Set 1)", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet2 = rt.TH1F("h_visE_CCnue_wCutSet2","Reco Nu Energy for True CCnue Events (Cut  Set 2)",visE_n,visE_l,visE_h)
@@ -686,6 +738,7 @@ h_visE_NCnue_wCutSet2 = rt.TH1F("h_visE_NCnue_wCutSet2","Reco Nu Energy for True
 h_visE_ext_wCutSet2 = rt.TH1F("h_visE_ext_wCutSet2","Reco Nu Energy for ExtBNB Events (Cut  Set 2)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet2 = rt.TH1F("h_visE_data_wCutSet2","Reco Nu Energy for BNB Data Events (Cut  Set 2)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet2 = rt.THStack("h_visE_all_wCutSet2", "Inclusive CCnue Selected Events (Cut  Set 2)")
+h_visE_predErr_wCutSet2 = rt.TH1F("h_visE_predErr_wCutSet2", "Inclusive CCnue Selected Events (Cut Set 2)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet2, h_visE_NCnue_wCutSet2, h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_ext_wCutSet2, h_visE_data_wCutSet2 = configure_stacked_hists(h_visE_CCnue_wCutSet2, h_visE_NCnue_wCutSet2, h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_ext_wCutSet2, h_visE_data_wCutSet2, "Inclusive CCnue Selected Events (Cut  Set 2)", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet3 = rt.TH1F("h_visE_CCnue_wCutSet3","Reco Nu Energy for True CCnue Events (Cut  Set 3)",visE_n,visE_l,visE_h)
@@ -695,6 +748,7 @@ h_visE_NCnue_wCutSet3 = rt.TH1F("h_visE_NCnue_wCutSet3","Reco Nu Energy for True
 h_visE_ext_wCutSet3 = rt.TH1F("h_visE_ext_wCutSet3","Reco Nu Energy for ExtBNB Events (Cut  Set 3)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet3 = rt.TH1F("h_visE_data_wCutSet3","Reco Nu Energy for BNB Data Events (Cut  Set 3)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet3 = rt.THStack("h_visE_all_wCutSet3", "Inclusive CCnue Selected Events (Cut  Set 3)")
+h_visE_predErr_wCutSet3 = rt.TH1F("h_visE_predErr_wCutSet3", "Inclusive CCnue Selected Events (Cut Set 3)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet3, h_visE_NCnue_wCutSet3, h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_ext_wCutSet3, h_visE_data_wCutSet3 = configure_stacked_hists(h_visE_CCnue_wCutSet3, h_visE_NCnue_wCutSet3, h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_ext_wCutSet3, h_visE_data_wCutSet3, "Inclusive CCnue Selected Events (Cut  Set 3)", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet4 = rt.TH1F("h_visE_CCnue_wCutSet4","Reco Nu Energy for True CCnue Events (Cut  Set 4)",visE_n,visE_l,visE_h)
@@ -704,6 +758,7 @@ h_visE_NCnue_wCutSet4 = rt.TH1F("h_visE_NCnue_wCutSet4","Reco Nu Energy for True
 h_visE_ext_wCutSet4 = rt.TH1F("h_visE_ext_wCutSet4","Reco Nu Energy for ExtBNB Events (Cut  Set 4)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet4 = rt.TH1F("h_visE_data_wCutSet4","Reco Nu Energy for BNB Data Events (Cut  Set 4)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet4 = rt.THStack("h_visE_all_wCutSet4", "Inclusive CCnue Selected Events (Cut  Set 4)")
+h_visE_predErr_wCutSet4 = rt.TH1F("h_visE_predErr_wCutSet4", "Inclusive CCnue Selected Events (Cut Set 4)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet4, h_visE_NCnue_wCutSet4, h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_ext_wCutSet4, h_visE_data_wCutSet4 = configure_stacked_hists(h_visE_CCnue_wCutSet4, h_visE_NCnue_wCutSet4, h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_ext_wCutSet4, h_visE_data_wCutSet4, "Inclusive CCnue Selected Events (Cut  Set 4)", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet5 = rt.TH1F("h_visE_CCnue_wCutSet5","Reco Nu Energy for True CCnue Events (Cut  Set 5)",visE_n,visE_l,visE_h)
@@ -713,6 +768,7 @@ h_visE_NCnue_wCutSet5 = rt.TH1F("h_visE_NCnue_wCutSet5","Reco Nu Energy for True
 h_visE_ext_wCutSet5 = rt.TH1F("h_visE_ext_wCutSet5","Reco Nu Energy for ExtBNB Events (Cut  Set 5)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet5 = rt.TH1F("h_visE_data_wCutSet5","Reco Nu Energy for BNB Data Events (Cut  Set 5)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet5 = rt.THStack("h_visE_all_wCutSet5", "Inclusive CCnue Selected Events (Cut  Set 5)")
+h_visE_predErr_wCutSet5 = rt.TH1F("h_visE_predErr_wCutSet5", "Inclusive CCnue Selected Events (Cut Set 5)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet5, h_visE_NCnue_wCutSet5, h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_ext_wCutSet5, h_visE_data_wCutSet5 = configure_stacked_hists(h_visE_CCnue_wCutSet5, h_visE_NCnue_wCutSet5, h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_ext_wCutSet5, h_visE_data_wCutSet5, "Inclusive CCnue Selected Events (Cut  Set 5)", "reconstructed neutrino energy (GeV)")
 
 h_visE_CCnue_wCutSet6 = rt.TH1F("h_visE_CCnue_wCutSet6","Reco Nu Energy for True CCnue Events (Cut  Set 6)",visE_n,visE_l,visE_h)
@@ -722,6 +778,7 @@ h_visE_NCnue_wCutSet6 = rt.TH1F("h_visE_NCnue_wCutSet6","Reco Nu Energy for True
 h_visE_ext_wCutSet6 = rt.TH1F("h_visE_ext_wCutSet6","Reco Nu Energy for ExtBNB Events (Cut  Set 6)",visE_n,visE_l,visE_h)
 h_visE_data_wCutSet6 = rt.TH1F("h_visE_data_wCutSet6","Reco Nu Energy for BNB Data Events (Cut  Set 6)",visE_n,visE_l,visE_h)
 h_visE_all_wCutSet6 = rt.THStack("h_visE_all_wCutSet6", "Inclusive CCnue Selected Events (Cut  Set 6)")
+h_visE_predErr_wCutSet6 = rt.TH1F("h_visE_predErr_wCutSet6", "Inclusive CCnue Selected Events (Cut Set 6)",visE_n,visE_l,visE_h)
 h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6 = configure_stacked_hists(h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6, "Inclusive CCnue Selected Events (Cut  Set 6)", "reconstructed neutrino energy (GeV)")
 
 
@@ -735,6 +792,7 @@ h_cosTheta_NCnue_wCuts = rt.TH1F("h_cosTheta_NCnue_wCuts","Reco e- cos(theta) fo
 h_cosTheta_ext_wCuts = rt.TH1F("h_cosTheta_ext_wCuts","Reco e- cos(theta) for ExtBNB Events",cosTheta_n,cosTheta_l,cosTheta_h)
 h_cosTheta_data_wCuts = rt.TH1F("h_cosTheta_data_wCuts","Reco e- cos(theta) for BNB Data Events",cosTheta_n,cosTheta_l,cosTheta_h)
 h_cosTheta_all_wCuts = rt.THStack("h_cosTheta_all_wCuts", "Inclusive CCnue Selected Events")
+h_cosTheta_predErr_wCuts = rt.TH1F("h_cosTheta_predErr_wCuts", "Inclusive CCnue Selected Events",cosTheta_n,cosTheta_l,cosTheta_h)
 h_cosTheta_CCnue_wCuts, h_cosTheta_NCnue_wCuts, h_cosTheta_CCnumu_wCuts, h_cosTheta_NCnumu_wCuts, h_cosTheta_ext_wCuts, h_cosTheta_data_wCuts = configure_stacked_hists(h_cosTheta_CCnue_wCuts, h_cosTheta_NCnue_wCuts, h_cosTheta_CCnumu_wCuts, h_cosTheta_NCnumu_wCuts, h_cosTheta_ext_wCuts, h_cosTheta_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron cos(theta)")
 
 lepP_n = 30
@@ -751,6 +809,7 @@ h_lepP_NCnue_wCuts = rt.TH1F("h_lepP_NCnue_wCuts","Reco e- Momentum for True NCn
 h_lepP_ext_wCuts = rt.TH1F("h_lepP_ext_wCuts","Reco e- Momentum for ExtBNB Events",lepP_n,lepP_l,lepP_h)
 h_lepP_data_wCuts = rt.TH1F("h_lepP_data_wCuts","Reco e- Momentum for BNB Data Events",lepP_n,lepP_l,lepP_h)
 h_lepP_all_wCuts = rt.THStack("h_lepP_all_wCuts", "Inclusive CCnue Selected Events")
+h_lepP_predErr_wCuts = rt.TH1F("h_lepP_predErr_wCuts", "Inclusive CCnue Selected Events",lepP_n,lepP_l,lepP_h)
 h_lepP_CCnue_wCuts, h_lepP_NCnue_wCuts, h_lepP_CCnumu_wCuts, h_lepP_NCnumu_wCuts, h_lepP_ext_wCuts, h_lepP_data_wCuts = configure_stacked_hists(h_lepP_CCnue_wCuts, h_lepP_NCnue_wCuts, h_lepP_CCnumu_wCuts, h_lepP_NCnumu_wCuts, h_lepP_ext_wCuts, h_lepP_data_wCuts, "Inclusive CCnue Selected Events", "reconstructed electron momentum (GeV/c)")
 
 partScore_n = 24
@@ -1112,6 +1171,9 @@ for i in range(tnu.GetEntries()):
     if tnu.foundVertex == 0 or not vtxIsFiducial: #tnu.vtxIsFiducial != 1:
       continue
 
+  if args.write_ntuples:
+    tnu_trimmed_cutSet1.Fill()
+
   recoNuE_GeV = tnu.recoNuE/1000.
   if args.recoEOverflow and recoNuE_GeV > 2.6:
     recoNuE_GeV = 2.7
@@ -1124,6 +1186,9 @@ for i in range(tnu.GetEntries()):
 
   if tnu.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.write_ntuples:
+    tnu_trimmed_cutSet2.Fill()
 
   h_visE_CCnumu_wCutSet2, h_visE_NCnumu_wCutSet2, h_visE_NCnue_wCutSet2 = FillNuHistos(h_visE_CCnumu_wCutSet2,
     h_visE_NCnumu_wCutSet2, h_visE_NCnue_wCutSet2, recoNuE_GeV, tnu.xsecWeight, eventType)
@@ -1254,6 +1319,8 @@ for i in range(tnu.GetEntries()):
         elMaxPur = tnu.showerPurity[iS]
 
   if nMuons == 0:
+    if args.write_ntuples:
+      tnu_trimmed_cutSet3.Fill()
     h_visE_CCnumu_wCutSet3, h_visE_NCnumu_wCutSet3, h_visE_NCnue_wCutSet3 = FillNuHistos(h_visE_CCnumu_wCutSet3,
       h_visE_NCnumu_wCutSet3, h_visE_NCnue_wCutSet3, recoNuE_GeV, tnu.xsecWeight, eventType)
     h_nEl_CCnumu, h_nEl_NCnumu, h_nEl_NCnue = FillNuHistos(h_nEl_CCnumu,
@@ -1267,6 +1334,9 @@ for i in range(tnu.GetEntries()):
 
   #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    if args.write_ntuples:
+      tnu_trimmed_cutSet4.Fill()
 
     h_visE_CCnumu_wCutSet4, h_visE_NCnumu_wCutSet4, h_visE_NCnue_wCutSet4 = FillNuHistos(h_visE_CCnumu_wCutSet4,
       h_visE_NCnumu_wCutSet4, h_visE_NCnue_wCutSet4, recoNuE_GeV, tnu.xsecWeight, eventType)
@@ -1286,6 +1356,9 @@ for i in range(tnu.GetEntries()):
 
     if elMaxQProc == 0:
 
+      if args.write_ntuples:
+        tnu_trimmed_cutSet5.Fill()
+
       h_visE_CCnumu_wCutSet5, h_visE_NCnumu_wCutSet5, h_visE_NCnue_wCutSet5 = FillNuHistos(h_visE_CCnumu_wCutSet5,
         h_visE_NCnumu_wCutSet5, h_visE_NCnue_wCutSet5, recoNuE_GeV, tnu.xsecWeight, eventType)
 
@@ -1296,6 +1369,9 @@ for i in range(tnu.GetEntries()):
         h_maxMuScore_NCnumu, h_maxMuScore_NCnue, maxMuScore, tnu.xsecWeight, eventType)
 
     if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      if args.write_ntuples:
+        tnu_trimmed_cutSet6.Fill()
 
       h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_NCnue_wCutSet6 = FillNuHistos(h_visE_CCnumu_wCutSet6,
         h_visE_NCnumu_wCutSet6, h_visE_NCnue_wCutSet6, recoNuE_GeV, tnu.xsecWeight, eventType)
@@ -1594,6 +1670,9 @@ for i in range(tnue.GetEntries()):
     if tnue.foundVertex == 0 or not vtxIsFiducial: #tnue.vtxIsFiducial != 1:
       continue
 
+  if args.write_ntuples:
+    tnue_trimmed_cutSet1.Fill()
+
   recoNuE_GeV = tnue.recoNuE/1000.
   if args.recoEOverflow and recoNuE_GeV > 2.6:
     recoNuE_GeV = 2.7
@@ -1607,6 +1686,9 @@ for i in range(tnue.GetEntries()):
 
   if tnue.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.write_ntuples:
+    tnue_trimmed_cutSet2.Fill()
 
   h_visE_CCnue_wCutSet2.Fill(recoNuE_GeV, tnue.xsecWeight)
 
@@ -1726,6 +1808,8 @@ for i in range(tnue.GetEntries()):
         elMaxPur = tnue.showerPurity[iS]
 
   if nMuons == 0:
+    if args.write_ntuples:
+      tnue_trimmed_cutSet3.Fill()
     h_visE_CCnue_wCutSet3.Fill(recoNuE_GeV, tnue.xsecWeight)
     h_nEl_CCnue.Fill(nElectrons, tnue.xsecWeight)
     h_nPrimEl_CCnue.Fill(nPrimElectrons, tnue.xsecWeight)
@@ -1734,6 +1818,9 @@ for i in range(tnue.GetEntries()):
 
   #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    if args.write_ntuples:
+      tnue_trimmed_cutSet4.Fill()
 
     h_visE_CCnue_wCutSet4.Fill(recoNuE_GeV, tnue.xsecWeight)
 
@@ -1751,6 +1838,9 @@ for i in range(tnue.GetEntries()):
 
     if elMaxQProc == 0:
 
+      if args.write_ntuples:
+        tnue_trimmed_cutSet5.Fill()
+
       h_visE_CCnue_wCutSet5.Fill(recoNuE_GeV, tnue.xsecWeight)
 
       h_pidConfVsProcConf_sig.Fill(elMaxQConf, elMaxQPrimConf, tnue.xsecWeight)
@@ -1759,6 +1849,9 @@ for i in range(tnue.GetEntries()):
       h_maxMuScore_CCnue.Fill(maxMuScore, tnue.xsecWeight)
 
     if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      if args.write_ntuples:
+        tnue_trimmed_cutSet6.Fill()
 
       h_visE_CCnue_wCutSet6.Fill(recoNuE_GeV, tnue.xsecWeight)
 
@@ -1882,6 +1975,9 @@ for i in range(text.GetEntries()):
   #if text.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
   #  continue
 
+  if args.write_ntuples:
+    text_trimmed_cutSet1.Fill()
+
   recoNuE_GeV = text.recoNuE/1000.
   if args.recoEOverflow and recoNuE_GeV > 2.6:
     recoNuE_GeV = 2.7
@@ -1892,6 +1988,9 @@ for i in range(text.GetEntries()):
 
   if text.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.write_ntuples:
+    text_trimmed_cutSet2.Fill()
 
   h_visE_ext_wCutSet2.Fill(recoNuE_GeV)
 
@@ -2011,6 +2110,8 @@ for i in range(text.GetEntries()):
         elMaxPur = text.showerPurity[iS]
 
   if nMuons == 0:
+    if args.write_ntuples:
+      text_trimmed_cutSet3.Fill()
     h_visE_ext_wCutSet3.Fill(recoNuE_GeV)
     h_nEl_ext.Fill(nElectrons)
     h_nPrimEl_ext.Fill(nPrimElectrons)
@@ -2019,6 +2120,9 @@ for i in range(text.GetEntries()):
 
   #if nPrimElectrons >= 1:
   if nElectrons >= 1:
+
+    if args.write_ntuples:
+      text_trimmed_cutSet4.Fill()
 
     h_visE_ext_wCutSet4.Fill(recoNuE_GeV)
 
@@ -2036,6 +2140,9 @@ for i in range(text.GetEntries()):
 
     if elMaxQProc == 0:
 
+      if args.write_ntuples:
+        text_trimmed_cutSet5.Fill()
+
       h_visE_ext_wCutSet5.Fill(recoNuE_GeV)
 
       h_pidConfVsProcConf_extBkg.Fill(elMaxQConf, elMaxQPrimConf)
@@ -2044,6 +2151,9 @@ for i in range(text.GetEntries()):
       h_maxMuScore_ext.Fill(maxMuScore)
 
     if elMaxQProc == 0 and maxMuScore < args.maxMuScoreCut:
+
+      if args.write_ntuples:
+        text_trimmed_cutSet6.Fill()
 
       h_visE_ext_wCutSet6.Fill(recoNuE_GeV)
 
@@ -2167,6 +2277,9 @@ for i in range(tdata.GetEntries()):
     if tdata.foundVertex == 0 or not vtxIsFiducial: #text.vtxIsFiducial != 1:
       continue
 
+  if args.write_ntuples:
+    tdata_trimmed_cutSet1.Fill()
+
   recoNuE_GeV = tdata.recoNuE/1000.
   if args.recoEOverflow and recoNuE_GeV > 2.6:
     recoNuE_GeV = 2.7
@@ -2175,6 +2288,9 @@ for i in range(tdata.GetEntries()):
 
   if tdata.vtxFracHitsOnCosmic >= args.vertexFracOnCosCut:
     continue
+
+  if args.write_ntuples:
+    tdata_trimmed_cutSet2.Fill()
 
   h_visE_data_wCutSet2.Fill(recoNuE_GeV)
 
@@ -2243,19 +2359,30 @@ for i in range(tdata.GetEntries()):
         elMaxQFrac = tdata.showerChargeFrac[iS]
 
   if nMuons == 0:
+    if args.write_ntuples:
+      tdata_trimmed_cutSet3.Fill()
     h_visE_data_wCutSet3.Fill(recoNuE_GeV)
 
   if nElectrons >= 1:
+
+    if args.write_ntuples:
+      tdata_trimmed_cutSet4.Fill()
 
     h_visE_data_wCutSet4.Fill(recoNuE_GeV)
 
     if elMaxQProc != 0:
       continue
 
+    if args.write_ntuples:
+      tdata_trimmed_cutSet5.Fill()
+
     h_visE_data_wCutSet5.Fill(recoNuE_GeV)
 
     if maxMuScore >= args.maxMuScoreCut:
       continue
+
+    if args.write_ntuples:
+      tdata_trimmed_cutSet6.Fill()
 
     h_visE_data_wCutSet6.Fill(recoNuE_GeV)
 
@@ -2395,6 +2522,12 @@ h_visE_all_wCutSet1.Add(h_visE_NCnue_wCutSet1)
 h_visE_all_wCutSet1.Add(h_visE_NCnumu_wCutSet1)
 h_visE_all_wCutSet1.Add(h_visE_CCnumu_wCutSet1)
 h_visE_all_wCutSet1.Add(h_visE_CCnue_wCutSet1)
+h_visE_predErr_wCutSet1.Add(h_visE_ext_wCutSet1)
+h_visE_predErr_wCutSet1.Add(h_visE_NCnue_wCutSet1)
+h_visE_predErr_wCutSet1.Add(h_visE_NCnumu_wCutSet1)
+h_visE_predErr_wCutSet1.Add(h_visE_CCnumu_wCutSet1)
+h_visE_predErr_wCutSet1.Add(h_visE_CCnue_wCutSet1)
+h_visE_predErr_wCutSet1 = SetUncertainties(h_visE_predErr_wCutSet1, "recoNuE_cutSet1", "CCnue")
 
 h_visE_CCnumu_wCutSet2.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet2.Scale(targetPOT/tnuPOTsum)
@@ -2406,6 +2539,12 @@ h_visE_all_wCutSet2.Add(h_visE_NCnue_wCutSet2)
 h_visE_all_wCutSet2.Add(h_visE_NCnumu_wCutSet2)
 h_visE_all_wCutSet2.Add(h_visE_CCnumu_wCutSet2)
 h_visE_all_wCutSet2.Add(h_visE_CCnue_wCutSet2)
+h_visE_predErr_wCutSet2.Add(h_visE_ext_wCutSet2)
+h_visE_predErr_wCutSet2.Add(h_visE_NCnue_wCutSet2)
+h_visE_predErr_wCutSet2.Add(h_visE_NCnumu_wCutSet2)
+h_visE_predErr_wCutSet2.Add(h_visE_CCnumu_wCutSet2)
+h_visE_predErr_wCutSet2.Add(h_visE_CCnue_wCutSet2)
+h_visE_predErr_wCutSet2 = SetUncertainties(h_visE_predErr_wCutSet2, "recoNuE_cutSet2", "CCnue")
 
 h_visE_CCnumu_wCutSet3.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet3.Scale(targetPOT/tnuPOTsum)
@@ -2417,6 +2556,12 @@ h_visE_all_wCutSet3.Add(h_visE_NCnue_wCutSet3)
 h_visE_all_wCutSet3.Add(h_visE_NCnumu_wCutSet3)
 h_visE_all_wCutSet3.Add(h_visE_CCnumu_wCutSet3)
 h_visE_all_wCutSet3.Add(h_visE_CCnue_wCutSet3)
+h_visE_predErr_wCutSet3.Add(h_visE_ext_wCutSet3)
+h_visE_predErr_wCutSet3.Add(h_visE_NCnue_wCutSet3)
+h_visE_predErr_wCutSet3.Add(h_visE_NCnumu_wCutSet3)
+h_visE_predErr_wCutSet3.Add(h_visE_CCnumu_wCutSet3)
+h_visE_predErr_wCutSet3.Add(h_visE_CCnue_wCutSet3)
+h_visE_predErr_wCutSet3 = SetUncertainties(h_visE_predErr_wCutSet3, "recoNuE_cutSet3", "CCnue")
 
 h_visE_CCnumu_wCutSet4.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet4.Scale(targetPOT/tnuPOTsum)
@@ -2428,6 +2573,12 @@ h_visE_all_wCutSet4.Add(h_visE_NCnue_wCutSet4)
 h_visE_all_wCutSet4.Add(h_visE_NCnumu_wCutSet4)
 h_visE_all_wCutSet4.Add(h_visE_CCnumu_wCutSet4)
 h_visE_all_wCutSet4.Add(h_visE_CCnue_wCutSet4)
+h_visE_predErr_wCutSet4.Add(h_visE_ext_wCutSet4)
+h_visE_predErr_wCutSet4.Add(h_visE_NCnue_wCutSet4)
+h_visE_predErr_wCutSet4.Add(h_visE_NCnumu_wCutSet4)
+h_visE_predErr_wCutSet4.Add(h_visE_CCnumu_wCutSet4)
+h_visE_predErr_wCutSet4.Add(h_visE_CCnue_wCutSet4)
+h_visE_predErr_wCutSet4 = SetUncertainties(h_visE_predErr_wCutSet4, "recoNuE_cutSet4", "CCnue")
 
 h_visE_CCnumu_wCutSet5.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet5.Scale(targetPOT/tnuPOTsum)
@@ -2439,6 +2590,12 @@ h_visE_all_wCutSet5.Add(h_visE_NCnue_wCutSet5)
 h_visE_all_wCutSet5.Add(h_visE_NCnumu_wCutSet5)
 h_visE_all_wCutSet5.Add(h_visE_CCnumu_wCutSet5)
 h_visE_all_wCutSet5.Add(h_visE_CCnue_wCutSet5)
+h_visE_predErr_wCutSet5.Add(h_visE_ext_wCutSet5)
+h_visE_predErr_wCutSet5.Add(h_visE_NCnue_wCutSet5)
+h_visE_predErr_wCutSet5.Add(h_visE_NCnumu_wCutSet5)
+h_visE_predErr_wCutSet5.Add(h_visE_CCnumu_wCutSet5)
+h_visE_predErr_wCutSet5.Add(h_visE_CCnue_wCutSet5)
+h_visE_predErr_wCutSet5 = SetUncertainties(h_visE_predErr_wCutSet5, "recoNuE_cutSet5", "CCnue")
 
 h_visE_CCnumu_wCutSet6.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutSet6.Scale(targetPOT/tnuPOTsum)
@@ -2450,6 +2607,12 @@ h_visE_all_wCutSet6.Add(h_visE_NCnue_wCutSet6)
 h_visE_all_wCutSet6.Add(h_visE_NCnumu_wCutSet6)
 h_visE_all_wCutSet6.Add(h_visE_CCnumu_wCutSet6)
 h_visE_all_wCutSet6.Add(h_visE_CCnue_wCutSet6)
+h_visE_predErr_wCutSet6.Add(h_visE_ext_wCutSet6)
+h_visE_predErr_wCutSet6.Add(h_visE_NCnue_wCutSet6)
+h_visE_predErr_wCutSet6.Add(h_visE_NCnumu_wCutSet6)
+h_visE_predErr_wCutSet6.Add(h_visE_CCnumu_wCutSet6)
+h_visE_predErr_wCutSet6.Add(h_visE_CCnue_wCutSet6)
+h_visE_predErr_wCutSet6 = SetUncertainties(h_visE_predErr_wCutSet6, "recoNuE_cutSet6", "CCnue")
 
 h_cosTheta_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_cosTheta_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -2461,6 +2624,12 @@ h_cosTheta_all_wCuts.Add(h_cosTheta_NCnue_wCuts)
 h_cosTheta_all_wCuts.Add(h_cosTheta_NCnumu_wCuts)
 h_cosTheta_all_wCuts.Add(h_cosTheta_CCnumu_wCuts)
 h_cosTheta_all_wCuts.Add(h_cosTheta_CCnue_wCuts)
+h_cosTheta_predErr_wCuts.Add(h_cosTheta_ext_wCuts)
+h_cosTheta_predErr_wCuts.Add(h_cosTheta_NCnue_wCuts)
+h_cosTheta_predErr_wCuts.Add(h_cosTheta_NCnumu_wCuts)
+h_cosTheta_predErr_wCuts.Add(h_cosTheta_CCnumu_wCuts)
+h_cosTheta_predErr_wCuts.Add(h_cosTheta_CCnue_wCuts)
+h_cosTheta_predErr_wCuts = SetUncertainties(h_cosTheta_predErr_wCuts, "cosTheta", "CCnue")
 
 h_lepP_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_lepP_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -2472,6 +2641,12 @@ h_lepP_all_wCuts.Add(h_lepP_NCnue_wCuts)
 h_lepP_all_wCuts.Add(h_lepP_NCnumu_wCuts)
 h_lepP_all_wCuts.Add(h_lepP_CCnumu_wCuts)
 h_lepP_all_wCuts.Add(h_lepP_CCnue_wCuts)
+h_lepP_predErr_wCuts.Add(h_lepP_ext_wCuts)
+h_lepP_predErr_wCuts.Add(h_lepP_NCnue_wCuts)
+h_lepP_predErr_wCuts.Add(h_lepP_NCnumu_wCuts)
+h_lepP_predErr_wCuts.Add(h_lepP_CCnumu_wCuts)
+h_lepP_predErr_wCuts.Add(h_lepP_CCnue_wCuts)
+h_lepP_predErr_wCuts = SetUncertainties(h_lepP_predErr_wCuts, "lepP", "CCnue")
 
 h_elScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_elScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -3863,6 +4038,9 @@ cnv_visE_sel_cutSet1 = rt.TCanvas("cnv_visE_sel_cutSet1", "cnv_visE_sel_cutSet1"
 h_visE_data_wCutSet1.Draw("E")
 h_visE_all_wCutSet1.Draw("hist same")
 h_visE_data_wCutSet1.Draw("ESAME")
+h_visE_predErr_wCutSet1.SetFillColor(4)
+h_visE_predErr_wCutSet1.SetFillStyle(3002)
+h_visE_predErr_wCutSet1.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet1 = getOverflowLabel(h_visE_data_wCutSet1)
   label_visE_sel_cutSet1.Draw()
@@ -3873,6 +4051,7 @@ leg_visE_sel_cutSet1.AddEntry(h_visE_NCnumu_wCutSet1, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet1.AddEntry(h_visE_CCnumu_wCutSet1, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet1.Integral(), "f")
 leg_visE_sel_cutSet1.AddEntry(h_visE_CCnue_wCutSet1, "CC nue (%.2f)"%h_visE_CCnue_wCutSet1.Integral(), "f")
 leg_visE_sel_cutSet1.AddEntry(h_visE_data_wCutSet1, "5e19 data (%.2f)"%h_visE_data_wCutSet1.Integral(), "l")
+leg_visE_sel_cutSet1.AddEntry(h_visE_predErr_wCutSet1, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet1.Draw()
 cnv_visE_sel_cutSet1.Write()
 
@@ -3880,6 +4059,9 @@ cnv_visE_sel_cutSet2 = rt.TCanvas("cnv_visE_sel_cutSet2", "cnv_visE_sel_cutSet2"
 h_visE_data_wCutSet2.Draw("E")
 h_visE_all_wCutSet2.Draw("hist same")
 h_visE_data_wCutSet2.Draw("ESAME")
+h_visE_predErr_wCutSet2.SetFillColor(4)
+h_visE_predErr_wCutSet2.SetFillStyle(3002)
+h_visE_predErr_wCutSet2.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet2 = getOverflowLabel(h_visE_data_wCutSet2)
   label_visE_sel_cutSet2.Draw()
@@ -3890,6 +4072,7 @@ leg_visE_sel_cutSet2.AddEntry(h_visE_NCnumu_wCutSet2, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet2.AddEntry(h_visE_CCnumu_wCutSet2, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet2.Integral(), "f")
 leg_visE_sel_cutSet2.AddEntry(h_visE_CCnue_wCutSet2, "CC nue (%.2f)"%h_visE_CCnue_wCutSet2.Integral(), "f")
 leg_visE_sel_cutSet2.AddEntry(h_visE_data_wCutSet2, "5e19 data (%.2f)"%h_visE_data_wCutSet2.Integral(), "l")
+leg_visE_sel_cutSet2.AddEntry(h_visE_predErr_wCutSet2, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet2.Draw()
 cnv_visE_sel_cutSet2.Write()
 
@@ -3897,6 +4080,9 @@ cnv_visE_sel_cutSet3 = rt.TCanvas("cnv_visE_sel_cutSet3", "cnv_visE_sel_cutSet3"
 h_visE_data_wCutSet3.Draw("E")
 h_visE_all_wCutSet3.Draw("hist same")
 h_visE_data_wCutSet3.Draw("ESAME")
+h_visE_predErr_wCutSet3.SetFillColor(4)
+h_visE_predErr_wCutSet3.SetFillStyle(3002)
+h_visE_predErr_wCutSet3.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet3 = getOverflowLabel(h_visE_data_wCutSet3)
   label_visE_sel_cutSet3.Draw()
@@ -3907,12 +4093,16 @@ leg_visE_sel_cutSet3.AddEntry(h_visE_NCnumu_wCutSet3, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet3.AddEntry(h_visE_CCnumu_wCutSet3, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet3.Integral(), "f")
 leg_visE_sel_cutSet3.AddEntry(h_visE_CCnue_wCutSet3, "CC nue (%.2f)"%h_visE_CCnue_wCutSet3.Integral(), "f")
 leg_visE_sel_cutSet3.AddEntry(h_visE_data_wCutSet3, "5e19 data (%.2f)"%h_visE_data_wCutSet3.Integral(), "l")
+leg_visE_sel_cutSet3.AddEntry(h_visE_predErr_wCutSet3, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet3.Draw()
 cnv_visE_sel_cutSet3.Write()
 
 cnv_visE_sel_cutSet4 = rt.TCanvas("cnv_visE_sel_cutSet4", "cnv_visE_sel_cutSet4")
 h_visE_data_wCutSet4.Draw("E")
 h_visE_all_wCutSet4.Draw("hist same")
+h_visE_predErr_wCutSet4.SetFillColor(4)
+h_visE_predErr_wCutSet4.SetFillStyle(3002)
+h_visE_predErr_wCutSet4.Draw("E2SAME")
 h_visE_data_wCutSet4.Draw("ESAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet4 = getOverflowLabel(h_visE_data_wCutSet4)
@@ -3924,6 +4114,7 @@ leg_visE_sel_cutSet4.AddEntry(h_visE_NCnumu_wCutSet4, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet4.AddEntry(h_visE_CCnumu_wCutSet4, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet4.Integral(), "f")
 leg_visE_sel_cutSet4.AddEntry(h_visE_CCnue_wCutSet4, "CC nue (%.2f)"%h_visE_CCnue_wCutSet4.Integral(), "f")
 leg_visE_sel_cutSet4.AddEntry(h_visE_data_wCutSet4, "5e19 data (%.2f)"%h_visE_data_wCutSet4.Integral(), "l")
+leg_visE_sel_cutSet4.AddEntry(h_visE_predErr_wCutSet4, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet4.Draw()
 cnv_visE_sel_cutSet4.Write()
 
@@ -3931,6 +4122,9 @@ cnv_visE_sel_cutSet5 = rt.TCanvas("cnv_visE_sel_cutSet5", "cnv_visE_sel_cutSet5"
 h_visE_data_wCutSet5.Draw("E")
 h_visE_all_wCutSet5.Draw("hist same")
 h_visE_data_wCutSet5.Draw("ESAME")
+h_visE_predErr_wCutSet5.SetFillColor(4)
+h_visE_predErr_wCutSet5.SetFillStyle(3002)
+h_visE_predErr_wCutSet5.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet5 = getOverflowLabel(h_visE_data_wCutSet5)
   label_visE_sel_cutSet5.Draw()
@@ -3941,6 +4135,7 @@ leg_visE_sel_cutSet5.AddEntry(h_visE_NCnumu_wCutSet5, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet5.AddEntry(h_visE_CCnumu_wCutSet5, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet5.Integral(), "f")
 leg_visE_sel_cutSet5.AddEntry(h_visE_CCnue_wCutSet5, "CC nue (%.2f)"%h_visE_CCnue_wCutSet5.Integral(), "f")
 leg_visE_sel_cutSet5.AddEntry(h_visE_data_wCutSet5, "5e19 data (%.2f)"%h_visE_data_wCutSet5.Integral(), "l")
+leg_visE_sel_cutSet5.AddEntry(h_visE_predErr_wCutSet5, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet5.Draw()
 cnv_visE_sel_cutSet5.Write()
 
@@ -3948,6 +4143,9 @@ cnv_visE_sel_cutSet6 = rt.TCanvas("cnv_visE_sel_cutSet6", "cnv_visE_sel_cutSet6"
 h_visE_data_wCutSet6.Draw("E")
 h_visE_all_wCutSet6.Draw("hist same")
 h_visE_data_wCutSet6.Draw("ESAME")
+h_visE_predErr_wCutSet6.SetFillColor(4)
+h_visE_predErr_wCutSet6.SetFillStyle(3002)
+h_visE_predErr_wCutSet6.Draw("E2SAME")
 if args.recoEOverflow:
   label_visE_sel_cutSet6 = getOverflowLabel(h_visE_data_wCutSet6)
   label_visE_sel_cutSet6.Draw()
@@ -3958,6 +4156,7 @@ leg_visE_sel_cutSet6.AddEntry(h_visE_NCnumu_wCutSet6, "NC numu (%.2f)"%h_visE_NC
 leg_visE_sel_cutSet6.AddEntry(h_visE_CCnumu_wCutSet6, "CC numu (%.2f)"%h_visE_CCnumu_wCutSet6.Integral(), "f")
 leg_visE_sel_cutSet6.AddEntry(h_visE_CCnue_wCutSet6, "CC nue (%.2f)"%h_visE_CCnue_wCutSet6.Integral(), "f")
 leg_visE_sel_cutSet6.AddEntry(h_visE_data_wCutSet6, "5e19 data (%.2f)"%h_visE_data_wCutSet6.Integral(), "l")
+leg_visE_sel_cutSet6.AddEntry(h_visE_predErr_wCutSet6, "Pred. stats + sys (no detvar) unc.", "f")
 leg_visE_sel_cutSet6.Draw()
 cnv_visE_sel_cutSet6.Write()
 
@@ -3965,6 +4164,9 @@ cnv_cosTheta_sel = rt.TCanvas("cnv_cosTheta_sel", "cnv_cosTheta_sel")
 h_cosTheta_data_wCuts.Draw("E")
 h_cosTheta_all_wCuts.Draw("hist same")
 h_cosTheta_data_wCuts.Draw("ESAME")
+h_cosTheta_predErr_wCuts.SetFillColor(4)
+h_cosTheta_predErr_wCuts.SetFillStyle(3002)
+h_cosTheta_predErr_wCuts.Draw("E2SAME")
 leg_cosTheta_sel = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_cosTheta_sel.AddEntry(h_cosTheta_ext_wCuts, "cosmic background (%.2f)"%h_cosTheta_ext_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_NCnue_wCuts, "NC nue (%.2f)"%h_cosTheta_NCnue_wCuts.Integral(), "f")
@@ -3972,13 +4174,19 @@ leg_cosTheta_sel.AddEntry(h_cosTheta_NCnumu_wCuts, "NC numu (%.2f)"%h_cosTheta_N
 leg_cosTheta_sel.AddEntry(h_cosTheta_CCnumu_wCuts, "CC numu (%.2f)"%h_cosTheta_CCnumu_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_CCnue_wCuts, "CC nue (%.2f)"%h_cosTheta_CCnue_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_data_wCuts, "5e19 data (%.2f)"%h_cosTheta_data_wCuts.Integral(), "l")
+leg_cosTheta_sel.AddEntry(h_cosTheta_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
 leg_cosTheta_sel.Draw()
 cnv_cosTheta_sel.Write()
 
 cnv_lepP_sel = rt.TCanvas("cnv_lepP_sel", "cnv_lepP_sel")
-h_lepP_data_wCuts.Draw("E")
-h_lepP_all_wCuts.Draw("hist same")
+#h_lepP_data_wCuts.Draw("E")
+#h_lepP_all_wCuts.Draw("hist same")
+h_lepP_predErr_wCuts.Draw("E2")
+h_lepP_all_wCuts.Draw("hist")
 h_lepP_data_wCuts.Draw("ESAME")
+h_lepP_predErr_wCuts.SetFillColor(4)
+h_lepP_predErr_wCuts.SetFillStyle(3002)
+h_lepP_predErr_wCuts.Draw("E2SAME")
 if args.recoEOverflow:
   label_lepP_sel = getOverflowLabel(h_lepP_data_wCuts)
   label_lepP_sel.Draw()
@@ -3989,6 +4197,7 @@ leg_lepP_sel.AddEntry(h_lepP_NCnumu_wCuts, "NC numu (%.2f)"%h_lepP_NCnumu_wCuts.
 leg_lepP_sel.AddEntry(h_lepP_CCnumu_wCuts, "CC numu (%.2f)"%h_lepP_CCnumu_wCuts.Integral(), "f")
 leg_lepP_sel.AddEntry(h_lepP_CCnue_wCuts, "CC nue (%.2f)"%h_lepP_CCnue_wCuts.Integral(), "f")
 leg_lepP_sel.AddEntry(h_lepP_data_wCuts, "5e19 data (%.2f)"%h_lepP_data_wCuts.Integral(), "l")
+leg_lepP_sel.AddEntry(h_lepP_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
 leg_lepP_sel.Draw()
 cnv_lepP_sel.Write()
 
@@ -4196,6 +4405,119 @@ if args.write_ntuples:
   tdata_trimmed.Write("",rt.TObject.kOverwrite)
   fdata_trimmed.Close()
 
+
+  fnu_trimmed_cutSet1.cd()
+  tnu_trimmed_cutSet1.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet1.Close()
+  
+  fnue_trimmed_cutSet1.cd()
+  tnue_trimmed_cutSet1.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet1.Close()
+  
+  fext_trimmed_cutSet1.cd()
+  text_trimmed_cutSet1.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet1.Close()
+  
+  fdata_trimmed_cutSet1.cd()
+  tdata_trimmed_cutSet1.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet1.Close()
+
+
+  fnu_trimmed_cutSet2.cd()
+  tnu_trimmed_cutSet2.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet2.Close()
+  
+  fnue_trimmed_cutSet2.cd()
+  tnue_trimmed_cutSet2.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet2.Close()
+  
+  fext_trimmed_cutSet2.cd()
+  text_trimmed_cutSet2.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet2.Close()
+  
+  fdata_trimmed_cutSet2.cd()
+  tdata_trimmed_cutSet2.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet2.Close()
+
+
+  fnu_trimmed_cutSet3.cd()
+  tnu_trimmed_cutSet3.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet3.Close()
+  
+  fnue_trimmed_cutSet3.cd()
+  tnue_trimmed_cutSet3.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet3.Close()
+  
+  fext_trimmed_cutSet3.cd()
+  text_trimmed_cutSet3.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet3.Close()
+  
+  fdata_trimmed_cutSet3.cd()
+  tdata_trimmed_cutSet3.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet3.Close()
+
+
+  fnu_trimmed_cutSet4.cd()
+  tnu_trimmed_cutSet4.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet4.Close()
+  
+  fnue_trimmed_cutSet4.cd()
+  tnue_trimmed_cutSet4.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet4.Close()
+  
+  fext_trimmed_cutSet4.cd()
+  text_trimmed_cutSet4.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet4.Close()
+  
+  fdata_trimmed_cutSet4.cd()
+  tdata_trimmed_cutSet4.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet4.Close()
+
+
+  fnu_trimmed_cutSet5.cd()
+  tnu_trimmed_cutSet5.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet5.Close()
+  
+  fnue_trimmed_cutSet5.cd()
+  tnue_trimmed_cutSet5.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet5.Close()
+  
+  fext_trimmed_cutSet5.cd()
+  text_trimmed_cutSet5.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet5.Close()
+  
+  fdata_trimmed_cutSet5.cd()
+  tdata_trimmed_cutSet5.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet5.Close()
+
+
+  fnu_trimmed_cutSet6.cd()
+  tnu_trimmed_cutSet6.Write("",rt.TObject.kOverwrite)
+  tnuPOT.CloneTree().Write()
+  fnu_trimmed_cutSet6.Close()
+  
+  fnue_trimmed_cutSet6.cd()
+  tnue_trimmed_cutSet6.Write("",rt.TObject.kOverwrite)
+  tnuePOT.CloneTree().Write()
+  fnue_trimmed_cutSet6.Close()
+  
+  fext_trimmed_cutSet6.cd()
+  text_trimmed_cutSet6.Write("",rt.TObject.kOverwrite)
+  fext_trimmed_cutSet6.Close()
+  
+  fdata_trimmed_cutSet6.cd()
+  tdata_trimmed_cutSet6.Write("",rt.TObject.kOverwrite)
+  fdata_trimmed_cutSet6.Close()
 
 
 
