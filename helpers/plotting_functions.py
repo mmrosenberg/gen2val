@@ -32,3 +32,11 @@ def getOverflowLabel(h):
   label.SetTextAngle(-40)
   return label
 
+def getUnderflowLabel(h):
+  x = h.GetBinCenter(1) - 0.1*h.GetBinWidth(h.GetNbinsX())
+  rt.gPad.Update()
+  y = -rt.gPad.GetFrame().GetY2()/30.
+  label = rt.TText(x,y,"underflow")
+  label.SetTextSize(0.028)
+  label.SetTextAngle(-40)
+  return label

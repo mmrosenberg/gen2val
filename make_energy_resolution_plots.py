@@ -46,6 +46,10 @@ h_numu.GetZaxis().SetTitle("events per 6.67e+20 POT")
 l_numu = rt.TLine(0,0,5,5)
 l_numu.SetLineWidth(2)
 
+n_numu_preCuts = 0
+n_numu_leptonReco = 0
+n_nue_preCuts = 0
+n_nue_leptonReco = 0
 
 for i in range(tnu.GetEntries()):
 
@@ -57,7 +61,7 @@ for i in range(tnu.GetEntries()):
   if abs(tnu.trueLepPDG) != 13:
     sys.exit("ERROR: primary lepton pdg != 13 for true CCnumu event!!!")
 
-  if tnu.foundVertex == 0:
+  if tnu.foundVertex == 0 or tnu.vtxIsFiducial == 0 or tnu.vtxFracHitsOnCosmic >= 1 or tnu.vtxDistToTrue > 3.:
     continue
 
   trueMuTrackID = -1
@@ -75,6 +79,8 @@ for i in range(tnu.GetEntries()):
   if not eventContained:
     continue
 
+  n_numu_preCuts += 1
+
   if trueMuTrackID == -1:
     sys.exit("ERROR: couldn't find true primary muon in true CCnumu event!!!")
 
@@ -86,6 +92,8 @@ for i in range(tnu.GetEntries()):
 
   if not nuReconstructed:
     continue
+
+  n_numu_leptonReco += 1
 
   h_numu.Fill(tnu.trueNuE, tnu.recoNuE/1000., tnu.xsecWeight)
 
@@ -101,7 +109,7 @@ for i in range(tnue.GetEntries()):
   if abs(tnue.trueLepPDG) != 11:
     sys.exit("ERROR: primary lepton pdg != 11 for true CCnue event!!!")
 
-  if tnue.foundVertex == 0:
+  if tnue.foundVertex == 0 or tnue.vtxIsFiducial == 0 or tnue.vtxFracHitsOnCosmic >= 1 or tnue.vtxDistToTrue > 3.:
     continue
 
   trueElTrackID = -1
@@ -126,8 +134,11 @@ for i in range(tnue.GetEntries()):
         electronInPrimary = True
     if electronInPrimary:
       print("WARNING: primary electron not tracked in detsim, skipping event...")
+      continue
     else:
       sys.exit("ERROR: couldn't find true primary electron in true CCnue event!!! entry, rsr = %i, %i, %i, %i"%(i,tnue.run,tnue.subrun,tnue.event))
+
+  n_nue_preCuts += 1
 
   nuReconstructed = False
   for iS in range(tnue.nShowers):
@@ -138,9 +149,23 @@ for i in range(tnue.GetEntries()):
   if not nuReconstructed:
     continue
 
+  n_nue_leptonReco += 1
+
   h_nue.Fill(tnue.trueNuE, tnue.recoNuE/1000., tnue.xsecWeight)
 
 
+n_numu_preCuts_scaled = n_numu_preCuts*(targetPOT/tnuPOTsum)
+n_numu_leptonReco_scaled = n_numu_leptonReco*(targetPOT/tnuPOTsum)
+n_nue_preCuts_scaled = n_nue_preCuts*(targetPOT/tnuePOTsum)
+n_nue_leptonReco_scaled = n_nue_leptonReco*(targetPOT/tnuePOTsum)
+
+print("of raw events with a reco vertex and all true final state particles contained...")
+print("%i/%i CCnumu events had reconstructed muon"%(n_numu_leptonReco,n_numu_preCuts))
+print("%i/%i CCnue events had reconstructed electron"%(n_nue_leptonReco,n_nue_preCuts))
+
+print("of predicted runs1-3 event counts with a reco vertex and all true final state particles contained...")
+print("%i/%i CCnumu events had reconstructed muon"%(n_numu_leptonReco_scaled,n_numu_preCuts_scaled))
+print("%i/%i CCnue events had reconstructed electron"%(n_nue_leptonReco_scaled,n_nue_preCuts_scaled))
 
 h_numu.Scale(targetPOT/tnuPOTsum)
 h_nue.Scale(targetPOT/tnuePOTsum)

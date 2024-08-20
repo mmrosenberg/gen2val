@@ -6,7 +6,7 @@ import ROOT as rt
 from math import isinf, sqrt
 from helpers.plotting_functions import sortHists, getOverflowLabel
 from helpers.larflowreco_ana_funcs import isFiducial, getDistance, getCosThetaBeamVector, getCosThetaGravVector 
-from helpers.systematics import SetUncertainties
+from helpers.systematics_final import SetUncertainties
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
@@ -14,7 +14,7 @@ parser.add_argument("-fnu", "--bnbnu_file", type=str, default="flat_ntuples/dlge
 parser.add_argument("-fnue", "--bnbnue_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v5_mcc9_v28_wctagger_nueintrinsics.root", help="bnb nu input file")
 parser.add_argument("-fext", "--extbnb_file", type=str, default="flat_ntuples/dlgen2_reco_v2me06_ntuple_v5_mcc9_v29e_dl_run1_all_extbnb.root", help="extbnb input file")
 parser.add_argument("-fdata", "--data_file", type=str, default="flat_ntuples/dlgen2_reco_v2me05_ntuple_v5_mcc9_v28_wctagger_bnb5e19.root", help="bnb data input file")
-parser.add_argument("-o", "--outfile", type=str, default="selection_output/plot_selection_test_results_output/plot_muon_selection_test_results_output.root", help="output root file name")
+parser.add_argument("-o", "--outfile", type=str, default="plot_muon_selection_test_results_output.root", help="output root file name")
 parser.add_argument("-vsc", "--vertexScoreCut", type=float, default=0., help="minimum neutrino vertex score")
 parser.add_argument("-cgc", "--cosThetaGravCut", type=float, default=-9., help="minimum muon cos(theta)")
 parser.add_argument("-nsc", "--fromNeutralScoreCut", type=float, default=9., help="maximum muon from neutral parent score")
@@ -261,9 +261,11 @@ h_nuE_CCnumu_wCutsAll = rt.TH1F("h_nuE_CCnumu_wCutsAll","Neutrino Energy for Tru
 h_nuE_CCnumu_eff1 = rt.TH1F("h_nuE_CCnumu_eff1","Inclusive CCnumu Efficiency",30,0,3)
 h_nuE_CCnumu_eff2 = rt.TH1F("h_nuE_CCnumu_eff2","Inclusive CCnumu Efficiency",30,0,3)
 h_nuE_CCnumu_effAll = rt.TH1F("h_nuE_CCnumu_effAll","Inclusive CCnumu Efficiency",30,0,3)
+h_nuE_CCnumu_effAllRat = rt.TH1F("h_nuE_CCnumu_effAllRat","Inclusive CCnumu Efficiency",30,0,3)
 h_nuE_CCnumu_eff1 = configureEffHist(h_nuE_CCnumu_eff1, rt.kBlue)
 h_nuE_CCnumu_eff2 = configureEffHist(h_nuE_CCnumu_eff2, 8)
 h_nuE_CCnumu_effAll = configureEffHist(h_nuE_CCnumu_effAll, rt.kRed)
+h_nuE_CCnumu_effAllRat = configureEffHist(h_nuE_CCnumu_effAllRat, rt.kBlack)
 
 h_nuEr_CCnumu_wCuts = rt.TH1F("h_nuEr_CCnumu_wCuts","Neutrino Energy for True CCnumu Events",30,0,3)
 h_nuEr_CCnumu_nCuts = rt.TH1F("h_nuEr_CCnue_nCuts","Neutrino Energy for True CCnue Events",30,0,3)
@@ -297,9 +299,11 @@ visEn = 60
 visEl = 0.
 visEh = 6.
 if args.recoEOverflow:
-  visEn = 21
+  #visEn = 21
+  visEn = 19
   visEl = 0.
-  visEh = 2.1
+  #visEh = 2.1
+  visEh = 1.9
 
 h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",visEn,visEl,visEh)
 h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",visEn,visEl,visEh)
@@ -352,9 +356,9 @@ h_visE_ext_wCutsSet6 = rt.TH1F("h_visE_ext_wCutsSet6","Reco Nu Energy for ExtBNB
 h_visE_data_wCutsSet6 = rt.TH1F("h_visE_data_wCutsSet6","Reco Nu Energy for BNB Data Events",visEn,visEl,visEh)
 
 def configureStackedHists(h_CCnumu, h_NCnumu, h_CCnue, h_NCnue, h_ext, h_data, title, xtitle):
-  h_CCnumu.SetFillColor(rt.kRed)
+  h_CCnumu.SetFillColor(rt.kBlue-4)
   h_NCnumu.SetFillColor(8)
-  h_CCnue.SetFillColor(rt.kBlue)
+  h_CCnue.SetFillColor(rt.kRed)
   h_NCnue.SetFillColor(40)
   h_ext.SetFillColor(12)
   h_data.SetLineColor(rt.kBlack)
@@ -400,9 +404,11 @@ lepPn = 60
 lepPl = 0.
 lepPh = 6.
 if args.recoEOverflow:
-  lepPn = 21
+  #lepPn = 21
+  lepPn = 16
   lepPl = 0.
-  lepPh = 2.1
+  #lepPh = 2.1
+  lepPh = 1.6
 h_lepP_CCnue_wCuts = rt.TH1F("h_lepP_CCnue_wCuts","Reco Muon Momentum for True CCnue Events",lepPn,lepPl,lepPh)
 h_lepP_CCnumu_wCuts = rt.TH1F("h_lepP_CCnumu_wCuts","Reco Muon Momentum for True CCnumu Events",lepPn,lepPl,lepPh)
 h_lepP_NCnumu_wCuts = rt.TH1F("h_lepP_NCnumu_wCuts","Reco Muon Momentum for True NCnumu Events",lepPn,lepPl,lepPh)
@@ -664,8 +670,8 @@ for i in range(tnu.GetEntries()):
     h_nuE_CCnumu_wCuts1.Fill(tnu.trueNuE, tnu.xsecWeight)
 
   overflowRecoEVal = tnu.recoNuE/1000.
-  if overflowRecoEVal > 2.0 and args.recoEOverflow:
-    overflowRecoEVal = 2.001
+  if overflowRecoEVal >= visEh and args.recoEOverflow:
+    overflowRecoEVal = visEh - 0.001
 
   h_visE_CCnumu_wCutsSet1, h_visE_NCnumu_wCutsSet1, h_visE_NCnue_wCutsSet1 = FillNuHistos(h_visE_CCnumu_wCutsSet1, h_visE_NCnumu_wCutsSet1, h_visE_NCnue_wCutsSet1, overflowRecoEVal, tnu.xsecWeight, eventType)
 
@@ -822,12 +828,12 @@ for i in range(tnu.GetEntries()):
     h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
     h_nuE_CCnumu_wCutsAll.Fill(tnu.trueNuE, tnu.xsecWeight)
     h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and tnu.recoNuE/1000. > 2.0:
-      h_visE_CCnumu_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and tnu.recoNuE/1000. >= visEh:
+      h_visE_CCnumu_wCuts.Fill(visEh-0.001, tnu.xsecWeight)
     else:
       h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and recoMuP > 2.0:
-      h_lepP_CCnumu_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and recoMuP >= lepPh:
+      h_lepP_CCnumu_wCuts.Fill(lepPh-0.001, tnu.xsecWeight)
     else:
       h_lepP_CCnumu_wCuts.Fill(recoMuP, tnu.xsecWeight)
     h_cosTheta_CCnumu_wCuts.Fill(selMu_cosThetaBeam, tnu.xsecWeight)
@@ -843,12 +849,12 @@ for i in range(tnu.GetEntries()):
     n_NCnumu_wCuts += tnu.xsecWeight
     h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
     h_nuEr_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and tnu.recoNuE/1000. > 2.0:
-      h_visE_NCnumu_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and tnu.recoNuE/1000. >= visEh:
+      h_visE_NCnumu_wCuts.Fill(visEh-0.001, tnu.xsecWeight)
     else:
       h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and recoMuP > 2.0:
-      h_lepP_NCnumu_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and recoMuP >= lepPh:
+      h_lepP_NCnumu_wCuts.Fill(lepPh-0.001, tnu.xsecWeight)
     else:
       h_lepP_NCnumu_wCuts.Fill(recoMuP, tnu.xsecWeight)
     h_cosTheta_NCnumu_wCuts.Fill(selMu_cosThetaBeam, tnu.xsecWeight)
@@ -864,12 +870,12 @@ for i in range(tnu.GetEntries()):
     n_NCnue_wCuts += tnu.xsecWeight
     h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
     h_nuEr_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and tnu.recoNuE/1000. > 2.0:
-      h_visE_NCnue_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and tnu.recoNuE/1000. >= visEh:
+      h_visE_NCnue_wCuts.Fill(visEh-0.001, tnu.xsecWeight)
     else:
       h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-    if args.recoEOverflow and recoMuP > 2.0:
-      h_lepP_NCnue_wCuts.Fill(2.001, tnu.xsecWeight)
+    if args.recoEOverflow and recoMuP >= lepPh:
+      h_lepP_NCnue_wCuts.Fill(lepPh-0.001, tnu.xsecWeight)
     else:
       h_lepP_NCnue_wCuts.Fill(recoMuP, tnu.xsecWeight)
     h_cosTheta_NCnue_wCuts.Fill(selMu_cosThetaBeam, tnu.xsecWeight)
@@ -909,8 +915,8 @@ for i in range(tnue.GetEntries()):
     continue
 
   overflowRecoEVal = tnue.recoNuE/1000.
-  if overflowRecoEVal > 2.0 and args.recoEOverflow:
-    overflowRecoEVal = 2.001
+  if overflowRecoEVal >= visEh and args.recoEOverflow:
+    overflowRecoEVal = visEh - 0.001
 
   h_visE_CCnue_wCutsSet1.Fill(overflowRecoEVal, tnue.xsecWeight)
 
@@ -1046,13 +1052,13 @@ for i in range(tnue.GetEntries()):
   n_CCnue_wCuts += tnue.xsecWeight
   h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
   h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
-  if args.recoEOverflow and tnue.recoNuE/1000. > 2.0:
-    h_visE_CCnue_wCuts.Fill(2.001, tnue.xsecWeight)
+  if args.recoEOverflow and tnue.recoNuE/1000. >= visEh:
+    h_visE_CCnue_wCuts.Fill(visEh-0.001, tnue.xsecWeight)
   else:
     h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
   recoMuP = sqrt( (selMu_recoE + 105.66)**2 - 105.66**2 )/1000.
-  if args.recoEOverflow and recoMuP > 2.0:
-    h_lepP_CCnue_wCuts.Fill(2.001, tnue.xsecWeight)
+  if args.recoEOverflow and recoMuP >= lepPh:
+    h_lepP_CCnue_wCuts.Fill(lepPh-0.001, tnue.xsecWeight)
   else:
     h_lepP_CCnue_wCuts.Fill(recoMuP, tnue.xsecWeight)
   h_cosTheta_CCnue_wCuts.Fill(selMu_cosThetaBeam, tnue.xsecWeight)
@@ -1084,8 +1090,8 @@ for i in range(text.GetEntries()):
     continue
 
   overflowRecoEVal = text.recoNuE/1000.
-  if overflowRecoEVal > 2.0 and args.recoEOverflow:
-    overflowRecoEVal = 2.001
+  if overflowRecoEVal >= visEh and args.recoEOverflow:
+    overflowRecoEVal = visEh - 0.001
 
   h_visE_ext_wCutsSet1.Fill(overflowRecoEVal)
 
@@ -1222,13 +1228,13 @@ for i in range(text.GetEntries()):
 
   n_ext_wCuts += 1.
   h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
-  if args.recoEOverflow and text.recoNuE/1000. > 2.0:
-    h_visE_ext_wCuts.Fill(2.001)
+  if args.recoEOverflow and text.recoNuE/1000. >= visEh:
+    h_visE_ext_wCuts.Fill(visEh-0.001)
   else:
     h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
   recoMuP = sqrt( (selMu_recoE + 105.66)**2 - 105.66**2 )/1000.
-  if args.recoEOverflow and recoMuP > 2.0:
-    h_lepP_ext_wCuts.Fill(2.001)
+  if args.recoEOverflow and recoMuP >= lepPh:
+    h_lepP_ext_wCuts.Fill(lepPh-0.001)
   else:
     h_lepP_ext_wCuts.Fill(recoMuP)
   h_cosTheta_ext_wCuts.Fill(selMu_cosThetaBeam)
@@ -1264,8 +1270,8 @@ for i in range(tdata.GetEntries()):
     continue
 
   overflowRecoEVal = tdata.recoNuE/1000.
-  if overflowRecoEVal > 2.0 and args.recoEOverflow:
-    overflowRecoEVal = 2.001
+  if overflowRecoEVal >= visEh and args.recoEOverflow:
+    overflowRecoEVal = visEh - 0.001
 
   h_visE_data_wCutsSet1.Fill(overflowRecoEVal)
 
@@ -1357,13 +1363,13 @@ for i in range(tdata.GetEntries()):
     tdata_trimmed.Fill()
 
   n_data_wCuts += 1.
-  if args.recoEOverflow and tdata.recoNuE/1000. > 2.0:
-    h_visE_data_wCuts.Fill(2.001)
+  if args.recoEOverflow and tdata.recoNuE/1000. >= visEh:
+    h_visE_data_wCuts.Fill(visEh-0.001)
   else:
     h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
   recoMuP = sqrt( (selMu_recoE + 105.66)**2 - 105.66**2 )/1000.
-  if args.recoEOverflow and recoMuP > 2.0:
-    h_lepP_data_wCuts.Fill(2.001)
+  if args.recoEOverflow and recoMuP >= lepPh:
+    h_lepP_data_wCuts.Fill(lepPh-0.001)
   else:
     h_lepP_data_wCuts.Fill(recoMuP)
   h_cosTheta_data_wCuts.Fill(selMu_cosThetaBeam)
@@ -1435,6 +1441,7 @@ h_nuE_CCnumu_wCutsAll.Scale(targetPOT/tnuPOTsum)
 h_nuE_CCnumu_eff1.Divide(h_nuE_CCnumu_wCuts1,h_nuE_CCnumu_nCuts,1,1,"B")
 h_nuE_CCnumu_eff2.Divide(h_nuE_CCnumu_wCuts2,h_nuE_CCnumu_nCuts,1,1,"B")
 h_nuE_CCnumu_effAll.Divide(h_nuE_CCnumu_wCutsAll,h_nuE_CCnumu_nCuts,1,1,"B")
+h_nuE_CCnumu_effAllRat.Divide(h_nuE_CCnumu_wCutsAll,h_nuE_CCnumu_wCuts2,1,1,"B")
 
 h_nuEr_CCnumu_nCuts.Scale(targetPOT/tnuPOTsum)
 h_nuEr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -1467,7 +1474,7 @@ h_visE_predErr_wCuts.Add(h_visE_NCnue_wCuts)
 h_visE_predErr_wCuts.Add(h_visE_NCnumu_wCuts)
 h_visE_predErr_wCuts.Add(h_visE_CCnumu_wCuts)
 h_visE_predErr_wCuts.Add(h_visE_CCnue_wCuts)
-h_visE_predErr_wCuts = SetUncertainties(h_visE_predErr_wCuts, "recoNuE", "CCnumu")
+h_visE_predErr_wCuts = SetUncertainties(h_visE_predErr_wCuts, h_visE_ext_wCuts, "recoNuE", "CCnumu")
 
 h_visE_CCnumu_wCutsSet1.Scale(targetPOT/tnuPOTsum)
 h_visE_NCnumu_wCutsSet1.Scale(targetPOT/tnuPOTsum)
@@ -1550,7 +1557,7 @@ h_cosTheta_predErr_wCuts.Add(h_cosTheta_NCnue_wCuts)
 h_cosTheta_predErr_wCuts.Add(h_cosTheta_CCnue_wCuts)
 h_cosTheta_predErr_wCuts.Add(h_cosTheta_NCnumu_wCuts)
 h_cosTheta_predErr_wCuts.Add(h_cosTheta_CCnumu_wCuts)
-h_cosTheta_predErr_wCuts = SetUncertainties(h_cosTheta_predErr_wCuts, "cosTheta", "CCnumu")
+h_cosTheta_predErr_wCuts = SetUncertainties(h_cosTheta_predErr_wCuts, h_cosTheta_ext_wCuts, "cosTheta", "CCnumu")
 
 h_lepP_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_lepP_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -1567,7 +1574,7 @@ h_lepP_predErr_wCuts.Add(h_lepP_NCnue_wCuts)
 h_lepP_predErr_wCuts.Add(h_lepP_CCnue_wCuts)
 h_lepP_predErr_wCuts.Add(h_lepP_NCnumu_wCuts)
 h_lepP_predErr_wCuts.Add(h_lepP_CCnumu_wCuts)
-h_lepP_predErr_wCuts = SetUncertainties(h_lepP_predErr_wCuts, "lepP", "CCnumu")
+h_lepP_predErr_wCuts = SetUncertainties(h_lepP_predErr_wCuts, h_lepP_ext_wCuts, "lepP", "CCnumu")
 
 h_muScr_CCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
 h_muScr_NCnumu_wCuts.Scale(targetPOT/tnuPOTsum)
@@ -2102,10 +2109,10 @@ cnv_CCnumu_sel_recoE.Write()
 cnv_visE_sel = rt.TCanvas("cnv_visE_sel", "cnv_visE_sel")
 h_visE_data_wCuts.Draw("E")
 h_visE_all_wCuts.Draw("hist same")
-h_visE_data_wCuts.Draw("ESAME")
-h_visE_predErr_wCuts.SetFillColor(4)
-h_visE_predErr_wCuts.SetFillStyle(3002)
+h_visE_predErr_wCuts.SetFillColor(2)
+h_visE_predErr_wCuts.SetFillStyle(3001)
 h_visE_predErr_wCuts.Draw("E2SAME")
+h_visE_data_wCuts.Draw("ESAME")
 if args.recoEOverflow:
   label_visE_sel = getOverflowLabel(h_visE_data_wCuts)
   label_visE_sel.Draw()
@@ -2116,7 +2123,7 @@ leg_visE_sel.AddEntry(h_visE_CCnue_wCuts, "CC nue (%.2f)"%h_visE_CCnue_wCuts.Int
 leg_visE_sel.AddEntry(h_visE_NCnumu_wCuts, "NC numu (%.2f)"%h_visE_NCnumu_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_CCnumu_wCuts, "CC numu (%.2f)"%h_visE_CCnumu_wCuts.Integral(), "f")
 leg_visE_sel.AddEntry(h_visE_data_wCuts, "5e19 data (%.2f)"%h_visE_data_wCuts.Integral(), "l")
-leg_visE_sel.AddEntry(h_visE_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
+leg_visE_sel.AddEntry(h_visE_predErr_wCuts, "Pred. stats + sys error", "f")
 leg_visE_sel.Draw()
 cnv_visE_sel.Write()
 h_visE_data_wCuts.Write()
@@ -2228,10 +2235,10 @@ cnv_visE_cutSet6.Write()
 cnv_cosTheta_sel = rt.TCanvas("cnv_cosTheta_sel", "cnv_cosTheta_sel")
 h_cosTheta_data_wCuts.Draw("E")
 h_cosTheta_all_wCuts.Draw("hist same")
-h_cosTheta_data_wCuts.Draw("ESAME")
-h_cosTheta_predErr_wCuts.SetFillColor(4)
-h_cosTheta_predErr_wCuts.SetFillStyle(3002)
+h_cosTheta_predErr_wCuts.SetFillColor(2)
+h_cosTheta_predErr_wCuts.SetFillStyle(3001)
 h_cosTheta_predErr_wCuts.Draw("E2SAME")
+h_cosTheta_data_wCuts.Draw("ESAME")
 leg_cosTheta_sel = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_cosTheta_sel.AddEntry(h_cosTheta_ext_wCuts, "cosmic background (%.2f)"%h_cosTheta_ext_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_NCnue_wCuts, "NC nue (%.2f)"%h_cosTheta_NCnue_wCuts.Integral(), "f")
@@ -2239,17 +2246,20 @@ leg_cosTheta_sel.AddEntry(h_cosTheta_CCnue_wCuts, "CC nue (%.2f)"%h_cosTheta_CCn
 leg_cosTheta_sel.AddEntry(h_cosTheta_NCnumu_wCuts, "NC numu (%.2f)"%h_cosTheta_NCnumu_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_CCnumu_wCuts, "CC numu (%.2f)"%h_cosTheta_CCnumu_wCuts.Integral(), "f")
 leg_cosTheta_sel.AddEntry(h_cosTheta_data_wCuts, "5e19 data (%.2f)"%h_cosTheta_data_wCuts.Integral(), "l")
-leg_cosTheta_sel.AddEntry(h_cosTheta_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
+leg_cosTheta_sel.AddEntry(h_cosTheta_predErr_wCuts, "Pred. stats + sys error", "f")
 leg_cosTheta_sel.Draw()
 cnv_cosTheta_sel.Write()
+h_cosTheta_data_wCuts.Write()
+h_cosTheta_all_wCuts.Write()
+h_cosTheta_predErr_wCuts.Write()
 
 cnv_lepP_sel = rt.TCanvas("cnv_lepP_sel", "cnv_lepP_sel")
 h_lepP_data_wCuts.Draw("E")
 h_lepP_all_wCuts.Draw("hist same")
-h_lepP_data_wCuts.Draw("ESAME")
-h_lepP_predErr_wCuts.SetFillColor(4)
-h_lepP_predErr_wCuts.SetFillStyle(3002)
+h_lepP_predErr_wCuts.SetFillColor(2)
+h_lepP_predErr_wCuts.SetFillStyle(3001)
 h_lepP_predErr_wCuts.Draw("E2SAME")
+h_lepP_data_wCuts.Draw("ESAME")
 if args.recoEOverflow:
   label_lepP_sel = getOverflowLabel(h_lepP_data_wCuts)
   label_lepP_sel.Draw()
@@ -2260,9 +2270,12 @@ leg_lepP_sel.AddEntry(h_lepP_CCnue_wCuts, "CC nue (%.2f)"%h_lepP_CCnue_wCuts.Int
 leg_lepP_sel.AddEntry(h_lepP_NCnumu_wCuts, "NC numu (%.2f)"%h_lepP_NCnumu_wCuts.Integral(), "f")
 leg_lepP_sel.AddEntry(h_lepP_CCnumu_wCuts, "CC numu (%.2f)"%h_lepP_CCnumu_wCuts.Integral(), "f")
 leg_lepP_sel.AddEntry(h_lepP_data_wCuts, "5e19 data (%.2f)"%h_lepP_data_wCuts.Integral(), "l")
-leg_lepP_sel.AddEntry(h_lepP_predErr_wCuts, "Pred. stats + sys (no detvar) unc.", "f")
+leg_lepP_sel.AddEntry(h_lepP_predErr_wCuts, "Pred. stats + sys error", "f")
 leg_lepP_sel.Draw()
 cnv_lepP_sel.Write()
+h_lepP_data_wCuts.Write()
+h_lepP_all_wCuts.Write()
+h_lepP_data_wCuts.Write()
 
 cnv_muScr_sel = rt.TCanvas("cnv_muScr_sel", "cnv_muScr_sel")
 h_muScr_data_wCuts.Draw("E")
@@ -2408,15 +2421,18 @@ cnv_lowEExVsX_allCuts.Write()
 h_nuE_CCnumu_eff1.GetYaxis().SetRangeUser(0,1.003)
 h_nuE_CCnumu_eff2.GetYaxis().SetRangeUser(0,1.003)
 h_nuE_CCnumu_effAll.GetYaxis().SetRangeUser(0,1.003)
+h_nuE_CCnumu_effAllRat.GetYaxis().SetRangeUser(0,1.003)
 cnv_cutSets_eff = rt.TCanvas("cnv_cutSets_eff","cnv_cutSets_eff")
 cnv_cutSets_eff.SetGrid()
 h_nuE_CCnumu_eff1.Draw("E")
 h_nuE_CCnumu_eff2.Draw("ESAME")
 h_nuE_CCnumu_effAll.Draw("ESAME")
+h_nuE_CCnumu_effAllRat.Draw("ESAME")
 leg_cutSets_eff = rt.TLegend(0.7,0.7,0.9,0.9)
 leg_cutSets_eff.AddEntry(h_nuE_CCnumu_eff1, "cut set 1", "l")
 leg_cutSets_eff.AddEntry(h_nuE_CCnumu_eff2, "cut set 2", "l")
 leg_cutSets_eff.AddEntry(h_nuE_CCnumu_effAll, "all cuts", "l")
+leg_cutSets_eff.AddEntry(h_nuE_CCnumu_effAllRat, "all cuts / cut set 2", "l")
 leg_cutSets_eff.Draw()
 cnv_cutSets_eff.Write()
 

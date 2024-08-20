@@ -6,7 +6,7 @@ import ROOT as rt
 from math import isinf, sqrt
 from helpers.plotting_functions import sortHists, getOverflowLabel
 from helpers.larflowreco_ana_funcs import isFiducial, isFiducialWC, getDistance
-from helpers.systematics import SetUncertainties
+from helpers.systematics_final import SetUncertainties
 
 
 parser = argparse.ArgumentParser("Plot Selection Test Results")
@@ -707,9 +707,9 @@ visE_n = 30
 visE_l = 0.
 visE_h = 6.
 if args.recoEOverflow:
-  visE_n = 14
-  visE_l = 0.
-  visE_h = 2.8
+  visE_n = 9
+  visE_l = 0.2
+  visE_h = 2.0
 
 h_visE_CCnue_wCuts = rt.TH1F("h_visE_CCnue_wCuts","Reco Nu Energy for True CCnue Events",visE_n,visE_l,visE_h)
 h_visE_CCnumu_wCuts = rt.TH1F("h_visE_CCnumu_wCuts","Reco Nu Energy for True CCnumu Events",visE_n,visE_l,visE_h)
@@ -782,8 +782,10 @@ h_visE_predErr_wCutSet6 = rt.TH1F("h_visE_predErr_wCutSet6", "Inclusive CCnue Se
 h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6 = configure_stacked_hists(h_visE_CCnue_wCutSet6, h_visE_NCnue_wCutSet6, h_visE_CCnumu_wCutSet6, h_visE_NCnumu_wCutSet6, h_visE_ext_wCutSet6, h_visE_data_wCutSet6, "Inclusive CCnue Selected Events (Cut  Set 6)", "reconstructed neutrino energy (GeV)")
 
 
-cosTheta_n = 18
-cosTheta_l = -1.125
+#cosTheta_n = 11
+#cosTheta_l = -0.25
+cosTheta_n = 8
+cosTheta_l = 0.125
 cosTheta_h = 1.125
 h_cosTheta_CCnue_wCuts = rt.TH1F("h_cosTheta_CCnue_wCuts","Reco e- cos(theta) for True CCnue Events",cosTheta_n,cosTheta_l,cosTheta_h)
 h_cosTheta_CCnumu_wCuts = rt.TH1F("h_cosTheta_CCnumu_wCuts","Reco e- cos(theta) for True CCnumu Events",cosTheta_n,cosTheta_l,cosTheta_h)
@@ -799,9 +801,9 @@ lepP_n = 30
 lepP_l = 0.
 lepP_h = 6.
 if args.recoEOverflow:
-  lepP_n = 14
+  lepP_n = 8
   lepP_l = 0.
-  lepP_h = 2.8
+  lepP_h = 1.6
 h_lepP_CCnue_wCuts = rt.TH1F("h_lepP_CCnue_wCuts","Reco e- Momentum for True CCnue Events",lepP_n,lepP_l,lepP_h)
 h_lepP_CCnumu_wCuts = rt.TH1F("h_lepP_CCnumu_wCuts","Reco e- Momentum for True CCnumu Events",lepP_n,lepP_l,lepP_h)
 h_lepP_NCnumu_wCuts = rt.TH1F("h_lepP_NCnumu_wCuts","Reco e- Momentum for True NCnumu Events",lepP_n,lepP_l,lepP_h)
@@ -1487,18 +1489,20 @@ for i in range(tnu.GetEntries()):
           if args.write_ntuples:
             tnu_trimmed.Fill()
           recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
+          if args.recoEOverflow:
+            recoElP = (lepP_h-0.01) if (recoElP >= lepP_h) else recoElP
+          elMaxQCosTheta = (cosTheta_l+0.125+0.001) if (elMaxQCosTheta < (cosTheta_l+0.125)) else elMaxQCosTheta
           if eventType == 0:
             n_runs1to3_CCnumu_pass += tnu.xsecWeight
             h_nuE_CCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
             h_nuEr_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-              h_visE_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. >= visE_h:
+              h_visE_CCnumu_wCuts.Fill(visE_h-0.01, tnu.xsecWeight)
+            elif args.recoEOverflow and tnu.recoNuE/1000. < visE_l:
+              h_visE_CCnumu_wCuts.Fill(visE_l+0.01, tnu.xsecWeight)
             else:
               h_visE_CCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and recoElP > 2.6:
-              h_lepP_CCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
-            else:
-              h_lepP_CCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_lepP_CCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
             h_cosTheta_CCnumu_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
             h_elScr_CCnumu_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
             h_phScr_CCnumu_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
@@ -1512,14 +1516,13 @@ for i in range(tnu.GetEntries()):
             n_runs1to3_NCnumu_pass += tnu.xsecWeight
             h_nuE_NCnumu_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
             h_nuEr_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-              h_visE_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. >= visE_h:
+              h_visE_NCnumu_wCuts.Fill(visE_h-0.01, tnu.xsecWeight)
+            elif args.recoEOverflow and tnu.recoNuE/1000. < visE_l:
+              h_visE_NCnumu_wCuts.Fill(visE_l+0.01, tnu.xsecWeight)
             else:
               h_visE_NCnumu_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and recoElP > 2.6:
-              h_lepP_NCnumu_wCuts.Fill(2.7, tnu.xsecWeight)
-            else:
-              h_lepP_NCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_lepP_NCnumu_wCuts.Fill(recoElP, tnu.xsecWeight)
             h_cosTheta_NCnumu_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
             h_elScr_NCnumu_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
             h_phScr_NCnumu_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
@@ -1533,14 +1536,13 @@ for i in range(tnu.GetEntries()):
             n_runs1to3_NCnue_pass += tnu.xsecWeight
             h_nuE_NCnue_wCuts.Fill(tnu.trueNuE, tnu.xsecWeight)
             h_nuEr_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and tnu.recoNuE/1000. > 2.6:
-              h_visE_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
+            if args.recoEOverflow and tnu.recoNuE/1000. >= visE_h:
+              h_visE_NCnue_wCuts.Fill(visE_h-0.01, tnu.xsecWeight)
+            elif args.recoEOverflow and tnu.recoNuE/1000. < visE_l:
+              h_visE_NCnue_wCuts.Fill(visE_l+0.01, tnu.xsecWeight)
             else:
               h_visE_NCnue_wCuts.Fill(tnu.recoNuE/1000., tnu.xsecWeight)
-            if args.recoEOverflow and recoElP > 2.6:
-              h_lepP_NCnue_wCuts.Fill(2.7, tnu.xsecWeight)
-            else:
-              h_lepP_NCnue_wCuts.Fill(recoElP, tnu.xsecWeight)
+            h_lepP_NCnue_wCuts.Fill(recoElP, tnu.xsecWeight)
             h_cosTheta_NCnue_wCuts.Fill(elMaxQCosTheta, tnu.xsecWeight)
             h_elScr_NCnue_wCuts.Fill(elMaxQElScore, tnu.xsecWeight)
             h_phScr_NCnue_wCuts.Fill(elMaxQPhScore, tnu.xsecWeight)
@@ -1924,15 +1926,18 @@ for i in range(tnue.GetEntries()):
           n_runs1to3_CCnue_pass += tnue.xsecWeight
           h_nuE_CCnue_wCuts.Fill(tnue.trueNuE, tnue.xsecWeight)
           h_nuEr_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
-          if args.recoEOverflow and tnue.recoNuE/1000. > 2.6:
-            h_visE_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+          if args.recoEOverflow and tnue.recoNuE/1000. >= visE_h:
+            h_visE_CCnue_wCuts.Fill(visE_h-0.01, tnue.xsecWeight)
+          elif args.recoEOverflow and tnue.recoNuE/1000. < visE_l:
+            h_visE_CCnue_wCuts.Fill(visE_l+0.01, tnue.xsecWeight)
           else:
             h_visE_CCnue_wCuts.Fill(tnue.recoNuE/1000., tnue.xsecWeight)
           recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
-          if args.recoEOverflow and recoElP > 2.6:
-            h_lepP_CCnue_wCuts.Fill(2.7, tnue.xsecWeight)
+          if args.recoEOverflow and recoElP > lepP_h:
+            h_lepP_CCnue_wCuts.Fill(lepP_h-0.01, tnue.xsecWeight)
           else:
             h_lepP_CCnue_wCuts.Fill(recoElP, tnue.xsecWeight)
+          elMaxQCosTheta = (cosTheta_l+0.125+0.001) if (elMaxQCosTheta < (cosTheta_l+0.125)) else elMaxQCosTheta
           h_cosTheta_CCnue_wCuts.Fill(elMaxQCosTheta, tnue.xsecWeight)
           h_elScr_CCnue_wCuts.Fill(elMaxQElScore, tnue.xsecWeight)
           h_phScr_CCnue_wCuts.Fill(elMaxQPhScore, tnue.xsecWeight)
@@ -2232,15 +2237,18 @@ for i in range(text.GetEntries()):
           n_runs1to3_ext_pass += 1.
           #h_nuE_ext_wCuts.Fill(text.trueNuE)
           h_nuEr_ext_wCuts.Fill(text.recoNuE/1000.)
-          if args.recoEOverflow and text.recoNuE/1000. > 2.6:
-            h_visE_ext_wCuts.Fill(2.7)
+          if args.recoEOverflow and text.recoNuE/1000. >= visE_h:
+            h_visE_ext_wCuts.Fill(visE_h-0.01)
+          elif args.recoEOverflow and text.recoNuE/1000. < visE_l:
+            h_visE_ext_wCuts.Fill(visE_l+0.01)
           else:
             h_visE_ext_wCuts.Fill(text.recoNuE/1000.)
           recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
-          if args.recoEOverflow and recoElP > 2.6:
-            h_lepP_ext_wCuts.Fill(2.7)
+          if args.recoEOverflow and recoElP >= lepP_h:
+            h_lepP_ext_wCuts.Fill(lepP_h-0.01)
           else:
             h_lepP_ext_wCuts.Fill(recoElP)
+          elMaxQCosTheta = (cosTheta_l+0.125+0.001) if (elMaxQCosTheta < (cosTheta_l+0.125)) else elMaxQCosTheta
           h_cosTheta_ext_wCuts.Fill(elMaxQCosTheta)
           h_elScr_ext_wCuts.Fill(elMaxQElScore)
           h_phScr_ext_wCuts.Fill(elMaxQPhScore)
@@ -2402,15 +2410,18 @@ for i in range(tdata.GetEntries()):
       if args.write_ntuples:
         tdata_trimmed.Fill()
       n_runs1to3_data_pass += 1.
-      if args.recoEOverflow and tdata.recoNuE/1000. > 2.6:
-        h_visE_data_wCuts.Fill(2.7)
+      if args.recoEOverflow and tdata.recoNuE/1000. >= visE_h:
+        h_visE_data_wCuts.Fill(visE_h-0.01)
+      elif args.recoEOverflow and tdata.recoNuE/1000. < visE_l:
+        h_visE_data_wCuts.Fill(visE_l+0.01)
       else:
         h_visE_data_wCuts.Fill(tdata.recoNuE/1000.)
       recoElP = sqrt(elMaxQEnergy**2 - 0.511**2)/1000.
-      if args.recoEOverflow and recoElP > 2.6:
-        h_lepP_data_wCuts.Fill(2.7)
+      if args.recoEOverflow and recoElP >= lepP_h:
+        h_lepP_data_wCuts.Fill(lepP_h-0.01)
       else:
         h_lepP_data_wCuts.Fill(recoElP)
+      elMaxQCosTheta = (cosTheta_l+0.125+0.001) if (elMaxQCosTheta < (cosTheta_l+0.125)) else elMaxQCosTheta
       h_cosTheta_data_wCuts.Fill(elMaxQCosTheta)
       h_elScr_data_wCuts.Fill(elMaxQElScore)
       h_phScr_data_wCuts.Fill(elMaxQPhScore)
