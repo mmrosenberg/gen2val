@@ -333,6 +333,7 @@ def set_zoom_coords(iolcv):
 
 
 iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickBackward)
+#iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickForward)
 iolcv.add_in_file(args.larcv_file)
 iolcv.reverse_all_products()
 iolcv.initialize()
@@ -366,6 +367,14 @@ for i in range(args.entry, iolcv.get_n_entries()):
     adc_v_thrumu = iolcv.get_data(larcv.kProductImage2D, "thrumu").Image2DArray()
     for p in range(3):
       adc_v[p].overlay(adc_v_thrumu[p], larcv.Image2D.kSubtract)
+  elif args.wireName == "ubspurn_shower":
+    adc_v = [iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane0").Image2DArray()[0]]
+    adc_v.append(iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane1").Image2DArray()[0])
+    adc_v.append(iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane2").Image2DArray()[0])
+  elif args.wireName == "ubspurn_track":
+    adc_v = [iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane0").Image2DArray()[1]]
+    adc_v.append(iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane1").Image2DArray()[1])
+    adc_v.append(iolcv.get_data(larcv.kProductImage2D, "ubspurn_plane2").Image2DArray()[1])
   else:
     adc_v = iolcv.get_data(larcv.kProductImage2D, args.wireName).Image2DArray()
   if args.root:
