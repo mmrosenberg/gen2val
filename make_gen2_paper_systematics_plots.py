@@ -2,6 +2,7 @@
 import ROOT as rt
 from math import sqrt
 from helpers.plotting_functions import getOverflowLabel, getUnderflowLabel
+from array import array
 
 #====== flux, xsec, and reint arrays from print_xsec_flux_reint_systematics_individual.py =======#
 
@@ -67,26 +68,27 @@ rt.gStyle.SetOptStat(0)
 
 #Final version binning:
 nueB_n = 9
-nueB_l = 0.2
-nueB_h = 2.0
+#nueB_l = 0.2
+#nueB_h = 2.0
+nueB_edges = array('f',[0.0,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0])
 numuB_n = 19
 numuB_l = 0.
 numuB_h = 1.9
 
-h_CCnue_flux = rt.TH1F("h_CCnue_flux", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnue_xsec = rt.TH1F("h_CCnue_xsec", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnue_reint = rt.TH1F("h_CCnue_reint", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnumu_flux = rt.TH1F("h_CCnumu_flux", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-h_CCnumu_xsec = rt.TH1F("h_CCnumu_xsec", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-h_CCnumu_reint = rt.TH1F("h_CCnumu_reint", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-h_CCnue_detvar = rt.TH1F("h_CCnue_detvar", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-#h_CCnue_detvar_noHacks = rt.TH1F("h_CCnue_detvar_noHacks", "Detector Systematic Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnumu_detvar = rt.TH1F("h_CCnumu_detvar", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-#h_CCnumu_detvar_noHacks = rt.TH1F("h_CCnumu_detvar_noHacks", "Detector Systematic Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-h_CCnue_stats = rt.TH1F("h_CCnue_stats", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnumu_stats = rt.TH1F("h_CCnumu_stats", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
-h_CCnue_tot = rt.TH1F("h_CCnue_tot", "Uncertainties in CCnue Selection", nueB_n, nueB_l, nueB_h)
-h_CCnumu_tot = rt.TH1F("h_CCnumu_tot", "Uncertainties in CCnumu Selection", numuB_n, numuB_l, numuB_h)
+h_CCnue_flux = rt.TH1F("h_CCnue_flux", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+h_CCnue_xsec = rt.TH1F("h_CCnue_xsec", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+h_CCnue_reint = rt.TH1F("h_CCnue_reint", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+h_CCnumu_flux = rt.TH1F("h_CCnumu_flux", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+h_CCnumu_xsec = rt.TH1F("h_CCnumu_xsec", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+h_CCnumu_reint = rt.TH1F("h_CCnumu_reint", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+h_CCnue_detvar = rt.TH1F("h_CCnue_detvar", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+#h_CCnue_detvar_noHacks = rt.TH1F("h_CCnue_detvar_noHacks", "Detector Systematic Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_l, nueB_h)
+h_CCnumu_detvar = rt.TH1F("h_CCnumu_detvar", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+#h_CCnumu_detvar_noHacks = rt.TH1F("h_CCnumu_detvar_noHacks", "Detector Systematic Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+h_CCnue_stats = rt.TH1F("h_CCnue_stats", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+h_CCnumu_stats = rt.TH1F("h_CCnumu_stats", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
+h_CCnue_tot = rt.TH1F("h_CCnue_tot", "Uncertainties in CC #nu_{e} Selection", nueB_n, nueB_edges)
+h_CCnumu_tot = rt.TH1F("h_CCnumu_tot", "Uncertainties in CC #nu_{#mu} Selection", numuB_n, numuB_l, numuB_h)
 
 h_CCnue_tot.GetXaxis().SetTitle("reconstructed neutrino energy (GeV)")
 h_CCnue_tot.GetYaxis().SetTitle("fractional uncertainty")
@@ -161,8 +163,8 @@ h_CCnue_flux.Draw("HISTSAME")
 h_CCnue_xsec.Draw("HISTSAME")
 ovfLabel_CCnue = getOverflowLabel(h_CCnue_tot)
 ovfLabel_CCnue.Draw()
-unfLabel_CCnue = getUnderflowLabel(h_CCnue_tot)
-unfLabel_CCnue.Draw()
+#unfLabel_CCnue = getUnderflowLabel(h_CCnue_tot)
+#unfLabel_CCnue.Draw()
 leg_CCnue = rt.TLegend(0.194842,0.64916,0.648997,0.846639)
 leg_CCnue.SetNColumns(2)
 leg_CCnue.AddEntry(h_CCnue_stats, "Statistical", "l")

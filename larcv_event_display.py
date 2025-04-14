@@ -23,6 +23,7 @@ parser.add_argument("-M","--max", type=float, default=-9999., help="maximum pixe
 parser.add_argument("-r", "--run", type=int, default=-1, help="plot event with this run (if > 0)")
 parser.add_argument("-sr", "--subrun", type=int, default=-1, help="plot event with this subrun (if > 0)")
 parser.add_argument("-e", "--event", type=int, default=-1, help="plot event with this event id (if > 0)")
+parser.add_argument("--tickforward", help="read in larcv images with tickforward option", action="store_true")
 parser.add_argument("--auto_zoom", help="zoom in on in-time hits above threshold", action="store_true")
 parser.add_argument("--root", help="plot with root instead of matplotlib", action="store_true")
 parser.add_argument("-zr1", "--zoom_r1", type=int, default=-1, help="optional plot zoom coord: min row")
@@ -332,11 +333,15 @@ def set_zoom_coords(iolcv):
 
 
 
-iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickBackward)
-#iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickForward)
-iolcv.add_in_file(args.larcv_file)
-iolcv.reverse_all_products()
-iolcv.initialize()
+if args.tickforward:
+  iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickForward)
+  iolcv.add_in_file(args.larcv_file)
+  iolcv.initialize()
+else:
+  iolcv = larcv.IOManager(larcv.IOManager.kREAD, "larcv", larcv.IOManager.kTickBackward)
+  iolcv.add_in_file(args.larcv_file)
+  iolcv.reverse_all_products()
+  iolcv.initialize()
 
 have_larlite = True
 try:

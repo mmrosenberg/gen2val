@@ -23,10 +23,10 @@ def sortHists(hlist):
   return sortedList
 
 #Must draw histogram before calling this function
-def getOverflowLabel(h):
+def getOverflowLabel(h, offset=27.):
   x = h.GetBinCenter(h.GetNbinsX()) - 0.1*h.GetBinWidth(h.GetNbinsX())
   rt.gPad.Update()
-  y = -rt.gPad.GetFrame().GetY2()/27.
+  y = -rt.gPad.GetFrame().GetY2()/offset
   label = rt.TText(x,y,"overflow")
   label.SetTextSize(0.028)
   label.SetTextAngle(-40)
@@ -37,6 +37,15 @@ def getUnderflowLabel(h):
   rt.gPad.Update()
   y = -rt.gPad.GetFrame().GetY2()/30.
   label = rt.TText(x,y,"underflow")
+  label.SetTextSize(0.028)
+  label.SetTextAngle(-40)
+  return label
+
+def getDefaultValueLabel(h, label):
+  x = h.GetBinCenter(1) - 0.1*h.GetBinWidth(h.GetNbinsX())
+  rt.gPad.Update()
+  y = -rt.gPad.GetFrame().GetY2()/30.
+  label = rt.TLatex(x,y,label)
   label.SetTextSize(0.028)
   label.SetTextAngle(-40)
   return label
